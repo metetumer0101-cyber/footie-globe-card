@@ -1,10 +1,18 @@
 import { useTranslation } from "react-i18next";
-import { Sparkles } from "lucide-react";
-import { playerOfTheDay } from "./data";
+import { ChevronRight, Sparkles } from "lucide-react";
+import { players } from "@/data/football";
 
-export function HeroBanner() {
+export function HeroBanner({ onOpen }: { onOpen?: () => void }) {
   const { t } = useTranslation();
-  const p = playerOfTheDay;
+  const p = players.find((x) => x.id === "arda") ?? players[0]!;
+  const core = [
+    ["pac", p.core.pac],
+    ["sho", p.core.sho],
+    ["pas", p.core.pas],
+    ["dri", p.core.dri],
+    ["def", p.core.def],
+    ["phy", p.core.phy],
+  ] as const;
 
   return (
     <section className="card-surface glow relative overflow-hidden rounded-3xl p-4">
@@ -18,21 +26,25 @@ export function HeroBanner() {
         <div className="min-w-0">
           <h2 className="truncate text-2xl font-extrabold">{p.name}</h2>
           <p className="truncate text-sm text-muted-foreground">
-            {p.country} {p.club} · {p.position} · {p.age}
+            {p.nation} {p.club} · {p.position} · {t(p.tier)}
           </p>
         </div>
-        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl gradient-pitch">
-          <span className="text-xl font-black text-primary-foreground">{p.rating}</span>
-        </div>
+        <button
+          onClick={onOpen}
+          className="flex shrink-0 items-center gap-1 rounded-full gradient-pitch px-3 py-2 text-xs font-bold text-primary-foreground transition-transform duration-200 hover:scale-105"
+        >
+          {t("seeAll")}
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </div>
 
       <dl className="relative mt-4 grid grid-cols-3 gap-2">
-        {p.stats.map((s) => (
-          <div key={s.key} className="rounded-xl bg-secondary/50 px-2 py-2">
+        {core.map(([key, value]) => (
+          <div key={key} className="rounded-xl bg-secondary/50 px-2 py-2">
             <dt className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">
-              {t(s.key)}
+              {t(`attr.${key}`)}
             </dt>
-            <dd className="text-sm font-bold text-primary">{s.value}</dd>
+            <dd className="text-sm font-bold text-primary">{value}</dd>
           </div>
         ))}
       </dl>
