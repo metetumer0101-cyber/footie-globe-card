@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import i18n, { languages } from "../i18n";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -77,11 +78,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "FootCard — Football Scout, Player Cards & Comparison" },
+      { name: "description", content: "Mobile-first football scouting platform: player cards, comparisons, squad builder and competitions in 35 languages." },
+      
+      { property: "og:title", content: "FootCard" },
+      { property: "og:description", content: "Player cards, scouting and comparisons for football fans." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
@@ -102,7 +103,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
@@ -116,6 +117,17 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    const apply = (lng: string) => {
+      const meta = languages.find((l) => l.code === lng) ?? languages.find((l) => l.code === lng.split("-")[0]);
+      document.documentElement.lang = meta?.code ?? "en";
+      document.documentElement.dir = meta?.rtl ? "rtl" : "ltr";
+    };
+    apply(i18n.resolvedLanguage ?? "en");
+    i18n.on("languageChanged", apply);
+    return () => i18n.off("languageChanged", apply);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -1,0 +1,1373 @@
+// Auto-generated translation catalog for FootCard (35 languages)
+export type LanguageMeta = { code: string; native: string; english: string; flag: string; rtl: boolean };
+
+export const languages: LanguageMeta[] = [
+  {
+    "code": "en",
+    "native": "English",
+    "english": "English",
+    "flag": "🇬🇧",
+    "rtl": false
+  },
+  {
+    "code": "tr",
+    "native": "Türkçe",
+    "english": "Turkish",
+    "flag": "🇹🇷",
+    "rtl": false
+  },
+  {
+    "code": "es",
+    "native": "Español",
+    "english": "Spanish",
+    "flag": "🇪🇸",
+    "rtl": false
+  },
+  {
+    "code": "de",
+    "native": "Deutsch",
+    "english": "German",
+    "flag": "🇩🇪",
+    "rtl": false
+  },
+  {
+    "code": "fr",
+    "native": "Français",
+    "english": "French",
+    "flag": "🇫🇷",
+    "rtl": false
+  },
+  {
+    "code": "it",
+    "native": "Italiano",
+    "english": "Italian",
+    "flag": "🇮🇹",
+    "rtl": false
+  },
+  {
+    "code": "pt",
+    "native": "Português",
+    "english": "Portuguese",
+    "flag": "🇵🇹",
+    "rtl": false
+  },
+  {
+    "code": "pt-BR",
+    "native": "Português (BR)",
+    "english": "Portuguese (Brazil)",
+    "flag": "🇧🇷",
+    "rtl": false
+  },
+  {
+    "code": "nl",
+    "native": "Nederlands",
+    "english": "Dutch",
+    "flag": "🇳🇱",
+    "rtl": false
+  },
+  {
+    "code": "ar",
+    "native": "العربية",
+    "english": "Arabic",
+    "flag": "🇸🇦",
+    "rtl": true
+  },
+  {
+    "code": "ja",
+    "native": "日本語",
+    "english": "Japanese",
+    "flag": "🇯🇵",
+    "rtl": false
+  },
+  {
+    "code": "ko",
+    "native": "한국어",
+    "english": "Korean",
+    "flag": "🇰🇷",
+    "rtl": false
+  },
+  {
+    "code": "zh",
+    "native": "中文",
+    "english": "Chinese",
+    "flag": "🇨🇳",
+    "rtl": false
+  },
+  {
+    "code": "ru",
+    "native": "Русский",
+    "english": "Russian",
+    "flag": "🇷🇺",
+    "rtl": false
+  },
+  {
+    "code": "el",
+    "native": "Ελληνικά",
+    "english": "Greek",
+    "flag": "🇬🇷",
+    "rtl": false
+  },
+  {
+    "code": "pl",
+    "native": "Polski",
+    "english": "Polish",
+    "flag": "🇵🇱",
+    "rtl": false
+  },
+  {
+    "code": "hr",
+    "native": "Hrvatski",
+    "english": "Croatian",
+    "flag": "🇭🇷",
+    "rtl": false
+  },
+  {
+    "code": "sr",
+    "native": "Српски",
+    "english": "Serbian",
+    "flag": "🇷🇸",
+    "rtl": false
+  },
+  {
+    "code": "sv",
+    "native": "Svenska",
+    "english": "Swedish",
+    "flag": "🇸🇪",
+    "rtl": false
+  },
+  {
+    "code": "no",
+    "native": "Norsk",
+    "english": "Norwegian",
+    "flag": "🇳🇴",
+    "rtl": false
+  },
+  {
+    "code": "da",
+    "native": "Dansk",
+    "english": "Danish",
+    "flag": "🇩🇰",
+    "rtl": false
+  },
+  {
+    "code": "fi",
+    "native": "Suomi",
+    "english": "Finnish",
+    "flag": "🇫🇮",
+    "rtl": false
+  },
+  {
+    "code": "id",
+    "native": "Bahasa Indonesia",
+    "english": "Indonesian",
+    "flag": "🇮🇩",
+    "rtl": false
+  },
+  {
+    "code": "hi",
+    "native": "हिन्दी",
+    "english": "Hindi",
+    "flag": "🇮🇳",
+    "rtl": false
+  },
+  {
+    "code": "fa",
+    "native": "فارسی",
+    "english": "Persian",
+    "flag": "🇮🇷",
+    "rtl": true
+  },
+  {
+    "code": "uk",
+    "native": "Українська",
+    "english": "Ukrainian",
+    "flag": "🇺🇦",
+    "rtl": false
+  },
+  {
+    "code": "cs",
+    "native": "Čeština",
+    "english": "Czech",
+    "flag": "🇨🇿",
+    "rtl": false
+  },
+  {
+    "code": "ro",
+    "native": "Română",
+    "english": "Romanian",
+    "flag": "🇷🇴",
+    "rtl": false
+  },
+  {
+    "code": "hu",
+    "native": "Magyar",
+    "english": "Hungarian",
+    "flag": "🇭🇺",
+    "rtl": false
+  },
+  {
+    "code": "bg",
+    "native": "Български",
+    "english": "Bulgarian",
+    "flag": "🇧🇬",
+    "rtl": false
+  },
+  {
+    "code": "th",
+    "native": "ไทย",
+    "english": "Thai",
+    "flag": "🇹🇭",
+    "rtl": false
+  },
+  {
+    "code": "vi",
+    "native": "Tiếng Việt",
+    "english": "Vietnamese",
+    "flag": "🇻🇳",
+    "rtl": false
+  },
+  {
+    "code": "he",
+    "native": "עברית",
+    "english": "Hebrew",
+    "flag": "🇮🇱",
+    "rtl": true
+  },
+  {
+    "code": "sw",
+    "native": "Kiswahili",
+    "english": "Swahili",
+    "flag": "🇰🇪",
+    "rtl": false
+  },
+  {
+    "code": "sk",
+    "native": "Slovenčina",
+    "english": "Slovak",
+    "flag": "🇸🇰",
+    "rtl": false
+  }
+];
+
+export const resources: Record<string, { translation: Record<string, unknown> }> = {
+  "en": {
+    "translation": {
+      "searchPlaceholder": "Search players, teams...",
+      "nav": {
+        "home": "Home",
+        "scout": "Scout",
+        "compare": "Compare",
+        "squad": "Squad Builder",
+        "competitions": "Competitions",
+        "profile": "Profile"
+      },
+      "playerOfTheDay": "Player of the Day",
+      "popularPlayers": "Popular Players",
+      "popularTeams": "Popular Teams",
+      "futureStars": "Future Stars",
+      "activeCompetitions": "Active Competitions",
+      "seeAll": "See all",
+      "comingSoon": "Coming soon",
+      "language": "Language",
+      "searchLanguage": "Search language",
+      "pace": "Pace",
+      "shooting": "Shooting",
+      "passing": "Passing",
+      "dribbling": "Dribbling",
+      "defending": "Defending",
+      "physical": "Physical",
+      "overall": "Overall",
+      "filters": "Filters",
+      "notifications": "Notifications",
+      "live": "Live"
+    }
+  },
+  "tr": {
+    "translation": {
+      "searchPlaceholder": "Oyuncu, takım ara...",
+      "nav": {
+        "home": "Ana Sayfa",
+        "scout": "Scout",
+        "compare": "Karşılaştır",
+        "squad": "Kadro Kur",
+        "competitions": "Yarışmalar",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Günün Oyuncusu",
+      "popularPlayers": "Popüler Oyuncular",
+      "popularTeams": "Popüler Takımlar",
+      "futureStars": "Geleceğin Yıldızları",
+      "activeCompetitions": "Aktif Yarışmalar",
+      "seeAll": "Tümünü gör",
+      "comingSoon": "Yakında",
+      "language": "Dil",
+      "searchLanguage": "Dil ara",
+      "pace": "Hız",
+      "shooting": "Şut",
+      "passing": "Pas",
+      "dribbling": "Dribling",
+      "defending": "Defans",
+      "physical": "Fizik",
+      "overall": "Genel",
+      "filters": "Filtreler",
+      "notifications": "Bildirimler",
+      "live": "Canlı"
+    }
+  },
+  "es": {
+    "translation": {
+      "searchPlaceholder": "Buscar jugadores, equipos...",
+      "nav": {
+        "home": "Inicio",
+        "scout": "Ojeador",
+        "compare": "Comparar",
+        "squad": "Crear plantilla",
+        "competitions": "Competiciones",
+        "profile": "Perfil"
+      },
+      "playerOfTheDay": "Jugador del día",
+      "popularPlayers": "Jugadores populares",
+      "popularTeams": "Equipos populares",
+      "futureStars": "Estrellas del futuro",
+      "activeCompetitions": "Competiciones activas",
+      "seeAll": "Ver todo",
+      "comingSoon": "Próximamente",
+      "language": "Idioma",
+      "searchLanguage": "Buscar idioma",
+      "pace": "Ritmo",
+      "shooting": "Tiro",
+      "passing": "Pase",
+      "dribbling": "Regate",
+      "defending": "Defensa",
+      "physical": "Físico",
+      "overall": "General",
+      "filters": "Filtros",
+      "notifications": "Notificaciones",
+      "live": "En vivo"
+    }
+  },
+  "de": {
+    "translation": {
+      "searchPlaceholder": "Spieler, Teams suchen...",
+      "nav": {
+        "home": "Start",
+        "scout": "Scout",
+        "compare": "Vergleichen",
+        "squad": "Kader bauen",
+        "competitions": "Wettbewerbe",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Spieler des Tages",
+      "popularPlayers": "Beliebte Spieler",
+      "popularTeams": "Beliebte Teams",
+      "futureStars": "Zukünftige Stars",
+      "activeCompetitions": "Aktive Wettbewerbe",
+      "seeAll": "Alle ansehen",
+      "comingSoon": "Demnächst",
+      "language": "Sprache",
+      "searchLanguage": "Sprache suchen",
+      "pace": "Tempo",
+      "shooting": "Schuss",
+      "passing": "Pass",
+      "dribbling": "Dribbling",
+      "defending": "Verteidigung",
+      "physical": "Physis",
+      "overall": "Gesamt",
+      "filters": "Filter",
+      "notifications": "Benachrichtigungen",
+      "live": "Live"
+    }
+  },
+  "fr": {
+    "translation": {
+      "searchPlaceholder": "Rechercher joueurs, équipes...",
+      "nav": {
+        "home": "Accueil",
+        "scout": "Scout",
+        "compare": "Comparer",
+        "squad": "Composer l'équipe",
+        "competitions": "Compétitions",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Joueur du jour",
+      "popularPlayers": "Joueurs populaires",
+      "popularTeams": "Équipes populaires",
+      "futureStars": "Stars de demain",
+      "activeCompetitions": "Compétitions actives",
+      "seeAll": "Tout voir",
+      "comingSoon": "Bientôt",
+      "language": "Langue",
+      "searchLanguage": "Rechercher une langue",
+      "pace": "Vitesse",
+      "shooting": "Tir",
+      "passing": "Passe",
+      "dribbling": "Dribble",
+      "defending": "Défense",
+      "physical": "Physique",
+      "overall": "Global",
+      "filters": "Filtres",
+      "notifications": "Notifications",
+      "live": "En direct"
+    }
+  },
+  "it": {
+    "translation": {
+      "searchPlaceholder": "Cerca giocatori, squadre...",
+      "nav": {
+        "home": "Home",
+        "scout": "Scout",
+        "compare": "Confronta",
+        "squad": "Crea rosa",
+        "competitions": "Competizioni",
+        "profile": "Profilo"
+      },
+      "playerOfTheDay": "Giocatore del giorno",
+      "popularPlayers": "Giocatori popolari",
+      "popularTeams": "Squadre popolari",
+      "futureStars": "Stelle del futuro",
+      "activeCompetitions": "Competizioni attive",
+      "seeAll": "Vedi tutto",
+      "comingSoon": "Prossimamente",
+      "language": "Lingua",
+      "searchLanguage": "Cerca lingua",
+      "pace": "Velocità",
+      "shooting": "Tiro",
+      "passing": "Passaggio",
+      "dribbling": "Dribbling",
+      "defending": "Difesa",
+      "physical": "Fisico",
+      "overall": "Generale",
+      "filters": "Filtri",
+      "notifications": "Notifiche",
+      "live": "Live"
+    }
+  },
+  "pt": {
+    "translation": {
+      "searchPlaceholder": "Procurar jogadores, equipas...",
+      "nav": {
+        "home": "Início",
+        "scout": "Scout",
+        "compare": "Comparar",
+        "squad": "Montar equipa",
+        "competitions": "Competições",
+        "profile": "Perfil"
+      },
+      "playerOfTheDay": "Jogador do dia",
+      "popularPlayers": "Jogadores populares",
+      "popularTeams": "Equipas populares",
+      "futureStars": "Estrelas do futuro",
+      "activeCompetitions": "Competições ativas",
+      "seeAll": "Ver tudo",
+      "comingSoon": "Em breve",
+      "language": "Idioma",
+      "searchLanguage": "Procurar idioma",
+      "pace": "Velocidade",
+      "shooting": "Remate",
+      "passing": "Passe",
+      "dribbling": "Drible",
+      "defending": "Defesa",
+      "physical": "Físico",
+      "overall": "Geral",
+      "filters": "Filtros",
+      "notifications": "Notificações",
+      "live": "Ao vivo"
+    }
+  },
+  "pt-BR": {
+    "translation": {
+      "searchPlaceholder": "Buscar jogadores, times...",
+      "nav": {
+        "home": "Início",
+        "scout": "Olheiro",
+        "compare": "Comparar",
+        "squad": "Montar time",
+        "competitions": "Competições",
+        "profile": "Perfil"
+      },
+      "playerOfTheDay": "Jogador do dia",
+      "popularPlayers": "Jogadores populares",
+      "popularTeams": "Times populares",
+      "futureStars": "Estrelas do futuro",
+      "activeCompetitions": "Competições ativas",
+      "seeAll": "Ver tudo",
+      "comingSoon": "Em breve",
+      "language": "Idioma",
+      "searchLanguage": "Buscar idioma",
+      "pace": "Velocidade",
+      "shooting": "Chute",
+      "passing": "Passe",
+      "dribbling": "Drible",
+      "defending": "Defesa",
+      "physical": "Físico",
+      "overall": "Geral",
+      "filters": "Filtros",
+      "notifications": "Notificações",
+      "live": "Ao vivo"
+    }
+  },
+  "nl": {
+    "translation": {
+      "searchPlaceholder": "Zoek spelers, teams...",
+      "nav": {
+        "home": "Home",
+        "scout": "Scout",
+        "compare": "Vergelijken",
+        "squad": "Team bouwen",
+        "competitions": "Competities",
+        "profile": "Profiel"
+      },
+      "playerOfTheDay": "Speler van de dag",
+      "popularPlayers": "Populaire spelers",
+      "popularTeams": "Populaire teams",
+      "futureStars": "Sterren van morgen",
+      "activeCompetitions": "Actieve competities",
+      "seeAll": "Bekijk alles",
+      "comingSoon": "Binnenkort",
+      "language": "Taal",
+      "searchLanguage": "Zoek taal",
+      "pace": "Snelheid",
+      "shooting": "Schot",
+      "passing": "Passing",
+      "dribbling": "Dribbelen",
+      "defending": "Verdediging",
+      "physical": "Fysiek",
+      "overall": "Totaal",
+      "filters": "Filters",
+      "notifications": "Meldingen",
+      "live": "Live"
+    }
+  },
+  "ar": {
+    "translation": {
+      "searchPlaceholder": "ابحث عن لاعبين وفرق...",
+      "nav": {
+        "home": "الرئيسية",
+        "scout": "الكشافة",
+        "compare": "قارن",
+        "squad": "بناء الفريق",
+        "competitions": "المسابقات",
+        "profile": "الملف الشخصي"
+      },
+      "playerOfTheDay": "لاعب اليوم",
+      "popularPlayers": "لاعبون مشهورون",
+      "popularTeams": "فرق مشهورة",
+      "futureStars": "نجوم المستقبل",
+      "activeCompetitions": "المسابقات النشطة",
+      "seeAll": "عرض الكل",
+      "comingSoon": "قريباً",
+      "language": "اللغة",
+      "searchLanguage": "ابحث عن لغة",
+      "pace": "السرعة",
+      "shooting": "التسديد",
+      "passing": "التمرير",
+      "dribbling": "المراوغة",
+      "defending": "الدفاع",
+      "physical": "البدنية",
+      "overall": "الإجمالي",
+      "filters": "الفلاتر",
+      "notifications": "الإشعارات",
+      "live": "مباشر"
+    }
+  },
+  "ja": {
+    "translation": {
+      "searchPlaceholder": "選手・チームを検索...",
+      "nav": {
+        "home": "ホーム",
+        "scout": "スカウト",
+        "compare": "比較",
+        "squad": "スカッド作成",
+        "competitions": "大会",
+        "profile": "プロフィール"
+      },
+      "playerOfTheDay": "本日の選手",
+      "popularPlayers": "人気選手",
+      "popularTeams": "人気チーム",
+      "futureStars": "未来のスター",
+      "activeCompetitions": "開催中の大会",
+      "seeAll": "すべて見る",
+      "comingSoon": "近日公開",
+      "language": "言語",
+      "searchLanguage": "言語を検索",
+      "pace": "スピード",
+      "shooting": "シュート",
+      "passing": "パス",
+      "dribbling": "ドリブル",
+      "defending": "守備",
+      "physical": "フィジカル",
+      "overall": "総合",
+      "filters": "フィルター",
+      "notifications": "通知",
+      "live": "ライブ"
+    }
+  },
+  "ko": {
+    "translation": {
+      "searchPlaceholder": "선수, 팀 검색...",
+      "nav": {
+        "home": "홈",
+        "scout": "스카우트",
+        "compare": "비교",
+        "squad": "스쿼드 빌더",
+        "competitions": "대회",
+        "profile": "프로필"
+      },
+      "playerOfTheDay": "오늘의 선수",
+      "popularPlayers": "인기 선수",
+      "popularTeams": "인기 팀",
+      "futureStars": "미래의 스타",
+      "activeCompetitions": "진행 중인 대회",
+      "seeAll": "전체 보기",
+      "comingSoon": "곧 출시",
+      "language": "언어",
+      "searchLanguage": "언어 검색",
+      "pace": "스피드",
+      "shooting": "슛",
+      "passing": "패스",
+      "dribbling": "드리블",
+      "defending": "수비",
+      "physical": "피지컬",
+      "overall": "종합",
+      "filters": "필터",
+      "notifications": "알림",
+      "live": "라이브"
+    }
+  },
+  "zh": {
+    "translation": {
+      "searchPlaceholder": "搜索球员、球队...",
+      "nav": {
+        "home": "首页",
+        "scout": "球探",
+        "compare": "对比",
+        "squad": "阵容搭建",
+        "competitions": "赛事",
+        "profile": "个人资料"
+      },
+      "playerOfTheDay": "今日球员",
+      "popularPlayers": "热门球员",
+      "popularTeams": "热门球队",
+      "futureStars": "未来之星",
+      "activeCompetitions": "进行中的赛事",
+      "seeAll": "查看全部",
+      "comingSoon": "即将推出",
+      "language": "语言",
+      "searchLanguage": "搜索语言",
+      "pace": "速度",
+      "shooting": "射门",
+      "passing": "传球",
+      "dribbling": "盘带",
+      "defending": "防守",
+      "physical": "身体",
+      "overall": "综合",
+      "filters": "筛选",
+      "notifications": "通知",
+      "live": "直播"
+    }
+  },
+  "ru": {
+    "translation": {
+      "searchPlaceholder": "Поиск игроков, команд...",
+      "nav": {
+        "home": "Главная",
+        "scout": "Скаут",
+        "compare": "Сравнить",
+        "squad": "Состав",
+        "competitions": "Турниры",
+        "profile": "Профиль"
+      },
+      "playerOfTheDay": "Игрок дня",
+      "popularPlayers": "Популярные игроки",
+      "popularTeams": "Популярные команды",
+      "futureStars": "Звёзды будущего",
+      "activeCompetitions": "Активные турниры",
+      "seeAll": "Смотреть все",
+      "comingSoon": "Скоро",
+      "language": "Язык",
+      "searchLanguage": "Поиск языка",
+      "pace": "Скорость",
+      "shooting": "Удар",
+      "passing": "Пас",
+      "dribbling": "Дриблинг",
+      "defending": "Защита",
+      "physical": "Физика",
+      "overall": "Общий",
+      "filters": "Фильтры",
+      "notifications": "Уведомления",
+      "live": "Прямой эфир"
+    }
+  },
+  "el": {
+    "translation": {
+      "searchPlaceholder": "Αναζήτηση παικτών, ομάδων...",
+      "nav": {
+        "home": "Αρχική",
+        "scout": "Σκάουτ",
+        "compare": "Σύγκριση",
+        "squad": "Δημιουργία ομάδας",
+        "competitions": "Διοργανώσεις",
+        "profile": "Προφίλ"
+      },
+      "playerOfTheDay": "Παίκτης της ημέρας",
+      "popularPlayers": "Δημοφιλείς παίκτες",
+      "popularTeams": "Δημοφιλείς ομάδες",
+      "futureStars": "Αστέρια του μέλλοντος",
+      "activeCompetitions": "Ενεργές διοργανώσεις",
+      "seeAll": "Δείτε όλα",
+      "comingSoon": "Σύντομα",
+      "language": "Γλώσσα",
+      "searchLanguage": "Αναζήτηση γλώσσας",
+      "pace": "Ταχύτητα",
+      "shooting": "Σουτ",
+      "passing": "Πάσα",
+      "dribbling": "Ντρίμπλα",
+      "defending": "Άμυνα",
+      "physical": "Φυσική κατάσταση",
+      "overall": "Συνολικά",
+      "filters": "Φίλτρα",
+      "notifications": "Ειδοποιήσεις",
+      "live": "Ζωντανά"
+    }
+  },
+  "pl": {
+    "translation": {
+      "searchPlaceholder": "Szukaj zawodników, drużyn...",
+      "nav": {
+        "home": "Główna",
+        "scout": "Skaut",
+        "compare": "Porównaj",
+        "squad": "Buduj skład",
+        "competitions": "Rozgrywki",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Zawodnik dnia",
+      "popularPlayers": "Popularni zawodnicy",
+      "popularTeams": "Popularne drużyny",
+      "futureStars": "Gwiazdy przyszłości",
+      "activeCompetitions": "Aktywne rozgrywki",
+      "seeAll": "Zobacz wszystko",
+      "comingSoon": "Wkrótce",
+      "language": "Język",
+      "searchLanguage": "Szukaj języka",
+      "pace": "Szybkość",
+      "shooting": "Strzał",
+      "passing": "Podanie",
+      "dribbling": "Drybling",
+      "defending": "Obrona",
+      "physical": "Fizyczność",
+      "overall": "Ogólnie",
+      "filters": "Filtry",
+      "notifications": "Powiadomienia",
+      "live": "Na żywo"
+    }
+  },
+  "hr": {
+    "translation": {
+      "searchPlaceholder": "Traži igrače, klubove...",
+      "nav": {
+        "home": "Početna",
+        "scout": "Skaut",
+        "compare": "Usporedi",
+        "squad": "Složi momčad",
+        "competitions": "Natjecanja",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Igrač dana",
+      "popularPlayers": "Popularni igrači",
+      "popularTeams": "Popularni klubovi",
+      "futureStars": "Zvijezde budućnosti",
+      "activeCompetitions": "Aktivna natjecanja",
+      "seeAll": "Prikaži sve",
+      "comingSoon": "Uskoro",
+      "language": "Jezik",
+      "searchLanguage": "Traži jezik",
+      "pace": "Brzina",
+      "shooting": "Udarac",
+      "passing": "Dodavanje",
+      "dribbling": "Driblanje",
+      "defending": "Obrana",
+      "physical": "Fizika",
+      "overall": "Ukupno",
+      "filters": "Filteri",
+      "notifications": "Obavijesti",
+      "live": "Uživo"
+    }
+  },
+  "sr": {
+    "translation": {
+      "searchPlaceholder": "Тражи играче, тимове...",
+      "nav": {
+        "home": "Почетна",
+        "scout": "Скаут",
+        "compare": "Упореди",
+        "squad": "Састави тим",
+        "competitions": "Такмичења",
+        "profile": "Профил"
+      },
+      "playerOfTheDay": "Играч дана",
+      "popularPlayers": "Популарни играчи",
+      "popularTeams": "Популарни тимови",
+      "futureStars": "Звезде будућности",
+      "activeCompetitions": "Активна такмичења",
+      "seeAll": "Прикажи све",
+      "comingSoon": "Ускоро",
+      "language": "Језик",
+      "searchLanguage": "Тражи језик",
+      "pace": "Брзина",
+      "shooting": "Шут",
+      "passing": "Додавање",
+      "dribbling": "Дриблинг",
+      "defending": "Одбрана",
+      "physical": "Физика",
+      "overall": "Укупно",
+      "filters": "Филтери",
+      "notifications": "Обавештења",
+      "live": "Уживо"
+    }
+  },
+  "sv": {
+    "translation": {
+      "searchPlaceholder": "Sök spelare, lag...",
+      "nav": {
+        "home": "Hem",
+        "scout": "Scout",
+        "compare": "Jämför",
+        "squad": "Bygg trupp",
+        "competitions": "Tävlingar",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Dagens spelare",
+      "popularPlayers": "Populära spelare",
+      "popularTeams": "Populära lag",
+      "futureStars": "Framtidens stjärnor",
+      "activeCompetitions": "Aktiva tävlingar",
+      "seeAll": "Visa alla",
+      "comingSoon": "Kommer snart",
+      "language": "Språk",
+      "searchLanguage": "Sök språk",
+      "pace": "Fart",
+      "shooting": "Skott",
+      "passing": "Passning",
+      "dribbling": "Dribbling",
+      "defending": "Försvar",
+      "physical": "Fysik",
+      "overall": "Totalt",
+      "filters": "Filter",
+      "notifications": "Aviseringar",
+      "live": "Live"
+    }
+  },
+  "no": {
+    "translation": {
+      "searchPlaceholder": "Søk spillere, lag...",
+      "nav": {
+        "home": "Hjem",
+        "scout": "Speider",
+        "compare": "Sammenlign",
+        "squad": "Bygg lag",
+        "competitions": "Turneringer",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Dagens spiller",
+      "popularPlayers": "Populære spillere",
+      "popularTeams": "Populære lag",
+      "futureStars": "Fremtidens stjerner",
+      "activeCompetitions": "Aktive turneringer",
+      "seeAll": "Se alle",
+      "comingSoon": "Kommer snart",
+      "language": "Språk",
+      "searchLanguage": "Søk språk",
+      "pace": "Fart",
+      "shooting": "Skudd",
+      "passing": "Pasning",
+      "dribbling": "Dribling",
+      "defending": "Forsvar",
+      "physical": "Fysikk",
+      "overall": "Totalt",
+      "filters": "Filtre",
+      "notifications": "Varsler",
+      "live": "Direkte"
+    }
+  },
+  "da": {
+    "translation": {
+      "searchPlaceholder": "Søg spillere, hold...",
+      "nav": {
+        "home": "Hjem",
+        "scout": "Spejder",
+        "compare": "Sammenlign",
+        "squad": "Byg hold",
+        "competitions": "Turneringer",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Dagens spiller",
+      "popularPlayers": "Populære spillere",
+      "popularTeams": "Populære hold",
+      "futureStars": "Fremtidens stjerner",
+      "activeCompetitions": "Aktive turneringer",
+      "seeAll": "Se alle",
+      "comingSoon": "Kommer snart",
+      "language": "Sprog",
+      "searchLanguage": "Søg sprog",
+      "pace": "Fart",
+      "shooting": "Skud",
+      "passing": "Aflevering",
+      "dribbling": "Dribling",
+      "defending": "Forsvar",
+      "physical": "Fysik",
+      "overall": "Samlet",
+      "filters": "Filtre",
+      "notifications": "Notifikationer",
+      "live": "Live"
+    }
+  },
+  "fi": {
+    "translation": {
+      "searchPlaceholder": "Hae pelaajia, joukkueita...",
+      "nav": {
+        "home": "Koti",
+        "scout": "Kykyjenetsijä",
+        "compare": "Vertaa",
+        "squad": "Rakenna joukkue",
+        "competitions": "Kilpailut",
+        "profile": "Profiili"
+      },
+      "playerOfTheDay": "Päivän pelaaja",
+      "popularPlayers": "Suositut pelaajat",
+      "popularTeams": "Suositut joukkueet",
+      "futureStars": "Tulevaisuuden tähdet",
+      "activeCompetitions": "Aktiiviset kilpailut",
+      "seeAll": "Näytä kaikki",
+      "comingSoon": "Tulossa pian",
+      "language": "Kieli",
+      "searchLanguage": "Hae kieltä",
+      "pace": "Nopeus",
+      "shooting": "Laukaus",
+      "passing": "Syöttö",
+      "dribbling": "Kuljetus",
+      "defending": "Puolustus",
+      "physical": "Fysiikka",
+      "overall": "Yhteensä",
+      "filters": "Suodattimet",
+      "notifications": "Ilmoitukset",
+      "live": "Live"
+    }
+  },
+  "id": {
+    "translation": {
+      "searchPlaceholder": "Cari pemain, tim...",
+      "nav": {
+        "home": "Beranda",
+        "scout": "Pemandu Bakat",
+        "compare": "Bandingkan",
+        "squad": "Susun Skuad",
+        "competitions": "Kompetisi",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Pemain Hari Ini",
+      "popularPlayers": "Pemain Populer",
+      "popularTeams": "Tim Populer",
+      "futureStars": "Bintang Masa Depan",
+      "activeCompetitions": "Kompetisi Aktif",
+      "seeAll": "Lihat semua",
+      "comingSoon": "Segera hadir",
+      "language": "Bahasa",
+      "searchLanguage": "Cari bahasa",
+      "pace": "Kecepatan",
+      "shooting": "Tembakan",
+      "passing": "Umpan",
+      "dribbling": "Dribel",
+      "defending": "Bertahan",
+      "physical": "Fisik",
+      "overall": "Keseluruhan",
+      "filters": "Filter",
+      "notifications": "Notifikasi",
+      "live": "Langsung"
+    }
+  },
+  "hi": {
+    "translation": {
+      "searchPlaceholder": "खिलाड़ी, टीम खोजें...",
+      "nav": {
+        "home": "होम",
+        "scout": "स्काउट",
+        "compare": "तुलना करें",
+        "squad": "टीम बनाएं",
+        "competitions": "प्रतियोगिताएं",
+        "profile": "प्रोफ़ाइल"
+      },
+      "playerOfTheDay": "आज का खिलाड़ी",
+      "popularPlayers": "लोकप्रिय खिलाड़ी",
+      "popularTeams": "लोकप्रिय टीमें",
+      "futureStars": "भविष्य के सितारे",
+      "activeCompetitions": "सक्रिय प्रतियोगिताएं",
+      "seeAll": "सभी देखें",
+      "comingSoon": "जल्द आ रहा है",
+      "language": "भाषा",
+      "searchLanguage": "भाषा खोजें",
+      "pace": "गति",
+      "shooting": "शॉट",
+      "passing": "पास",
+      "dribbling": "ड्रिबलिंग",
+      "defending": "रक्षा",
+      "physical": "शारीरिक",
+      "overall": "कुल",
+      "filters": "फ़िल्टर",
+      "notifications": "सूचनाएं",
+      "live": "लाइव"
+    }
+  },
+  "fa": {
+    "translation": {
+      "searchPlaceholder": "جستجوی بازیکنان، تیم‌ها...",
+      "nav": {
+        "home": "خانه",
+        "scout": "استعدادیاب",
+        "compare": "مقایسه",
+        "squad": "ساخت تیم",
+        "competitions": "مسابقات",
+        "profile": "پروفایل"
+      },
+      "playerOfTheDay": "بازیکن روز",
+      "popularPlayers": "بازیکنان محبوب",
+      "popularTeams": "تیم‌های محبوب",
+      "futureStars": "ستارگان آینده",
+      "activeCompetitions": "مسابقات فعال",
+      "seeAll": "مشاهده همه",
+      "comingSoon": "به‌زودی",
+      "language": "زبان",
+      "searchLanguage": "جستجوی زبان",
+      "pace": "سرعت",
+      "shooting": "شوت",
+      "passing": "پاس",
+      "dribbling": "دریبل",
+      "defending": "دفاع",
+      "physical": "بدنی",
+      "overall": "کلی",
+      "filters": "فیلترها",
+      "notifications": "اعلان‌ها",
+      "live": "زنده"
+    }
+  },
+  "uk": {
+    "translation": {
+      "searchPlaceholder": "Пошук гравців, команд...",
+      "nav": {
+        "home": "Головна",
+        "scout": "Скаут",
+        "compare": "Порівняти",
+        "squad": "Скласти склад",
+        "competitions": "Турніри",
+        "profile": "Профіль"
+      },
+      "playerOfTheDay": "Гравець дня",
+      "popularPlayers": "Популярні гравці",
+      "popularTeams": "Популярні команди",
+      "futureStars": "Зірки майбутнього",
+      "activeCompetitions": "Активні турніри",
+      "seeAll": "Дивитись усі",
+      "comingSoon": "Незабаром",
+      "language": "Мова",
+      "searchLanguage": "Пошук мови",
+      "pace": "Швидкість",
+      "shooting": "Удар",
+      "passing": "Пас",
+      "dribbling": "Дриблінг",
+      "defending": "Захист",
+      "physical": "Фізика",
+      "overall": "Загалом",
+      "filters": "Фільтри",
+      "notifications": "Сповіщення",
+      "live": "Наживо"
+    }
+  },
+  "cs": {
+    "translation": {
+      "searchPlaceholder": "Hledat hráče, týmy...",
+      "nav": {
+        "home": "Domů",
+        "scout": "Skaut",
+        "compare": "Porovnat",
+        "squad": "Sestavit tým",
+        "competitions": "Soutěže",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Hráč dne",
+      "popularPlayers": "Populární hráči",
+      "popularTeams": "Populární týmy",
+      "futureStars": "Hvězdy budoucnosti",
+      "activeCompetitions": "Aktivní soutěže",
+      "seeAll": "Zobrazit vše",
+      "comingSoon": "Již brzy",
+      "language": "Jazyk",
+      "searchLanguage": "Hledat jazyk",
+      "pace": "Rychlost",
+      "shooting": "Střelba",
+      "passing": "Přihrávka",
+      "dribbling": "Driblink",
+      "defending": "Obrana",
+      "physical": "Fyzička",
+      "overall": "Celkově",
+      "filters": "Filtry",
+      "notifications": "Oznámení",
+      "live": "Živě"
+    }
+  },
+  "ro": {
+    "translation": {
+      "searchPlaceholder": "Caută jucători, echipe...",
+      "nav": {
+        "home": "Acasă",
+        "scout": "Scouting",
+        "compare": "Compară",
+        "squad": "Creează lotul",
+        "competitions": "Competiții",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Jucătorul zilei",
+      "popularPlayers": "Jucători populari",
+      "popularTeams": "Echipe populare",
+      "futureStars": "Stelele viitorului",
+      "activeCompetitions": "Competiții active",
+      "seeAll": "Vezi tot",
+      "comingSoon": "În curând",
+      "language": "Limbă",
+      "searchLanguage": "Caută limbă",
+      "pace": "Viteză",
+      "shooting": "Șut",
+      "passing": "Pasă",
+      "dribbling": "Dribling",
+      "defending": "Apărare",
+      "physical": "Fizic",
+      "overall": "General",
+      "filters": "Filtre",
+      "notifications": "Notificări",
+      "live": "Live"
+    }
+  },
+  "hu": {
+    "translation": {
+      "searchPlaceholder": "Játékosok, csapatok keresése...",
+      "nav": {
+        "home": "Főoldal",
+        "scout": "Megfigyelő",
+        "compare": "Összehasonlítás",
+        "squad": "Keretépítő",
+        "competitions": "Versenyek",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "A nap játékosa",
+      "popularPlayers": "Népszerű játékosok",
+      "popularTeams": "Népszerű csapatok",
+      "futureStars": "A jövő csillagai",
+      "activeCompetitions": "Aktív versenyek",
+      "seeAll": "Összes megtekintése",
+      "comingSoon": "Hamarosan",
+      "language": "Nyelv",
+      "searchLanguage": "Nyelv keresése",
+      "pace": "Gyorsaság",
+      "shooting": "Lövés",
+      "passing": "Passz",
+      "dribbling": "Csel",
+      "defending": "Védekezés",
+      "physical": "Fizikum",
+      "overall": "Összesített",
+      "filters": "Szűrők",
+      "notifications": "Értesítések",
+      "live": "Élő"
+    }
+  },
+  "bg": {
+    "translation": {
+      "searchPlaceholder": "Търси играчи, отбори...",
+      "nav": {
+        "home": "Начало",
+        "scout": "Скаут",
+        "compare": "Сравни",
+        "squad": "Състави отбор",
+        "competitions": "Турнири",
+        "profile": "Профил"
+      },
+      "playerOfTheDay": "Играч на деня",
+      "popularPlayers": "Популярни играчи",
+      "popularTeams": "Популярни отбори",
+      "futureStars": "Звездите на бъдещето",
+      "activeCompetitions": "Активни турнири",
+      "seeAll": "Виж всички",
+      "comingSoon": "Очаквайте скоро",
+      "language": "Език",
+      "searchLanguage": "Търси език",
+      "pace": "Скорост",
+      "shooting": "Удар",
+      "passing": "Пас",
+      "dribbling": "Дрибъл",
+      "defending": "Защита",
+      "physical": "Физика",
+      "overall": "Общо",
+      "filters": "Филтри",
+      "notifications": "Известия",
+      "live": "На живо"
+    }
+  },
+  "th": {
+    "translation": {
+      "searchPlaceholder": "ค้นหานักเตะ ทีม...",
+      "nav": {
+        "home": "หน้าแรก",
+        "scout": "แมวมอง",
+        "compare": "เปรียบเทียบ",
+        "squad": "จัดทีม",
+        "competitions": "การแข่งขัน",
+        "profile": "โปรไฟล์"
+      },
+      "playerOfTheDay": "นักเตะประจำวัน",
+      "popularPlayers": "นักเตะยอดนิยม",
+      "popularTeams": "ทีมยอดนิยม",
+      "futureStars": "ดาวรุ่งอนาคต",
+      "activeCompetitions": "การแข่งขันที่ใช้งาน",
+      "seeAll": "ดูทั้งหมด",
+      "comingSoon": "เร็ว ๆ นี้",
+      "language": "ภาษา",
+      "searchLanguage": "ค้นหาภาษา",
+      "pace": "ความเร็ว",
+      "shooting": "การยิง",
+      "passing": "การส่งบอล",
+      "dribbling": "การเลี้ยงบอล",
+      "defending": "การป้องกัน",
+      "physical": "ร่างกาย",
+      "overall": "โดยรวม",
+      "filters": "ตัวกรอง",
+      "notifications": "การแจ้งเตือน",
+      "live": "สด"
+    }
+  },
+  "vi": {
+    "translation": {
+      "searchPlaceholder": "Tìm cầu thủ, đội bóng...",
+      "nav": {
+        "home": "Trang chủ",
+        "scout": "Tuyển trạch",
+        "compare": "So sánh",
+        "squad": "Xây đội hình",
+        "competitions": "Giải đấu",
+        "profile": "Hồ sơ"
+      },
+      "playerOfTheDay": "Cầu thủ trong ngày",
+      "popularPlayers": "Cầu thủ phổ biến",
+      "popularTeams": "Đội bóng phổ biến",
+      "futureStars": "Ngôi sao tương lai",
+      "activeCompetitions": "Giải đấu đang diễn ra",
+      "seeAll": "Xem tất cả",
+      "comingSoon": "Sắp ra mắt",
+      "language": "Ngôn ngữ",
+      "searchLanguage": "Tìm ngôn ngữ",
+      "pace": "Tốc độ",
+      "shooting": "Sút",
+      "passing": "Chuyền",
+      "dribbling": "Rê bóng",
+      "defending": "Phòng ngự",
+      "physical": "Thể lực",
+      "overall": "Tổng thể",
+      "filters": "Bộ lọc",
+      "notifications": "Thông báo",
+      "live": "Trực tiếp"
+    }
+  },
+  "he": {
+    "translation": {
+      "searchPlaceholder": "חפש שחקנים, קבוצות...",
+      "nav": {
+        "home": "בית",
+        "scout": "סקאוט",
+        "compare": "השוואה",
+        "squad": "בניית סגל",
+        "competitions": "תחרויות",
+        "profile": "פרופיל"
+      },
+      "playerOfTheDay": "שחקן היום",
+      "popularPlayers": "שחקנים פופולריים",
+      "popularTeams": "קבוצות פופולריות",
+      "futureStars": "כוכבי העתיד",
+      "activeCompetitions": "תחרויות פעילות",
+      "seeAll": "הצג הכל",
+      "comingSoon": "בקרוב",
+      "language": "שפה",
+      "searchLanguage": "חפש שפה",
+      "pace": "מהירות",
+      "shooting": "בעיטה",
+      "passing": "מסירה",
+      "dribbling": "כדרור",
+      "defending": "הגנה",
+      "physical": "פיזי",
+      "overall": "כללי",
+      "filters": "מסננים",
+      "notifications": "התראות",
+      "live": "שידור חי"
+    }
+  },
+  "sw": {
+    "translation": {
+      "searchPlaceholder": "Tafuta wachezaji, timu...",
+      "nav": {
+        "home": "Nyumbani",
+        "scout": "Skauti",
+        "compare": "Linganisha",
+        "squad": "Unda Kikosi",
+        "competitions": "Mashindano",
+        "profile": "Wasifu"
+      },
+      "playerOfTheDay": "Mchezaji wa Siku",
+      "popularPlayers": "Wachezaji Maarufu",
+      "popularTeams": "Timu Maarufu",
+      "futureStars": "Nyota za Baadaye",
+      "activeCompetitions": "Mashindano Yanayoendelea",
+      "seeAll": "Ona zote",
+      "comingSoon": "Inakuja hivi karibuni",
+      "language": "Lugha",
+      "searchLanguage": "Tafuta lugha",
+      "pace": "Kasi",
+      "shooting": "Kupiga",
+      "passing": "Kupasi",
+      "dribbling": "Kuchezea",
+      "defending": "Ulinzi",
+      "physical": "Nguvu",
+      "overall": "Jumla",
+      "filters": "Vichujio",
+      "notifications": "Arifa",
+      "live": "Moja kwa moja"
+    }
+  },
+  "sk": {
+    "translation": {
+      "searchPlaceholder": "Hľadať hráčov, tímy...",
+      "nav": {
+        "home": "Domov",
+        "scout": "Skaut",
+        "compare": "Porovnať",
+        "squad": "Zostaviť tím",
+        "competitions": "Súťaže",
+        "profile": "Profil"
+      },
+      "playerOfTheDay": "Hráč dňa",
+      "popularPlayers": "Populárni hráči",
+      "popularTeams": "Populárne tímy",
+      "futureStars": "Hviezdy budúcnosti",
+      "activeCompetitions": "Aktívne súťaže",
+      "seeAll": "Zobraziť všetko",
+      "comingSoon": "Už čoskoro",
+      "language": "Jazyk",
+      "searchLanguage": "Hľadať jazyk",
+      "pace": "Rýchlosť",
+      "shooting": "Streľba",
+      "passing": "Prihrávka",
+      "dribbling": "Driblovanie",
+      "defending": "Obrana",
+      "physical": "Fyzička",
+      "overall": "Celkovo",
+      "filters": "Filtre",
+      "notifications": "Oznámenia",
+      "live": "Naživo"
+    }
+  }
+};
