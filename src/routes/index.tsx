@@ -1,15 +1,14 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/layout/AppShell";
 import { HeroBanner } from "@/components/home/HeroBanner";
 import { SectionRow } from "@/components/home/SectionRow";
-import { PlayerCard } from "@/components/home/PlayerCard";
-import {
-  popularPlayers,
-  futureStars,
-  popularTeams,
-  activeCompetitions,
-} from "@/components/home/data";
+import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
+import { ManagerFrontCard } from "@/components/cards/ManagerFrontCard";
+import { CardDetailModal } from "@/components/analytics/CardDetailModal";
+import { players, managers, type CardData } from "@/data/football";
+import { popularTeams, activeCompetitions } from "@/components/home/data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,14 +31,23 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { t } = useTranslation();
+  const [selected, setSelected] = useState<CardData | null>(null);
+
+  const futureStars = players.filter((p) => p.age <= 21);
 
   return (
     <AppShell>
-      <HeroBanner />
+      <HeroBanner onOpen={() => setSelected(players.find((p) => p.id === "arda") ?? null)} />
 
       <SectionRow titleKey="popularPlayers">
-        {popularPlayers.map((p) => (
-          <PlayerCard key={p.id} player={p} />
+        {players.map((p) => (
+          <PlayerFrontCard key={p.id} player={p} onClick={() => setSelected(p)} />
+        ))}
+      </SectionRow>
+
+      <SectionRow titleKey="manager">
+        {managers.map((m) => (
+          <ManagerFrontCard key={m.id} manager={m} onClick={() => setSelected(m)} />
         ))}
       </SectionRow>
 
@@ -62,16 +70,13 @@ function Index() {
 
       <SectionRow titleKey="futureStars">
         {futureStars.map((p) => (
-          <PlayerCard key={p.id} player={p} />
+          <PlayerFrontCard key={p.id} player={p} onClick={() => setSelected(p)} />
         ))}
       </SectionRow>
 
       <SectionRow titleKey="activeCompetitions">
         {activeCompetitions.map((c) => (
-          <article
-            key={c.id}
-            className="card-surface w-60 shrink-0 snap-start rounded-2xl p-3"
-          >
+          <article key={c.id} className="card-surface w-60 shrink-0 snap-start rounded-2xl p-3">
             <span className="rounded-lg bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
               {t("live")}
             </span>
@@ -82,6 +87,8 @@ function Index() {
           </article>
         ))}
       </SectionRow>
+
+      <CardDetailModal card={selected} onOpenChange={(o) => !o && setSelected(null)} />
     </AppShell>
   );
 }
