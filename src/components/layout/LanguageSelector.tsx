@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Globe, Search } from "lucide-react";
-import { languages } from "@/i18n";
+import { languages, STORAGE_KEY } from "@/i18n";
 import {
   Popover,
   PopoverContent,
@@ -13,10 +13,12 @@ export function LanguageSelector() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
+  const fallback = { code: "en", native: "English", english: "English", flag: "\u{1F1EC}\u{1F1E7}", rtl: false };
   const current =
     languages.find((l) => l.code === i18n.resolvedLanguage) ??
     languages.find((l) => l.code === i18n.language?.split("-")[0]) ??
-    languages[0];
+    languages[0] ??
+    fallback;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -31,6 +33,7 @@ export function LanguageSelector() {
 
   const select = (code: string) => {
     void i18n.changeLanguage(code);
+    if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, code);
     const meta = languages.find((l) => l.code === code);
     if (typeof document !== "undefined") {
       document.documentElement.lang = code;

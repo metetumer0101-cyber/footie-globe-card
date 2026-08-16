@@ -10,7 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import i18n, { languages } from "../i18n";
+import i18n, { languages, detectAndApplyLanguage, STORAGE_KEY } from "../i18n";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -124,6 +124,7 @@ function RootComponent() {
       document.documentElement.lang = meta?.code ?? "en";
       document.documentElement.dir = meta?.rtl ? "rtl" : "ltr";
     };
+    detectAndApplyLanguage();
     apply(i18n.resolvedLanguage ?? "en");
     i18n.on("languageChanged", apply);
     return () => i18n.off("languageChanged", apply);
