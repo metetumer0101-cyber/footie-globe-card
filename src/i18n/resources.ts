@@ -251,8 +251,6 @@ export const languages: LanguageMeta[] = [
 
 export const resources: Record<string, { translation: Record<string, unknown> }> = {
   "en": {
-    "trans{
-  "en": {
     "translation": {
       "searchPlaceholder": "Search players, teams...",
       "nav": {
