@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import i18n, { languages, detectAndApplyLanguage, STORAGE_KEY } from "../i18n";
@@ -117,23 +117,32 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [lang, setLang] = useState("en");
 
   useEffect(() => {
     const apply = (lng: string) => {
       const meta = languages.find((l) => l.code === lng) ?? languages.find((l) => l.code === lng.split("-")[0]);
       document.documentElement.lang = meta?.code ?? "en";
       document.documentElement.dir = meta?.rtl ? "rtl" : "ltr";
+      setLang(meta?.code ?? "en");
     };
-    detectAndApplyLanguage();
-    apply(i18n.resolvedLanguage ?? "en");
     i18n.on("languageChanged", apply);
-    return () => i18n.off("languageChanged", apply);
+    // Defer detection past hydration so the client first renders the same
+    // markup the server produced (always English).
+    const id = window.setTimeout(() => {
+      detectAndApplyLanguage();
+      apply(i18n.resolvedLanguage ?? "en");
+    }, 0);
+    return () => {
+      window.clearTimeout(id);
+      i18n.off("languageChanged", apply);
+    };
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <Outlet key={lang} />
     </QueryClientProvider>
   );
 }
