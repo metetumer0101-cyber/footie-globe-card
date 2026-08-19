@@ -1,116 +1,248 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { Download, Loader2, Flame } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
-import { players, type CoreStats, type PlayerCardData } from "@/data/football";
+import { EntityPicker } from "@/components/compare/EntityPicker";
+import { DualRadarChart } from "@/components/compare/DualRadarChart";
+import { StatBars, buildRows } from "@/components/compare/StatBars";
+import { MatchupCard } from "@/components/compare/MatchupCard";
+import {
+  findEntity,
+  metricsOf,
+  pools,
+  radarOf,
+  subtitleOf,
+  trendingMatchups,
+  type EntityKind,
+} from "@/lib/compare";
+import { tierStyles } from "@/data/football";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/compare")({
   head: () => ({
     meta: [
-      { title: "Compare — FootCard" },
-      { name: "description", content: "Compare football players attribute by attribute, head to head." },
-      { property: "og:title", content: "Compare — FootCard" },
-      { property: "og:description", content: "Compare football players attribute by attribute, head to head." },
+      { title: "Compare Players, Managers & Teams — FootCard" },
+      {
+        name: "description",
+        content:
+          "Head-to-head football comparison: dual radar overlay, stat-by-stat bars and a shareable matchup card.",
+      },
+      { property: "og:title", content: "Compare Players, Managers & Teams — FootCard" },
+      {
+        property: "og:description",
+        content:
+          "Head-to-head football comparison: dual radar overlay, stat-by-stat bars and a shareable matchup card.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Page,
 });
 
+const KINDS: EntityKind[] = ["player", "manager", "team"];
+const KIND_LABEL: Record<EntityKind, string> = {
+  player: "cmp.players",
+  manager: "cmp.managers",
+  team: "cmp.teams",
+};
+
 function Page() {
   const { t } = useTranslation();
-  const [leftId, setLeftId] = useState(players[0]!.id);
-  const [rightId, setRightId] = useState(players[1]!.id);
+  const [kind, setKind] = useState<EntityKind>("player");
+  const [ids, setIds] = useState<Record<EntityKind, [string, string]>>({
+    player: ["haaland", "mbappe"],
+    manager: ["pep", "ancelotti"],
+    team: ["real-madrid", "man-city"],
+  });
+  const [qr, setQr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
 
-  const left = players.find((p) => p.id === leftId)!;
-  const right = players.find((p) => p.id === rightId)!;
-  const keys: (keyof CoreStats)[] = ["pac", "sho", "pas", "dri", "def", "phy"];
+  const [idA, idB] = ids[kind];
+  const a = findEntity(kind, idA);
+  const b = findEntity(kind, idB);
+
+  const radarA = useMemo(() => radarOf(a), [a]);
+  const radarB = useMemo(() => radarOf(b), [b]);
+  const rows = useMemo(
+    () => buildRows(radarA, radarB, metricsOf(a, b), t),
+    [radarA, radarB, a, b, t],
+  );
+
+  useEffect(() => {
+    let alive = true;
+    import("qrcode").then((m) =>
+      m
+        .toDataURL("https://footie-globe-card.lovable.app/compare", {
+          margin: 1,
+          width: 256,
+          color: { dark: "#0B0F17", light: "#FFFFFF" },
+        })
+        .then((url) => {
+          if (alive) setQr(url);
+        })
+        .catch(() => undefined),
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const setSide = (side: 0 | 1, id: string) =>
+    setIds((prev) => {
+      const pair: [string, string] = [...prev[kind]] as [string, string];
+      pair[side] = id;
+      return { ...prev, [kind]: pair };
+    });
+
+  const handleExport = async () => {
+    if (!exportRef.current) return;
+    setBusy(true);
+    try {
+      const { default: html2canvas } = await import("html2canvas-pro");
+      const canvas = await html2canvas(exportRef.current, { scale: 2, backgroundColor: null });
+      const link = document.createElement("a");
+      link.download = `footcard-${a.id}-vs-${b.id}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      toast.success(t("cmp.downloaded"));
+    } catch {
+      toast.error(t("cmp.exportFailed"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <AppShell>
-      <section className="space-y-4">
-        <h1 className="text-2xl font-bold">{t("headToHead")}</h1>
-        <p className="text-sm text-muted-foreground">{t("compareHint")}</p>
+      <section className="space-y-5">
+        <header>
+          <h1 className="text-2xl font-bold">{t("cmp.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("cmp.subtitle")}</p>
+        </header>
 
-        <div className="grid grid-cols-2 gap-2">
-          <PlayerPicker value={leftId} onChange={setLeftId} label={t("selectPlayer")} />
-          <PlayerPicker value={rightId} onChange={setRightId} label={t("selectPlayer")} />
+        <div className="flex gap-1 rounded-2xl bg-secondary/40 p-1">
+          {KINDS.map((k) => (
+            <button
+              key={k}
+              onClick={() => setKind(k)}
+              className={cn(
+                "flex-1 truncate rounded-xl px-3 py-2 text-xs font-bold transition-colors",
+                kind === k ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              )}
+            >
+              {t(KIND_LABEL[k])}
+            </button>
+          ))}
         </div>
 
-        <div className="card-surface grid grid-cols-2 gap-2 rounded-2xl p-3">
-          <PlayerHead player={left} />
-          <PlayerHead player={right} align="end" />
+        <div>
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            <Flame className="h-4 w-4 text-accent" /> {t("cmp.trending")}
+          </p>
+          <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
+            {trendingMatchups.map((m) => {
+              const ea = findEntity(m.kind, m.a);
+              const eb = findEntity(m.kind, m.b);
+              return (
+                <button
+                  key={`${m.kind}-${m.a}-${m.b}`}
+                  onClick={() => {
+                    setKind(m.kind);
+                    setIds((prev) => ({ ...prev, [m.kind]: [m.a, m.b] }));
+                  }}
+                  className="card-surface shrink-0 snap-start rounded-2xl px-3 py-2 text-xs font-semibold transition-transform hover:scale-[1.03] active:scale-[0.98]"
+                >
+                  <span className="text-primary">{ea.name}</span>
+                  <span className="mx-1 text-muted-foreground">{t("cmp.vs")}</span>
+                  <span className="text-accent">{eb.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <ul className="card-surface space-y-2.5 rounded-2xl p-3">
-          {keys.map((k) => {
-            const a = left.core[k];
-            const b = right.core[k];
-            return (
-              <li key={k}>
-                <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                  <span className={cn(a >= b ? "text-primary" : "text-muted-foreground")}>{a}</span>
-                  <span className="text-[10px] uppercase tracking-wide text-accent">
-                    {t(`attr.${k}`)}
-                  </span>
-                  <span className={cn(b >= a ? "text-primary" : "text-muted-foreground")}>{b}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="flex h-1.5 flex-1 justify-end overflow-hidden rounded-full bg-secondary/50">
-                    <span
-                      className={cn("h-full rounded-full", a >= b ? "bg-primary" : "bg-muted-foreground")}
-                      style={{ width: `${a}%` }}
-                    />
-                  </div>
-                  <div className="flex h-1.5 flex-1 overflow-hidden rounded-full bg-secondary/50">
-                    <span
-                      className={cn("h-full rounded-full", b >= a ? "bg-primary" : "bg-muted-foreground")}
-                      style={{ width: `${b}%` }}
-                    />
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="grid gap-3 md:grid-cols-2">
+          <EntityPicker
+            side="a"
+            label={t("cmp.entityA")}
+            pool={pools[kind]}
+            value={a}
+            onChange={(id) => setSide(0, id)}
+          />
+          <EntityPicker
+            side="b"
+            label={t("cmp.entityB")}
+            pool={pools[kind]}
+            value={b}
+            onChange={(id) => setSide(1, id)}
+          />
+        </div>
+
+        <div className="card-surface grid grid-cols-2 gap-3 rounded-2xl p-3">
+          <Head entity={a} tone="primary" />
+          <Head entity={b} tone="accent" align="end" />
+        </div>
+
+        <div className="card-surface rounded-2xl p-3">
+          <h2 className="mb-1 text-sm font-bold">{t("cmp.radarTitle")}</h2>
+          <div className="flex items-center justify-center gap-4 text-[11px] font-bold">
+            <span className="flex items-center gap-1.5 text-primary">
+              <span className="h-2 w-2 rounded-full bg-primary" /> {a.name}
+            </span>
+            <span className="flex items-center gap-1.5 text-accent">
+              <span className="h-2 w-2 rounded-full bg-accent" /> {b.name}
+            </span>
+          </div>
+          <DualRadarChart a={radarA} b={radarB} />
+        </div>
+
+        <div className="card-surface rounded-2xl p-3">
+          <h2 className="mb-3 text-sm font-bold">{t("cmp.statsTitle")}</h2>
+          <StatBars rows={rows} />
+        </div>
+
+        <button
+          onClick={handleExport}
+          disabled={busy}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-accent px-4 py-3 text-sm font-black text-background transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {busy ? t("cmp.generating") : t("cmp.download")}
+        </button>
       </section>
+
+      <div className="pointer-events-none fixed -left-[10000px] top-0" aria-hidden="true">
+        <MatchupCard ref={exportRef} a={a} b={b} radarA={radarA} radarB={radarB} rows={rows} qr={qr} />
+      </div>
     </AppShell>
   );
 }
 
-function PlayerPicker({
-  value,
-  onChange,
-  label,
+function Head({
+  entity,
+  tone,
+  align,
 }: {
-  value: string;
-  onChange: (v: string) => void;
-  label: string;
+  entity: ReturnType<typeof findEntity>;
+  tone: "primary" | "accent";
+  align?: "end";
 }) {
-  return (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="card-surface w-full truncate rounded-2xl px-3 py-2 text-sm font-semibold outline-none"
-    >
-      {players.map((p) => (
-        <option key={p.id} value={p.id} className="bg-surface">
-          {p.name}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-function PlayerHead({ player, align }: { player: PlayerCardData; align?: "end" }) {
+  const tier = tierStyles[entity.tier];
   return (
     <div className={cn("min-w-0", align === "end" && "text-end")}>
-      <span className="text-2xl">{player.nation}</span>
-      <h2 className="truncate text-sm font-bold">{player.name}</h2>
-      <p className="truncate text-xs text-muted-foreground">
-        {player.clubBadge} {player.club} · {player.position}
-      </p>
+      <div className={cn("inline-block rounded-2xl bg-gradient-to-b p-[2px]", tier.frame)}>
+        <div className="rounded-[14px] bg-surface px-3 py-1.5 text-2xl leading-none">
+          {entity.nation}
+        </div>
+      </div>
+      <h2 className={cn("truncate text-sm font-bold", tone === "primary" ? "text-primary" : "text-accent")}>
+        {entity.name}
+      </h2>
+      <p className="truncate text-xs text-muted-foreground">{subtitleOf(entity)}</p>
     </div>
   );
 }
