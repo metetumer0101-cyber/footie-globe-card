@@ -320,13 +320,56 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
       "elite": "Elite",
       "icon": "Icon",
       "tapForDetails": "Tap for details",
+      "cmp": {
+        "title": "Comparison Engine",
+        "subtitle": "Put any two players, managers or teams head to head.",
+        "players": "Players",
+        "managers": "Managers",
+        "teams": "Teams",
+        "entityA": "Side A",
+        "entityB": "Side B",
+        "search": "Search and select",
+        "trending": "Trending Matchups",
+        "radarTitle": "Radar Overlay",
+        "statsTitle": "Stat by Stat",
+        "advantage": "Advantage",
+        "tie": "Tie",
+        "download": "Download / Share Matchup Card",
+        "generating": "Generating...",
+        "downloaded": "Matchup card downloaded",
+        "exportFailed": "Could not generate image",
+        "form": "Form",
+        "careerGoals": "Career Goals",
+        "winRate": "Win Rate",
+        "trophies": "Trophies",
+        "matches": "Matches",
+        "goalsFor": "Goals For",
+        "squadValue": "Squad Value",
+        "avgAge": "Average Age",
+        "technicalAvg": "Technical",
+        "physicalAvg": "Physical",
+        "mentalAvg": "Mental & Tactical",
+        "league": "League",
+        "scan": "Scan to explore on FootCard",
+        "noMatch": "No results",
+        "vs": "VS",
+        "wins": "leads"
+      },
       "attr": {
         "pac": "PAC",
         "sho": "SHO",
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -436,13 +479,56 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
       "elite": "Elit",
       "icon": "Efsane",
       "tapForDetails": "Detaylar için dokun",
+      "cmp": {
+        "title": "Karşılaştırma Motoru",
+        "subtitle": "İki oyuncuyu, teknik direktörü veya takımı karşı karşıya getir.",
+        "players": "Oyuncular",
+        "managers": "Teknik Direktörler",
+        "teams": "Takımlar",
+        "entityA": "A Tarafı",
+        "entityB": "B Tarafı",
+        "search": "Ara ve seç",
+        "trending": "Popüler Eşleşmeler",
+        "radarTitle": "Radar Karşılaştırması",
+        "statsTitle": "İstatistik Karşılaştırması",
+        "advantage": "Üstünlük",
+        "tie": "Berabere",
+        "download": "Karşılaşma Kartını İndir / Paylaş",
+        "generating": "Oluşturuluyor...",
+        "downloaded": "Karşılaşma kartı indirildi",
+        "exportFailed": "Görsel oluşturulamadı",
+        "form": "Form",
+        "careerGoals": "Kariyer Golleri",
+        "winRate": "Galibiyet Oranı",
+        "trophies": "Kupalar",
+        "matches": "Maçlar",
+        "goalsFor": "Attığı Gol",
+        "squadValue": "Kadro Değeri",
+        "avgAge": "Yaş Ortalaması",
+        "technicalAvg": "Teknik",
+        "physicalAvg": "Fiziksel",
+        "mentalAvg": "Mental & Taktik",
+        "league": "Lig",
+        "scan": "FootCard'da keşfetmek için tara",
+        "noMatch": "Sonuç yok",
+        "vs": "VS",
+        "wins": "önde"
+      },
       "attr": {
         "pac": "PAC",
         "sho": "SHO",
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Bitiricilik",
@@ -550,7 +636,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -658,7 +752,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -766,7 +868,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -874,7 +984,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -982,7 +1100,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -1090,7 +1216,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -1198,7 +1332,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -1306,7 +1448,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -1414,7 +1564,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -1522,7 +1680,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -1630,7 +1796,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -1738,7 +1912,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -1846,7 +2028,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -1954,7 +2144,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -2062,7 +2260,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -2170,7 +2376,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -2278,7 +2492,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -2386,7 +2608,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -2494,7 +2724,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -2602,7 +2840,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -2710,7 +2956,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -2818,7 +3072,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -2926,7 +3188,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -3034,7 +3304,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -3142,7 +3420,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -3250,7 +3536,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -3358,7 +3652,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -3466,7 +3768,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -3574,7 +3884,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -3682,7 +4000,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -3790,7 +4116,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -3898,7 +4232,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",
@@ -4006,7 +4348,15 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "pas": "PAS",
         "dri": "DRI",
         "def": "DEF",
-        "phy": "PHY"
+        "phy": "PHY",
+        "att": "ATT",
+        "mid": "MID",
+        "tdef": "DEF",
+        "pos": "POS",
+        "prs": "PRS",
+        "frm": "FRM",
+        "dev": "DEV",
+        "mgt": "MGT"
       },
       "deep": {
         "finishing": "Finishing",

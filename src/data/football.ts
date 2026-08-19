@@ -11,6 +11,24 @@ export type CoreStats = {
 
 export type DeepAttr = { key: string; value: number };
 
+export type CoachStats = {
+  att: number;
+  def: number;
+  pos: number;
+  prs: number;
+  dev: number;
+  mgt: number;
+};
+
+export type TeamStats = {
+  att: number;
+  mid: number;
+  tdef: number;
+  pos: number;
+  prs: number;
+  frm: number;
+};
+
 export type PlayerCardData = {
   id: string;
   type: "player";
@@ -31,6 +49,8 @@ export type PlayerCardData = {
   technical: DeepAttr[];
   physical: DeepAttr[];
   mental: DeepAttr[];
+  form: number;
+  careerGoals: number;
 };
 
 export type ManagerCardData = {
@@ -48,9 +68,30 @@ export type ManagerCardData = {
   marketValue: string;
   contractUntil: string;
   trophies: number;
+  coach: CoachStats;
+  form: number;
+  matches: number;
 };
 
-export type CardData = PlayerCardData | ManagerCardData;
+export type TeamCardData = {
+  id: string;
+  type: "team";
+  name: string;
+  club: string;
+  clubBadge: string;
+  nation: string;
+  league: string;
+  tier: Tier;
+  stats: TeamStats;
+  winRate: number;
+  goalsFor: number;
+  trophies: number;
+  squadValue: string;
+  avgAge: number;
+};
+
+export type CardData = PlayerCardData | ManagerCardData | TeamCardData;
+export type ComparableEntity = CardData;
 
 const tech = (v: number[]): DeepAttr[] =>
   [
@@ -112,6 +153,8 @@ export const players: PlayerCardData[] = [
     technical: tech([93, 89, 83, 84, 84, 80, 70, 86, 85, 71, 83, 92, 74]),
     physical: phys([97, 97, 93, 82, 88, 77, 88, 93]),
     mental: ment([93, 92, 88, 64, 38, 34, 34, 32, 36, 79, 76, 91]),
+    form: 92,
+    careerGoals: 340,
   },
   {
     id: "haaland",
@@ -133,6 +176,8 @@ export const players: PlayerCardData[] = [
     technical: tech([96, 94, 85, 88, 85, 74, 62, 55, 68, 60, 74, 90, 90]),
     physical: phys([87, 92, 79, 71, 88, 93, 95, 92]),
     mental: ment([95, 92, 88, 87, 40, 35, 42, 30, 43, 78, 72, 76]),
+    form: 94,
+    careerGoals: 310,
   },
   {
     id: "bellingham",
@@ -154,6 +199,8 @@ export const players: PlayerCardData[] = [
     technical: tech([87, 86, 84, 80, 76, 80, 74, 80, 88, 82, 87, 89, 79]),
     physical: phys([80, 82, 82, 80, 90, 84, 82, 89]),
     mental: ment([88, 89, 88, 83, 78, 74, 79, 73, 77, 92, 88, 85]),
+    form: 85,
+    careerGoals: 120,
   },
   {
     id: "arda",
@@ -175,6 +222,8 @@ export const players: PlayerCardData[] = [
     technical: tech([82, 80, 86, 79, 82, 90, 88, 85, 89, 86, 89, 90, 62]),
     physical: phys([83, 80, 88, 86, 74, 62, 66, 84]),
     mental: ment([84, 83, 85, 58, 48, 42, 46, 38, 45, 74, 68, 92]),
+    form: 80,
+    careerGoals: 42,
   },
   {
     id: "yamal",
@@ -196,6 +245,8 @@ export const players: PlayerCardData[] = [
     technical: tech([81, 78, 80, 74, 72, 88, 80, 87, 86, 78, 88, 93, 58]),
     physical: phys([91, 89, 93, 88, 76, 58, 64, 86]),
     mental: ment([83, 86, 84, 52, 40, 33, 35, 30, 38, 72, 62, 94]),
+    form: 88,
+    careerGoals: 66,
   },
 ];
 
@@ -215,6 +266,9 @@ export const managers: ManagerCardData[] = [
     marketValue: "€25M / yr",
     contractUntil: "2027",
     trophies: 40,
+    coach: { att: 94, def: 82, pos: 97, prs: 90, dev: 86, mgt: 92 },
+    form: 91,
+    matches: 940,
   },
   {
     id: "ancelotti",
@@ -231,6 +285,109 @@ export const managers: ManagerCardData[] = [
     marketValue: "€12M / yr",
     contractUntil: "2026",
     trophies: 32,
+    coach: { att: 86, def: 85, pos: 84, prs: 72, dev: 80, mgt: 97 },
+    form: 82,
+    matches: 1300,
+  },
+];
+
+
+export const teams: TeamCardData[] = [
+  {
+    id: "real-madrid",
+    type: "team",
+    name: "Real Madrid",
+    club: "Real Madrid",
+    clubBadge: "⚪",
+    nation: "🇪🇸",
+    league: "La Liga",
+    tier: "icon",
+    stats: { att: 94, mid: 90, tdef: 86, pos: 84, prs: 82, frm: 90 },
+    winRate: 72,
+    goalsFor: 102,
+    trophies: 15,
+    squadValue: "€1.3B",
+    avgAge: 26,
+  },
+  {
+    id: "man-city",
+    type: "team",
+    name: "Manchester City",
+    club: "Manchester City",
+    clubBadge: "🔵",
+    nation: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+    league: "Premier League",
+    tier: "icon",
+    stats: { att: 92, mid: 94, tdef: 87, pos: 96, prs: 90, frm: 86 },
+    winRate: 74,
+    goalsFor: 96,
+    trophies: 9,
+    squadValue: "€1.2B",
+    avgAge: 27,
+  },
+  {
+    id: "barcelona",
+    type: "team",
+    name: "Barcelona",
+    club: "Barcelona",
+    clubBadge: "🔴",
+    nation: "🇪🇸",
+    league: "La Liga",
+    tier: "elite",
+    stats: { att: 90, mid: 89, tdef: 80, pos: 92, prs: 88, frm: 84 },
+    winRate: 68,
+    goalsFor: 98,
+    trophies: 5,
+    squadValue: "€1.1B",
+    avgAge: 24,
+  },
+  {
+    id: "bayern",
+    type: "team",
+    name: "Bayern München",
+    club: "Bayern München",
+    clubBadge: "🔴",
+    nation: "🇩🇪",
+    league: "Bundesliga",
+    tier: "elite",
+    stats: { att: 91, mid: 88, tdef: 84, pos: 89, prs: 87, frm: 85 },
+    winRate: 71,
+    goalsFor: 94,
+    trophies: 6,
+    squadValue: "€950M",
+    avgAge: 27,
+  },
+  {
+    id: "galatasaray",
+    type: "team",
+    name: "Galatasaray",
+    club: "Galatasaray",
+    clubBadge: "🟡",
+    nation: "🇹🇷",
+    league: "Süper Lig",
+    tier: "gold",
+    stats: { att: 85, mid: 80, tdef: 78, pos: 79, prs: 82, frm: 88 },
+    winRate: 70,
+    goalsFor: 88,
+    trophies: 24,
+    squadValue: "€280M",
+    avgAge: 28,
+  },
+  {
+    id: "inter",
+    type: "team",
+    name: "Inter",
+    club: "Inter",
+    clubBadge: "🔷",
+    nation: "🇮🇹",
+    league: "Serie A",
+    tier: "elite",
+    stats: { att: 86, mid: 85, tdef: 90, pos: 83, prs: 80, frm: 82 },
+    winRate: 66,
+    goalsFor: 82,
+    trophies: 3,
+    squadValue: "€620M",
+    avgAge: 29,
   },
 ];
 
