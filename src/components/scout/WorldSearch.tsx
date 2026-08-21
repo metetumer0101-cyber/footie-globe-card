@@ -9,7 +9,7 @@ import {
   searchWorldPlayers,
   type WorldPlayer,
 } from "@/lib/player-search.functions";
-import type { PlayerCardData } from "@/data/football";
+import { players as localPlayers, type PlayerCardData } from "@/data/football";
 import { cn } from "@/lib/utils";
 
 const LEAGUES = [
@@ -63,6 +63,13 @@ export function WorldSearch({
   const loading = active ? searchQuery.isPending : topQuery.isPending;
 
   const open = async (player: WorldPlayer) => {
+    if (player.localId) {
+      const local = localPlayers.find((p) => p.id === player.localId);
+      if (local) {
+        onSelect(local);
+        return;
+      }
+    }
     setPending(player.id);
     try {
       const result = await loadCard({ data: { playerId: player.id } });
@@ -113,12 +120,18 @@ export function WorldSearch({
                 onClick={() => void open(p)}
                 className="card-surface flex w-full items-center gap-3 rounded-2xl p-2.5 text-start transition-colors hover:bg-secondary/40"
               >
-                <img
-                  src={p.photo ?? `https://media.api-sports.io/football/players/${p.id}.png`}
-                  alt={p.name}
-                  loading="lazy"
-                  className="h-11 w-11 shrink-0 rounded-full bg-secondary/50 object-cover"
-                />
+                {p.photo ? (
+                  <img
+                    src={p.photo}
+                    alt={p.name}
+                    loading="lazy"
+                    className="h-11 w-11 shrink-0 rounded-full bg-secondary/50 object-cover"
+                  />
+                ) : (
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-secondary/50 text-xs font-bold text-muted-foreground">
+                    {p.name.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{p.name}</span>
                   <span className="block truncate text-xs text-muted-foreground">

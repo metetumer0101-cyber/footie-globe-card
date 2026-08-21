@@ -16,6 +16,8 @@ export type WorldPlayer = {
   heightCm?: number | undefined;
   weightKg?: number | undefined;
   club?: string | undefined;
+  /** Set when the entry comes from the built-in FootCard catalogue. */
+  localId?: string | undefined;
 };
 
 export type WorldSearchResult = {
@@ -68,6 +70,8 @@ function mockSearch(query: string): WorldSearchResult {
       .filter((p) => !q || p.name.toLowerCase().includes(q))
       .map((p, i) => ({
         id: 900000 + i,
+        localId: p.id,
+        club: p.club,
         name: p.name,
         age: p.age,
         nationality: p.nation,
@@ -148,7 +152,15 @@ export const getLeagueTopPlayers = createServerFn({ method: "GET" })
             statistics?: { team?: { name?: string }; games?: { position?: string } }[];
           }[];
         }>(`/players/topscorers?league=${data.leagueId}&season=${season}`, apiKey);
-        const list = (json?.response ?? [])
+        const rows = json?.response?.length
+          ? json.response
+          : (
+              await apiFootball<typeof json>(
+                `/players/topscorers?league=${data.leagueId}&season=${season - 1}`,
+                apiKey,
+              )
+            )?.response ?? [];
+        const list = (rows ?? [])
           .filter((r) => r.player?.id)
           .map((r) => ({
             id: r.player?.id as number,
