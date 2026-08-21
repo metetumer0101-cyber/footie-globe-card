@@ -19,6 +19,7 @@ import {
 import { RadarChart } from "./RadarChart";
 import { AttributeList } from "./AttributeList";
 import { tierStyles, type CardData } from "@/data/football";
+import { TransferTimeline } from "./TransferTimeline";
 import { cn } from "@/lib/utils";
 
 function InfoRow({
@@ -118,6 +119,10 @@ export function CardDetailModal({
                 <span className="text-[11px] text-muted-foreground">{t("chartPlaceholder")}</span>
               </div>
             </div>
+
+            <TransferTimeline playerId={card.id} />
+
+
 
             <AttributeList titleKey="technical" attrs={card.technical} />
             <AttributeList titleKey="physicalCat" attrs={card.physical} />

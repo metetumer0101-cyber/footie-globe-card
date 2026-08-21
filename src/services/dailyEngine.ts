@@ -42,6 +42,35 @@ function pickFrom<T>(arr: readonly T[], rnd: () => number): T {
   return arr[Math.floor(rnd() * arr.length) % arr.length]!;
 }
 
+const tierWeight: Record<string, number> = { icon: 5, elite: 4, gold: 3, silver: 2, bronze: 1 };
+
+/** Popularity score used to bias daily puzzles toward trending players. */
+export function popularityScore(p: PlayerCardData): number {
+  const core = (p.core.pac + p.core.sho + p.core.pas + p.core.dri + p.core.def + p.core.phy) / 6;
+  return (tierWeight[p.tier] ?? 1) * 12 + p.form * 4 + core / 2 + Math.max(0, 26 - p.age);
+}
+
+/**
+ * The live player database, ordered by trending/popularity so daily puzzles
+ * automatically sample recognisable names as the database grows.
+ */
+export function trendingPlayers(limit = 12): PlayerCardData[] {
+  return [...players].sort((a, b) => popularityScore(b) - popularityScore(a)).slice(0, limit);
+}
+
+/** Weighted sample: popular players appear more often, everyone stays possible. */
+function pickWeighted(pool: readonly PlayerCardData[], rnd: () => number): PlayerCardData {
+  const weights = pool.map(popularityScore);
+  const total = weights.reduce((s, w) => s + w, 0);
+  let cursor = rnd() * total;
+  for (let i = 0; i < pool.length; i++) {
+    cursor -= weights[i]!;
+    if (cursor <= 0) return pool[i]!;
+  }
+  return pool[pool.length - 1]!;
+}
+
+
 export type DailyChallenge = {
   /** Stable id for the day, e.g. "2026-08-21". */
   id: string;
@@ -55,19 +84,20 @@ export type DailyChallenge = {
 
 export function dailyPlayerOfDay(date = new Date()): PlayerCardData {
   const rnd = seededRandom(hashSeed(`player:${utcDateKey(date)}`));
-  return pickFrom(players, rnd);
+  return pickWeighted(trendingPlayers(), rnd);
 }
 
 export function dailyHigherLowerRounds(date = new Date(), count = 10): HLRound[] {
   const rnd = seededRandom(hashSeed(`hl:${utcDateKey(date)}`));
+  const pool = trendingPlayers(Math.max(8, Math.floor(players.length * 0.8)));
   const rounds: HLRound[] = [];
   for (let i = 0; i < count; i++) {
-    const a = pickFrom(players, rnd);
-    const others = players.filter((p) => p.id !== a.id);
-    let b = pickFrom(others, rnd);
+    const a = pickWeighted(pool, rnd);
+    const others = pool.filter((p) => p.id !== a.id);
+    let b = pickWeighted(others, rnd);
     const stat: StatKey = pickFrom(statKeys, rnd);
     let guard = 0;
-    while (b.core[stat] === a.core[stat] && guard++ < 20) b = pickFrom(others, rnd);
+    while (b.core[stat] === a.core[stat] && guard++ < 20) b = pickWeighted(others, rnd);
     rounds.push({ a, b, stat });
   }
   return rounds;
@@ -75,8 +105,11 @@ export function dailyHigherLowerRounds(date = new Date(), count = 10): HLRound[]
 
 export function dailyTransferPath(date = new Date()): TransferPath {
   const rnd = seededRandom(hashSeed(`tp:${utcDateKey(date)}`));
-  return pickFrom(transferPaths, rnd);
+  const trendingIds = new Set(trendingPlayers().map((p) => p.id));
+  const preferred = transferPaths.filter((p) => trendingIds.has(p.playerId));
+  return pickFrom(preferred.length ? preferred : transferPaths, rnd);
 }
+
 
 export function msUntilNextUtcDay(now = new Date()): number {
   const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);

@@ -392,11 +392,14 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "finished": "FT",
         "refresh": "Refresh",
         "refreshed": "Scores refreshed",
-        "mockNote": "Demo feed — connect a live data key for real fixtures."
+        "mockNote": "Demo feed — connect a live data key for real fixtures.",
+        "cached": "Cached live data",
+        "rateLimited": "Live provider unavailable — showing demo data."
       },
       "badges": {
         "title": "Badge Collection"
       },
+      "transferHistory": "Transfer history",
       "playerOfTheDay": "Player of the Day",
       "popularPlayers": "Popular Players",
       "popularTeams": "Popular Teams",
@@ -692,6 +695,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
       "badges": {
         "title": "Rozet Koleksiyonu"
       },
+      "transferHistory": "Transfer geçmişi",
       "playerOfTheDay": "Günün Oyuncusu",
       "popularPlayers": "Popüler Oyuncular",
       "popularTeams": "Popüler Takımlar",
