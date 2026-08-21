@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Radio, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
-import { getLiveFeed } from "@/lib/live.functions";
+import { useLiveFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
 import { players } from "@/data/football";
 import { bumpBadgeStat } from "@/lib/badges";
 import type { LiveFixture } from "@/lib/live";
@@ -39,15 +37,19 @@ function statusLabel(fixture: LiveFixture, t: (k: string, o: { defaultValue: str
 
 function LivePage() {
   const { t } = useTranslation();
-  const fetchFeed = useServerFn(getLiveFeed);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["live-feed"],
-    queryFn: () => fetchFeed(),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
-  });
+  const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useLiveFeed();
+
+  // Countdown to the next automatic 30s poll.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const nextIn = dataUpdatedAt
+    ? Math.max(0, Math.ceil((dataUpdatedAt + LIVE_POLL_MS - now) / 1000))
+    : Math.ceil(LIVE_POLL_MS / 1000);
 
   const fixtures = useMemo(() => data?.fixtures ?? [], [data]);
   const liveCount = fixtures.filter((f) => f.status === "live" || f.status === "halftime").length;
@@ -72,6 +74,17 @@ function LivePage() {
                 defaultValue: "{{count}} match(es) in play · today's fixtures",
                 count: liveCount,
               })}
+            </p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${isFetching ? "animate-ping bg-primary" : "bg-primary/60"}`}
+              />
+              {isFetching
+                ? t("liveCenter.updating", { defaultValue: "Updating…" })
+                : t("liveCenter.autoRefresh", {
+                    defaultValue: "Auto-refresh in {{seconds}}s",
+                    seconds: nextIn,
+                  })}
             </p>
           </div>
           <button

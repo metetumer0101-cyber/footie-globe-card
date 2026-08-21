@@ -393,6 +393,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "refresh": "Refresh",
         "refreshed": "Scores refreshed",
         "mockNote": "Demo feed — connect a live data key for real fixtures.",
+        "updating": "Updating…",
+        "autoRefresh": "Auto-refresh in {{seconds}}s",
         "cached": "Cached live data",
         "rateLimited": "Live provider unavailable — showing demo data."
       },
@@ -690,6 +692,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "finished": "MS",
         "refresh": "Yenile",
         "refreshed": "Skorlar güncellendi",
+        "updating": "Güncelleniyor…",
+        "autoRefresh": "{{seconds}} sn içinde yenilenecek",
         "mockNote": "Demo veri — canlı fikstür için veri anahtarı bağlayın."
       },
       "badges": {
