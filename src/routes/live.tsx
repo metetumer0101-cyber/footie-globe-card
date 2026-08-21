@@ -37,15 +37,19 @@ function statusLabel(fixture: LiveFixture, t: (k: string, o: { defaultValue: str
 
 function LivePage() {
   const { t } = useTranslation();
-  const fetchFeed = useServerFn(getLiveFeed);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["live-feed"],
-    queryFn: () => fetchFeed(),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
-  });
+  const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useLiveFeed();
+
+  // Countdown to the next automatic 30s poll.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const nextIn = dataUpdatedAt
+    ? Math.max(0, Math.ceil((dataUpdatedAt + LIVE_POLL_MS - now) / 1000))
+    : Math.ceil(LIVE_POLL_MS / 1000);
 
   const fixtures = useMemo(() => data?.fixtures ?? [], [data]);
   const liveCount = fixtures.filter((f) => f.status === "live" || f.status === "halftime").length;
