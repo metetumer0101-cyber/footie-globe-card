@@ -75,6 +75,17 @@ function LivePage() {
                 count: liveCount,
               })}
             </p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${isFetching ? "animate-ping bg-primary" : "bg-primary/60"}`}
+              />
+              {isFetching
+                ? t("liveCenter.updating", { defaultValue: "Updating…" })
+                : t("liveCenter.autoRefresh", {
+                    defaultValue: "Auto-refresh in {{seconds}}s",
+                    seconds: nextIn,
+                  })}
+            </p>
           </div>
           <button
             onClick={() => {
