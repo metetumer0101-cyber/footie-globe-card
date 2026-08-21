@@ -396,7 +396,19 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "updating": "Updating…",
         "autoRefresh": "Auto-refresh in {{seconds}}s",
         "cached": "Cached live data",
-        "rateLimited": "Live provider unavailable — showing demo data."
+        "rateLimited": "Live provider unavailable — showing demo data.",
+        "backToLive": "Back to live matches",
+        "details": "Match details",
+        "home": "Home",
+        "away": "Away",
+        "events": "Events",
+        "stats": "Stats",
+        "lineups": "Lineups",
+        "noEvents": "No events yet.",
+        "noStats": "No statistics available.",
+        "noLineups": "No lineups available.",
+        "startXI": "Starting XI",
+        "bench": "Bench"
       },
       "badges": {
         "title": "Badge Collection"
