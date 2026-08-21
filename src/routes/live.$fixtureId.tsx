@@ -73,7 +73,11 @@ function MatchDetailPage() {
 
           <div className="mt-4 flex items-center justify-between gap-3">
             <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center">
-              <span className="text-3xl">{fixture?.home.badge ?? "⚽"}</span>
+              {fixture?.home.logo ? (
+                <img src={fixture.home.logo} alt={homeName} className="h-10 w-10 object-contain" />
+              ) : (
+                <span className="text-3xl">{fixture?.home.badge ?? "⚽"}</span>
+              )}
               <span className="w-full truncate text-sm font-bold">{homeName}</span>
             </div>
             <div className="shrink-0 text-center">
@@ -89,7 +93,11 @@ function MatchDetailPage() {
               </span>
             </div>
             <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center">
-              <span className="text-3xl">{fixture?.away.badge ?? "⚽"}</span>
+              {fixture?.away.logo ? (
+                <img src={fixture.away.logo} alt={awayName} className="h-10 w-10 object-contain" />
+              ) : (
+                <span className="text-3xl">{fixture?.away.badge ?? "⚽"}</span>
+              )}
               <span className="w-full truncate text-sm font-bold">{awayName}</span>
             </div>
           </div>
