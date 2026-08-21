@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Download, Loader2, Save, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
+import { bumpBadgeStat } from "@/lib/badges";
 import { AppShell } from "@/components/layout/AppShell";
 import { Pitch } from "@/components/squad/Pitch";
 import { SlotChip, ManagerSlot, chemColor } from "@/components/squad/SlotChip";
@@ -169,6 +170,7 @@ function Page() {
   };
 
   const saveSquad = () => {
+    bumpBadgeStat("squadsSaved");
     const entry: SavedSquad = {
       ...squad,
       name: squad.name.trim() || t("sq.mySquad"),
