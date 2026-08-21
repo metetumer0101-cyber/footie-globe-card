@@ -53,7 +53,16 @@ export function PlayerFrontCard({
               tier.frame,
             )}
           />
-          <Shirt className="relative h-11 w-11 text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5" />
+          {player.photo ? (
+            <img
+              src={player.photo}
+              alt={player.name}
+              loading="lazy"
+              className="relative h-20 w-20 rounded-full object-cover ring-2 ring-border/60 transition-transform duration-200 group-hover:-translate-y-0.5"
+            />
+          ) : (
+            <Shirt className="relative h-11 w-11 text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5" />
+          )}
           <span className="absolute bottom-1 start-1.5 text-base leading-none">{player.nation}</span>
           <span className="absolute bottom-1 end-1.5 text-base leading-none">{player.clubBadge}</span>
         </div>
