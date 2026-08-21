@@ -79,7 +79,11 @@ function Index() {
 
       <SectionRow titleKey="activeCompetitions">
         {activeCompetitions.map((c) => (
-          <article key={c.id} className="card-surface w-60 shrink-0 snap-start rounded-2xl p-3">
+          <Link
+            key={c.id}
+            to="/competitions"
+            className="card-surface block w-60 shrink-0 snap-start rounded-2xl p-3 transition-colors hover:bg-secondary/40"
+          >
             <span className="rounded-lg bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
               {t("live")}
             </span>
@@ -87,7 +91,7 @@ function Index() {
             <p className="truncate text-xs text-muted-foreground">
               {c.phase} · {c.entrants}
             </p>
-          </article>
+          </Link>
         ))}
       </SectionRow>
 
