@@ -252,6 +252,69 @@ export const languages: LanguageMeta[] = [
 export const resources: Record<string, { translation: Record<string, unknown> }> = {
   "en": {
     "translation": {
+      "auth": {
+        "signIn": "Sign in",
+        "signUp": "Create account",
+        "signOut": "Sign out",
+        "subtitle": "Save your XP, scout rank and leaderboard spot.",
+        "email": "Email",
+        "password": "Password",
+        "google": "Continue with Google",
+        "needAccount": "Need an account? Sign up",
+        "haveAccount": "Already have an account? Sign in",
+        "welcome": "Welcome back!",
+        "checkEmail": "Account created — check your inbox to confirm.",
+        "displayName": "Display name",
+        "saved": "Saved"
+      },
+      "games": {
+        "title": "Games Hub",
+        "subtitle": "Play, earn XP and climb the scout ranks.",
+        "leaderboard": "Leaderboard",
+        "global": "Global",
+        "weekly": "Weekly",
+        "emptyBoard": "No scouts on the board yet — be the first!",
+        "correct": "Correct!",
+        "wrong": "Wrong",
+        "next": "Next",
+        "toNext": "{{xp}} XP to {{rank}}",
+        "maxRank": "Top rank reached — Legend status.",
+        "guestHint": "Playing as guest — XP is stored on this device only.",
+        "playingAs": "Playing as",
+        "higher_lower": { "name": "Higher or Lower" },
+        "transfer_path": { "name": "Transfer Path" },
+        "daily_player": { "name": "Daily Player" },
+        "hl": {
+          "streak": "Streak",
+          "best": "Best",
+          "higher": "Higher",
+          "lower": "Lower",
+          "question": "Is the second player's {{stat}} higher or lower?"
+        },
+        "tp": {
+          "subtitle": "Guess the player from their club history. Each hint costs XP.",
+          "hint": "Reveal hint",
+          "reward": "Reward",
+          "guessPlaceholder": "Type a player name…"
+        },
+        "daily": {
+          "subtitle": "Find today's player in {{max}} guesses.",
+          "left": "Guesses left",
+          "player": "Player",
+          "club": "Club",
+          "pos": "Pos",
+          "age": "Age",
+          "guessPlaceholder": "Guess a player…"
+        },
+        "rank": {
+          "bronze": "Bronze Scout",
+          "silver": "Silver Scout",
+          "gold": "Gold Scout",
+          "diamond": "Diamond Scout",
+          "legend": "Legend"
+        }
+      },
+
       "sq": {
         "subtitle": "Pick a formation, fill the pitch and chase 100 chemistry.",
         "formation": "Formation",
@@ -470,6 +533,69 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
   },
   "tr": {
     "translation": {
+      "auth": {
+        "signIn": "Giriş yap",
+        "signUp": "Hesap oluştur",
+        "signOut": "Çıkış yap",
+        "subtitle": "XP'ni, scout rütbeni ve sıralamadaki yerini kaydet.",
+        "email": "E-posta",
+        "password": "Şifre",
+        "google": "Google ile devam et",
+        "needAccount": "Hesabın yok mu? Kaydol",
+        "haveAccount": "Hesabın var mı? Giriş yap",
+        "welcome": "Tekrar hoş geldin!",
+        "checkEmail": "Hesap oluşturuldu — onay için e-postanı kontrol et.",
+        "displayName": "Görünen ad",
+        "saved": "Kaydedildi"
+      },
+      "games": {
+        "title": "Oyun Merkezi",
+        "subtitle": "Oyna, XP kazan ve scout rütbelerinde yüksel.",
+        "leaderboard": "Liderlik tablosu",
+        "global": "Genel",
+        "weekly": "Haftalık",
+        "emptyBoard": "Tabloda henüz kimse yok — ilk sen ol!",
+        "correct": "Doğru!",
+        "wrong": "Yanlış",
+        "next": "Sıradaki",
+        "toNext": "{{rank}} için {{xp}} XP",
+        "maxRank": "En üst rütbe — Efsane oldun.",
+        "guestHint": "Misafir olarak oynuyorsun — XP yalnızca bu cihazda saklanır.",
+        "playingAs": "Oyuncu",
+        "higher_lower": { "name": "Yüksek mi Düşük mü" },
+        "transfer_path": { "name": "Transfer Rotası" },
+        "daily_player": { "name": "Günün Oyuncusu" },
+        "hl": {
+          "streak": "Seri",
+          "best": "Rekor",
+          "higher": "Yüksek",
+          "lower": "Düşük",
+          "question": "İkinci oyuncunun {{stat}} değeri daha yüksek mi düşük mü?"
+        },
+        "tp": {
+          "subtitle": "Kulüp geçmişinden oyuncuyu bul. Her ipucu XP düşürür.",
+          "hint": "İpucu aç",
+          "reward": "Ödül",
+          "guessPlaceholder": "Oyuncu adı yaz…"
+        },
+        "daily": {
+          "subtitle": "Günün oyuncusunu {{max}} tahminde bul.",
+          "left": "Kalan tahmin",
+          "player": "Oyuncu",
+          "club": "Kulüp",
+          "pos": "Poz",
+          "age": "Yaş",
+          "guessPlaceholder": "Bir oyuncu tahmin et…"
+        },
+        "rank": {
+          "bronze": "Bronz Scout",
+          "silver": "Gümüş Scout",
+          "gold": "Altın Scout",
+          "diamond": "Elmas Scout",
+          "legend": "Efsane"
+        }
+      },
+
       "sq": {
         "subtitle": "Dizilişini seç, sahayı doldur ve 100 uyum yakala.",
         "formation": "Diziliş",
