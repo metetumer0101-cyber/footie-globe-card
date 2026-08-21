@@ -390,6 +390,7 @@ export const getFixturesByLeague = createServerFn({ method: "GET" })
             away: { id: r.teams?.away?.id ?? 0, name: r.teams?.away?.name ?? "—", logo: r.teams?.away?.logo ?? "", score: r.goals?.away ?? undefined },
             status,
             minute: r.fixture?.status?.elapsed ?? undefined,
+            source: "api-football",
           };
         });
       },
