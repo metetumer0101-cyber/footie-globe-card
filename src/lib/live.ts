@@ -1,3 +1,4 @@
+import { transferPaths } from "@/lib/games";
 import { players, teams } from "@/data/football";
 import { hashSeed, seededRandom, utcDateKey } from "@/services/dailyEngine";
 
@@ -76,4 +77,26 @@ export function buildMockFeed(now = new Date()): LiveFeed {
   }
 
   return { date, source: "mock", fixtures };
+}
+
+/* ---------------- Historical transfers ---------------- */
+
+export type TransferMove = { date: string; from: string; to: string };
+
+export type TransferHistory = {
+  playerId: string;
+  source: "api-football" | "mock";
+  moves: TransferMove[];
+};
+
+/** Rich local fallback derived from the curated transfer-path dataset. */
+export function mockTransfers(playerId: string): TransferHistory {
+  const path = transferPaths.find((p) => p.playerId === playerId);
+  const clubs = path?.clubs ?? [];
+  const moves: TransferMove[] = clubs.slice(1).map((club, i) => ({
+    date: "",
+    from: clubs[i]!,
+    to: club,
+  }));
+  return { playerId, source: "mock", moves };
 }
