@@ -35,6 +35,132 @@ export type Database = {
         }
         Relationships: []
       }
+      injuries: {
+        Row: {
+          fixture_date: string | null
+          fixture_id: number | null
+          id: string
+          player_id: number | null
+          player_name: string | null
+          reason: string | null
+          status: string | null
+          team_id: number | null
+          team_name: string | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          fixture_date?: string | null
+          fixture_id?: number | null
+          id?: string
+          player_id?: number | null
+          player_name?: string | null
+          reason?: string | null
+          status?: string | null
+          team_id?: number | null
+          team_name?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          fixture_date?: string | null
+          fixture_id?: number | null
+          id?: string
+          player_id?: number | null
+          player_name?: string | null
+          reason?: string | null
+          status?: string | null
+          team_id?: number | null
+          team_name?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      match_events: {
+        Row: {
+          assist_id: number | null
+          assist_name: string | null
+          comments: string | null
+          detail: string | null
+          elapsed: number | null
+          extra_time: number | null
+          fixture_id: number
+          id: string
+          player_id: number | null
+          player_name: string | null
+          team_id: number | null
+          team_name: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          assist_id?: number | null
+          assist_name?: string | null
+          comments?: string | null
+          detail?: string | null
+          elapsed?: number | null
+          extra_time?: number | null
+          fixture_id: number
+          id?: string
+          player_id?: number | null
+          player_name?: string | null
+          team_id?: number | null
+          team_name?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          assist_id?: number | null
+          assist_name?: string | null
+          comments?: string | null
+          detail?: string | null
+          elapsed?: number | null
+          extra_time?: number | null
+          fixture_id?: number
+          id?: string
+          player_id?: number | null
+          player_name?: string | null
+          team_id?: number | null
+          team_name?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      match_stats: {
+        Row: {
+          away_value: string | null
+          fixture_id: number
+          home_value: string | null
+          id: string
+          stat_type: string
+          team_id: number
+          team_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          away_value?: string | null
+          fixture_id: number
+          home_value?: string | null
+          id?: string
+          stat_type: string
+          team_id: number
+          team_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          away_value?: string | null
+          fixture_id?: number
+          home_value?: string | null
+          id?: string
+          stat_type?: string
+          team_id?: number
+          team_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -56,6 +182,66 @@ export type Database = {
           id?: string
           total_xp?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      standings: {
+        Row: {
+          draws: number
+          form: string | null
+          goal_diff: number
+          goals_against: number
+          goals_for: number
+          id: string
+          league_id: number
+          logo: string | null
+          losses: number
+          played: number
+          points: number
+          rank: number
+          season: number
+          team_id: number
+          team_name: string
+          updated_at: string
+          wins: number
+        }
+        Insert: {
+          draws?: number
+          form?: string | null
+          goal_diff?: number
+          goals_against?: number
+          goals_for?: number
+          id?: string
+          league_id: number
+          logo?: string | null
+          losses?: number
+          played?: number
+          points?: number
+          rank: number
+          season: number
+          team_id: number
+          team_name: string
+          updated_at?: string
+          wins?: number
+        }
+        Update: {
+          draws?: number
+          form?: string | null
+          goal_diff?: number
+          goals_against?: number
+          goals_for?: number
+          id?: string
+          league_id?: number
+          logo?: string | null
+          losses?: number
+          played?: number
+          points?: number
+          rank?: number
+          season?: number
+          team_id?: number
+          team_name?: string
+          updated_at?: string
+          wins?: number
         }
         Relationships: []
       }

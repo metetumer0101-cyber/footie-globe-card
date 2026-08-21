@@ -396,7 +396,25 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "updating": "Updating…",
         "autoRefresh": "Auto-refresh in {{seconds}}s",
         "cached": "Cached live data",
-        "rateLimited": "Live provider unavailable — showing demo data."
+        "rateLimited": "Live provider unavailable — showing demo data.",
+        "backToLive": "Back to live matches",
+        "details": "Match details",
+        "home": "Home",
+        "away": "Away",
+        "events": "Events",
+        "stats": "Stats",
+        "lineups": "Lineups",
+        "noEvents": "No events yet.",
+        "noStats": "No statistics available.",
+        "noLineups": "No lineups available.",
+        "startXI": "Starting XI",
+        "bench": "Bench"
+      },
+      "competitions": {
+        "subtitle": "League tables and fixtures from top competitions.",
+        "standings": "Standings",
+        "fixtures": "Fixtures",
+        "team": "Team"
       },
       "badges": {
         "title": "Badge Collection"
@@ -694,7 +712,25 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "refreshed": "Skorlar güncellendi",
         "updating": "Güncelleniyor…",
         "autoRefresh": "{{seconds}} sn içinde yenilenecek",
-        "mockNote": "Demo veri — canlı fikstür için veri anahtarı bağlayın."
+        "mockNote": "Demo veri — canlı fikstür için veri anahtarı bağlayın.",
+        "backToLive": "Canlı maçlara dön",
+        "details": "Maç detayı",
+        "home": "Ev Sahibi",
+        "away": "Deplasman",
+        "events": "Olaylar",
+        "stats": "İstatistikler",
+        "lineups": "Kadrolar",
+        "noEvents": "Henüz olay yok.",
+        "noStats": "İstatistik bulunmuyor.",
+        "noLineups": "Kadro bulunmuyor.",
+        "startXI": "İlk 11",
+        "bench": "Yedekler"
+      },
+      "competitions": {
+        "subtitle": "Önemli liglerin puan durumu ve fikstürleri.",
+        "standings": "Puan Durumu",
+        "fixtures": "Fikstür",
+        "team": "Takım"
       },
       "badges": {
         "title": "Rozet Koleksiyonu"

@@ -29,7 +29,8 @@ export function LiveWidget() {
         {fixtures.map((f) => (
           <li key={f.id}>
             <Link
-              to="/live"
+              to="/live/$fixtureId"
+              params={{ fixtureId: f.id }}
               className="flex items-center justify-between rounded-xl bg-secondary/40 px-3 py-2 text-xs transition-colors hover:bg-secondary/70"
             >
               <span className="min-w-0 flex-1 truncate">{f.home.name}</span>
