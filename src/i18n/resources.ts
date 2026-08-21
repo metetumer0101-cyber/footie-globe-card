@@ -688,6 +688,12 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "watchlist": "Takip listesi",
         "gridView": "Kart görünümü",
         "tableView": "Tablo görünümü",
+        "world": "Dünya veritabanı",
+        "local": "FootCard seçkisi",
+        "worldHint": "Dünyadaki tüm oyuncularda aramak için en az 3 harf yaz",
+        "worldSearching": "Dünya veritabanında aranıyor…",
+        "worldTop": "Gol kralları",
+        "loadingCard": "Kart hazırlanıyor…",
         "preset": {
           "wonderkids": "Genç yetenekler",
           "expiring": "Sözleşmesi bitenler",
