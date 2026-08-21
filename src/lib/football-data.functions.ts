@@ -29,13 +29,13 @@ export type Standings = {
 
 export type MatchEvent = {
   elapsed: number;
-  extraTime?: number;
+  extraTime?: number | undefined;
   team: { id: number; name: string };
   player: { id: number; name: string };
-  assist?: { id?: number; name?: string };
+  assist?: { id?: number | undefined; name?: string | undefined } | undefined;
   type: "Goal" | "Card" | "Subst" | "Var" | string;
   detail: string;
-  comments?: string;
+  comments?: string | undefined;
 };
 
 export type MatchStat = {
@@ -49,11 +49,11 @@ export type LineupPlayer = {
   name: string;
   number: number;
   pos: string;
-  grid?: string;
+  grid?: string | undefined;
 };
 
 export type MatchLineup = {
-  team: { id: number; name: string; logo: string; colors?: unknown };
+  team: { id: number; name: string; logo: string };
   formation: string;
   coach: string;
   startXI: LineupPlayer[];
@@ -69,24 +69,24 @@ export type MatchDetails = {
 };
 
 export type Injury = {
-  player: { id: number; name: string; photo?: string };
+  player: { id: number; name: string; photo?: string | undefined };
   team: { id: number; name: string };
-  fixture?: { id: number; date?: string };
-  type?: string;
-  reason?: string;
-  status?: string;
+  fixture?: { id: number; date?: string | undefined } | undefined;
+  type?: string | undefined;
+  reason?: string | undefined;
+  status?: string | undefined;
 };
 
 export type Fixture = {
   id: number;
   date: string;
   league: { id: number; name: string; logo: string };
-  home: { id: number; name: string; logo: string; score?: number };
-  away: { id: number; name: string; logo: string; score?: number };
+  home: { id: number; name: string; logo: string; score?: number | undefined };
+  away: { id: number; name: string; logo: string; score?: number | undefined };
   status: "scheduled" | "live" | "halftime" | "finished";
-  minute?: number;
-  elapsed?: number;
-  source?: "api-football" | "mock";
+  minute?: number | undefined;
+  elapsed?: number | undefined;
+  source?: "api-football" | "mock" | undefined;
 };
 
 async function apiFootball<T>(path: string, apiKey: string): Promise<T | null> {
