@@ -712,7 +712,19 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "refreshed": "Skorlar güncellendi",
         "updating": "Güncelleniyor…",
         "autoRefresh": "{{seconds}} sn içinde yenilenecek",
-        "mockNote": "Demo veri — canlı fikstür için veri anahtarı bağlayın."
+        "mockNote": "Demo veri — canlı fikstür için veri anahtarı bağlayın.",
+        "backToLive": "Canlı maçlara dön",
+        "details": "Maç detayı",
+        "home": "Ev Sahibi",
+        "away": "Deplasman",
+        "events": "Olaylar",
+        "stats": "İstatistikler",
+        "lineups": "Kadrolar",
+        "noEvents": "Henüz olay yok.",
+        "noStats": "İstatistik bulunmuyor.",
+        "noLineups": "Kadro bulunmuyor.",
+        "startXI": "İlk 11",
+        "bench": "Yedekler"
       },
       "badges": {
         "title": "Rozet Koleksiyonu"
