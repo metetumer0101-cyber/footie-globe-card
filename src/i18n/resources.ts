@@ -385,6 +385,18 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "live": "Live",
         "profile": "Profile"
       },
+      "liveCenter": {
+        "title": "Live Matches",
+        "subtitle": "{{count}} match(es) in play · today's fixtures",
+        "halftime": "HT",
+        "finished": "FT",
+        "refresh": "Refresh",
+        "refreshed": "Scores refreshed",
+        "mockNote": "Demo feed — connect a live data key for real fixtures."
+      },
+      "badges": {
+        "title": "Badge Collection"
+      },
       "playerOfTheDay": "Player of the Day",
       "popularPlayers": "Popular Players",
       "popularTeams": "Popular Teams",
@@ -667,6 +679,18 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "games": "Oyunlar",
         "live": "Canlı",
         "profile": "Profil"
+      },
+      "liveCenter": {
+        "title": "Canlı Maçlar",
+        "subtitle": "{{count}} maç oynanıyor · bugünün fikstürü",
+        "halftime": "İY",
+        "finished": "MS",
+        "refresh": "Yenile",
+        "refreshed": "Skorlar güncellendi",
+        "mockNote": "Demo veri — canlı fikstür için veri anahtarı bağlayın."
+      },
+      "badges": {
+        "title": "Rozet Koleksiyonu"
       },
       "playerOfTheDay": "Günün Oyuncusu",
       "popularPlayers": "Popüler Oyuncular",
