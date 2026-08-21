@@ -14,8 +14,8 @@ export type LivePlayerLine = {
 export type LiveFixture = {
   id: string;
   league: string;
-  home: { name: string; badge: string; score: number };
-  away: { name: string; badge: string; score: number };
+  home: { name: string; badge: string; score: number; logo?: string | undefined };
+  away: { name: string; badge: string; score: number; logo?: string | undefined };
   status: "scheduled" | "live" | "halftime" | "finished";
   /** Match minute for live games, kickoff HH:mm (UTC) for scheduled ones. */
   minute: number;

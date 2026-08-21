@@ -38,6 +38,7 @@ function statusLabel(fixture: LiveFixture, t: (k: string, o: { defaultValue: str
 function LiveListPage() {
   const { t } = useTranslation();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "live" | "finished" | "scheduled">("all");
 
   const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useLiveFeed();
 
@@ -51,8 +52,20 @@ function LiveListPage() {
     ? Math.max(0, Math.ceil((dataUpdatedAt + LIVE_POLL_MS - now) / 1000))
     : Math.ceil(LIVE_POLL_MS / 1000);
 
-  const fixtures = useMemo(() => data?.fixtures ?? [], [data]);
-  const liveCount = fixtures.filter((f) => f.status === "live" || f.status === "halftime").length;
+  const allFixtures = useMemo(() => data?.fixtures ?? [], [data]);
+  const liveCount = allFixtures.filter((f) => f.status === "live" || f.status === "halftime").length;
+  const finishedCount = allFixtures.filter((f) => f.status === "finished").length;
+  const fixtures = useMemo(
+    () =>
+      allFixtures.filter((f) =>
+        filter === "all"
+          ? true
+          : filter === "live"
+            ? f.status === "live" || f.status === "halftime"
+            : f.status === filter,
+      ),
+    [allFixtures, filter],
+  );
 
   useEffect(() => {
     if (liveCount > 0) bumpBadgeStat("liveMatchesViewed", liveCount);
@@ -99,6 +112,29 @@ function LiveListPage() {
           </button>
         </section>
 
+        <div className="flex gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+          {([
+            ["all", t("liveCenter.filterAll", { defaultValue: "All" }), allFixtures.length],
+            ["live", t("liveCenter.filterLive", { defaultValue: "Live" }), liveCount],
+            ["finished", t("liveCenter.filterFinished", { defaultValue: "Finished" }), finishedCount],
+            [
+              "scheduled",
+              t("liveCenter.filterUpcoming", { defaultValue: "Upcoming" }),
+              allFixtures.length - liveCount - finishedCount,
+            ],
+          ] as const).map(([key, label, count]) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`shrink-0 rounded-full px-3 py-1.5 transition-colors ${
+                filter === key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+              }`}
+            >
+              {label} <span className="tabular-nums opacity-70">{count}</span>
+            </button>
+          ))}
+        </div>
+
         {isLoading && (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
@@ -136,7 +172,16 @@ function LiveListPage() {
 
             <div className="mt-3 flex items-center justify-between gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="text-xl">{fixture.home.badge}</span>
+                {fixture.home.logo ? (
+                  <img
+                    src={fixture.home.logo}
+                    alt={`${fixture.home.name} logo`}
+                    loading="lazy"
+                    className="h-6 w-6 shrink-0 object-contain"
+                  />
+                ) : (
+                  <span className="text-xl">{fixture.home.badge}</span>
+                )}
                 <span className="truncate text-sm font-bold">{fixture.home.name}</span>
               </div>
               <span className="text-xl font-extrabold tabular-nums">
@@ -144,7 +189,16 @@ function LiveListPage() {
               </span>
               <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
                 <span className="truncate text-sm font-bold">{fixture.away.name}</span>
-                <span className="text-xl">{fixture.away.badge}</span>
+                {fixture.away.logo ? (
+                  <img
+                    src={fixture.away.logo}
+                    alt={`${fixture.away.name} logo`}
+                    loading="lazy"
+                    className="h-6 w-6 shrink-0 object-contain"
+                  />
+                ) : (
+                  <span className="text-xl">{fixture.away.badge}</span>
+                )}
               </div>
             </div>
 

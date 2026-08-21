@@ -5,7 +5,7 @@ import { cached } from "@/lib/api-cache.server";
 type ApiFootballFixture = {
   fixture?: { id?: number; status?: { short?: string; elapsed?: number | null }; date?: string };
   league?: { name?: string };
-  teams?: { home?: { name?: string; logo?: string }; away?: { name?: string; logo?: string } };
+  teams?: { home?: { id?: number; name?: string; logo?: string }; away?: { id?: number; name?: string; logo?: string } };
   goals?: { home?: number | null; away?: number | null };
 };
 
@@ -50,14 +50,24 @@ export const getLiveFeed = createServerFn({ method: "GET" }).handler(async (): P
         `/fixtures?date=${fallback.date}`,
         apiKey,
       );
-      const rows = (json?.response ?? []).slice(0, 12);
+      const rows = json?.response ?? [];
       if (!rows.length) return null;
 
       const fixtures: LiveFixture[] = rows.map((r, i) => ({
         id: String(r.fixture?.id ?? `${fallback.date}-${i}`),
         league: r.league?.name ?? "—",
-        home: { name: r.teams?.home?.name ?? "Home", badge: "⚽", score: r.goals?.home ?? 0 },
-        away: { name: r.teams?.away?.name ?? "Away", badge: "⚽", score: r.goals?.away ?? 0 },
+        home: {
+          name: r.teams?.home?.name ?? "Home",
+          badge: "⚽",
+          score: r.goals?.home ?? 0,
+          logo: r.teams?.home?.logo,
+        },
+        away: {
+          name: r.teams?.away?.name ?? "Away",
+          badge: "⚽",
+          score: r.goals?.away ?? 0,
+          logo: r.teams?.away?.logo,
+        },
         status: mapStatus(r.fixture?.status?.short),
         minute: r.fixture?.status?.elapsed ?? 0,
         kickoff: (r.fixture?.date ?? "").slice(11, 16),
