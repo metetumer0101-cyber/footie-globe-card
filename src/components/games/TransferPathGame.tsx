@@ -2,11 +2,13 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Lightbulb } from "lucide-react";
 import { players } from "@/data/football";
+import { dailyTransferPath } from "@/services/dailyEngine";
+import { bumpBadgeStat } from "@/lib/badges";
 import { TP_PENALTY, randomTransferPath, transferPathXp, type TransferPath } from "@/lib/games";
 
 export function TransferPathGame({ onAward }: { onAward: (xp: number) => void }) {
   const { t } = useTranslation();
-  const [path, setPath] = useState<TransferPath>(() => randomTransferPath());
+  const [path, setPath] = useState<TransferPath>(() => dailyTransferPath());
   const [hints, setHints] = useState(0);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
@@ -26,6 +28,7 @@ export function TransferPathGame({ onAward }: { onAward: (xp: number) => void })
     setQuery("");
     if (id === target.id) {
       const xp = transferPathXp(hints);
+      bumpBadgeStat("transferPathWins");
       setGained(xp);
       setStatus("won");
       onAward(xp);

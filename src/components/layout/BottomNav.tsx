@@ -6,7 +6,7 @@ export function BottomNav() {
   const { t } = useTranslation();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur md:hidden">
-      <ul className="grid grid-cols-6">
+      <ul className="grid grid-cols-7">
         {navItems.map(({ to, labelKey, icon: Icon }) => (
           <li key={to}>
             <Link

@@ -2,19 +2,20 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { players } from "@/data/football";
+import { dailyPlayerOfDay } from "@/services/dailyEngine";
+import { bumpBadgeStat } from "@/lib/badges";
 import {
   DAILY_MAX_GUESSES,
   DAILY_PENALTY,
   clueClass,
   compareDaily,
-  dailyPlayer,
   dailyXp,
   type DailyFeedback,
 } from "@/lib/games";
 
 export function DailyPlayerGame({ onAward }: { onAward: (xp: number) => void }) {
   const { t } = useTranslation();
-  const target = useMemo(() => dailyPlayer(), []);
+  const target = useMemo(() => dailyPlayerOfDay(), []);
   const [rows, setRows] = useState<DailyFeedback[]>([]);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"playing" | "won" | "lost">("playing");
@@ -37,6 +38,7 @@ export function DailyPlayerGame({ onAward }: { onAward: (xp: number) => void }) 
 
     if (guess.id === target.id) {
       const xp = dailyXp(nextRows.length);
+      bumpBadgeStat("dailyWins");
       setGained(xp);
       setStatus("won");
       onAward(xp);

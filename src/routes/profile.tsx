@@ -9,6 +9,8 @@ import { RankBadge } from "@/components/games/RankBadge";
 import { useXp } from "@/hooks/use-xp";
 import { nextRank, rankFor, rankProgress } from "@/lib/ranks";
 import { supabase } from "@/integrations/supabase/client";
+import { BadgeShowcase } from "@/components/profile/BadgeShowcase";
+import { emptyBadgeStats, readLocalBadgeStats, type BadgeStats } from "@/lib/badges";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -32,6 +34,9 @@ function Page() {
   const [name, setName] = useState(displayName);
 
   useEffect(() => setName(displayName), [displayName]);
+
+  const [badgeStats, setBadgeStats] = useState<BadgeStats>(emptyBadgeStats);
+  useEffect(() => setBadgeStats(readLocalBadgeStats()), []);
 
   const rank = rankFor(xp);
   const next = nextRank(xp);
@@ -67,6 +72,8 @@ function Page() {
             </p>
           </div>
         </section>
+
+        <BadgeShowcase stats={{ ...badgeStats, xp }} />
 
         {isGuest ? (
           <Link

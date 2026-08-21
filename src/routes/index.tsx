@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/layout/AppShell";
 import { HeroBanner } from "@/components/home/HeroBanner";
+import { LiveWidget } from "@/components/home/LiveWidget";
 import { SectionRow } from "@/components/home/SectionRow";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
 import { ManagerFrontCard } from "@/components/cards/ManagerFrontCard";
@@ -38,6 +39,8 @@ function Index() {
   return (
     <AppShell>
       <HeroBanner onOpen={() => setSelected(players.find((p) => p.id === "arda") ?? null)} />
+
+      <LiveWidget />
 
       <SectionRow titleKey="popularPlayers">
         {players.map((p) => (
