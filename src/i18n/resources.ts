@@ -695,6 +695,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
       "badges": {
         "title": "Rozet Koleksiyonu"
       },
+      "transferHistory": "Transfer geçmişi",
       "playerOfTheDay": "Günün Oyuncusu",
       "popularPlayers": "Popüler Oyuncular",
       "popularTeams": "Popüler Takımlar",
