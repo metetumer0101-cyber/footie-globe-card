@@ -19,6 +19,7 @@ import {
 import { RadarChart } from "./RadarChart";
 import { AttributeList } from "./AttributeList";
 import { tierStyles, type CardData } from "@/data/football";
+import { TransferTimeline } from "./TransferTimeline";
 import { cn } from "@/lib/utils";
 
 function InfoRow({
