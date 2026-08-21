@@ -92,6 +92,26 @@ function Page() {
           />
         </label>
 
+        <div className="flex items-center gap-1 rounded-xl bg-secondary/40 p-1">
+          {(["local", "world"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              )}
+            >
+              {m === "world" && <Globe2 className="h-3.5 w-3.5" />}
+              {t(`scout.${m}`)}
+            </button>
+          ))}
+        </div>
+
+        {mode === "world" && (
+          <WorldSearch query={filters.query} onSelect={(card) => setSelected(card)} />
+        )}
+
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {presets.map((p) => (
             <button
