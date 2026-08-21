@@ -114,15 +114,11 @@ function mockStandings(leagueId: number, season: number): Standings {
     "United", "City", "Rovers", "Wanderers", "Athletic", "Olympic", "Sporting", "Nacional",
     "Dynamo", "Spartak", "Rangers", "Celtic", "Basel", "Roma", "Milan", "Lyon",
   ];
-  const pool = known.length
-    ? known
-    : Array.from({ length: 10 }, (_, i) => ({
-        id: `mock-${leagueId}-${i}`,
-        name: `${leagueName.split(" ")[0]} ${placeholders[i % placeholders.length]}`,
-        club: `${leagueName.split(" ")[0]} ${placeholders[i % placeholders.length]}`,
-        league: leagueName,
-        nation: "🏳️",
-      }));
+  const needed = Math.max(0, 10 - known.length);
+  const padded = Array.from({ length: needed }, (_, i) => ({
+    name: `${leagueName.split(" ")[0]} ${placeholders[i % placeholders.length]}`,
+  }));
+  const pool = [...known.map((t) => ({ name: t.name })), ...padded];
   const rows: StandingRow[] = pool
     .map((t, i) => ({
       rank: i + 1,
