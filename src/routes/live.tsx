@@ -111,17 +111,27 @@ function LivePage() {
           <article key={fixture.id} className="card-surface rounded-3xl p-4">
             <header className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{fixture.league}</span>
-              <span
-                className={`rounded-full px-2 py-0.5 font-bold ${
-                  fixture.status === "live"
-                    ? "bg-primary/20 text-primary"
-                    : fixture.status === "halftime"
-                      ? "bg-accent/20 text-accent"
-                      : "bg-secondary text-muted-foreground"
-                }`}
-              >
-                {statusLabel(fixture, t)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`rounded-full px-2 py-0.5 font-bold ${
+                    fixture.status === "live"
+                      ? "bg-primary/20 text-primary"
+                      : fixture.status === "halftime"
+                        ? "bg-accent/20 text-accent"
+                        : "bg-secondary text-muted-foreground"
+                  }`}
+                >
+                  {statusLabel(fixture, t)}
+                </span>
+                <Link
+                  to="/live/$fixtureId"
+                  params={{ fixtureId: fixture.id }}
+                  className="rounded-full bg-secondary p-1 text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label={t("liveCenter.details", { defaultValue: "Match details" })}
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
             </header>
 
             <div className="mt-3 flex items-center justify-between gap-3">
