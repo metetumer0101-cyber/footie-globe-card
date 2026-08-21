@@ -360,6 +360,12 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "watchlist": "Watchlist",
         "gridView": "Grid view",
         "tableView": "Table view",
+        "world": "World database",
+        "local": "FootCard picks",
+        "worldHint": "Type at least 3 letters to search every player in the world",
+        "worldSearching": "Searching the world database…",
+        "worldTop": "Top scorers",
+        "loadingCard": "Building card…",
         "preset": {
           "wonderkids": "Wonderkids",
           "expiring": "Free agents & expiring",
