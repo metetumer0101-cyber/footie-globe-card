@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Radio, RefreshCw } from "lucide-react";
+import { Radio, RefreshCw, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
 import { useLiveFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
