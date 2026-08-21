@@ -252,6 +252,35 @@ export const languages: LanguageMeta[] = [
 export const resources: Record<string, { translation: Record<string, unknown> }> = {
   "en": {
     "translation": {
+      "scout": {
+        "subtitle": "Multi-parametric search across the FootCard database.",
+        "reset": "Reset",
+        "any": "Any",
+        "ageRange": "Age range",
+        "valueRange": "Market value",
+        "contractBefore": "Contract expiry",
+        "minStats": "Minimum stats",
+        "league": "League",
+        "nation": "Nation",
+        "player": "Player",
+        "rating": "Scout rating",
+        "watchlist": "Watchlist",
+        "gridView": "Grid view",
+        "tableView": "Table view",
+        "preset": {
+          "wonderkids": "Wonderkids",
+          "expiring": "Free agents & expiring",
+          "pace": "Pace monsters",
+          "playmakers": "Playmakers"
+        },
+        "sort": {
+          "scoutRating": "Sort: Scout rating",
+          "valueM": "Sort: Market value",
+          "age": "Sort: Age",
+          "potential": "Sort: Potential",
+          "form": "Sort: Form"
+        }
+      },
       "searchPlaceholder": "Search players, teams...",
       "nav": {
         "home": "Home",
@@ -411,6 +440,35 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
   },
   "tr": {
     "translation": {
+      "scout": {
+        "subtitle": "FootCard veritabanında cok parametreli arama.",
+        "reset": "Sıfırla",
+        "any": "Farketmez",
+        "ageRange": "Yaş aralığı",
+        "valueRange": "Piyasa değeri",
+        "contractBefore": "Sözleşme bitişi",
+        "minStats": "Minimum statlar",
+        "league": "Lig",
+        "nation": "Ülke",
+        "player": "Oyuncu",
+        "rating": "Scout puanı",
+        "watchlist": "Takip listesi",
+        "gridView": "Kart görünümü",
+        "tableView": "Tablo görünümü",
+        "preset": {
+          "wonderkids": "Genç yetenekler",
+          "expiring": "Sözleşmesi bitenler",
+          "pace": "Hız canavarları",
+          "playmakers": "Oyun kurucular"
+        },
+        "sort": {
+          "scoutRating": "Sırala: Scout puanı",
+          "valueM": "Sırala: Piyasa değeri",
+          "age": "Sırala: Yaş",
+          "potential": "Sırala: Potansiyel",
+          "form": "Sırala: Form"
+        }
+      },
       "searchPlaceholder": "Oyuncu, takım ara...",
       "nav": {
         "home": "Ana Sayfa",
