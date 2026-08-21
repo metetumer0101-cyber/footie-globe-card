@@ -126,7 +126,7 @@ function MatchDetailPage() {
                 {details?.events.map((e, i) => (
                   <li key={i} className="flex items-center gap-3 rounded-xl bg-secondary/40 px-3 py-2 text-xs">
                     <span className="w-10 shrink-0 font-extrabold tabular-nums text-muted-foreground">
-                      {e.elapsed}{e.extraTime ? `+${e.extraTime}` : "'}"
+                      {e.elapsed}{e.extraTime ? `+${e.extraTime}` : ""}{"'}"
                     </span>
                     <span className="shrink-0">
                       {e.type === "Goal" ? "⚽" : e.type === "Card" ? (e.detail.includes("yellow") ? "🟨" : "🟥") : e.type === "Subst" ? "🔄" : "•"}
