@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as CompetitionsRouteImport } from './routes/competitions'
 import { Route as GamesRouteImport } from './routes/games'
+import { Route as LiveRouteImport } from './routes/live'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ScoutRouteImport } from './routes/scout'
 import { Route as SquadRouteImport } from './routes/squad'
@@ -43,6 +44,11 @@ const GamesRoute = GamesRouteImport.update({
   path: '/games',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LiveRoute = LiveRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/compare': typeof CompareRoute
   '/competitions': typeof CompetitionsRoute
   '/games': typeof GamesRoute
+  '/live': typeof LiveRoute
   '/profile': typeof ProfileRoute
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/compare': typeof CompareRoute
   '/competitions': typeof CompetitionsRoute
   '/games': typeof GamesRoute
+  '/live': typeof LiveRoute
   '/profile': typeof ProfileRoute
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/compare': typeof CompareRoute
   '/competitions': typeof CompetitionsRoute
   '/games': typeof GamesRoute
+  '/live': typeof LiveRoute
   '/profile': typeof ProfileRoute
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/competitions'
     | '/games'
+    | '/live'
     | '/profile'
     | '/scout'
     | '/squad'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/competitions'
     | '/games'
+    | '/live'
     | '/profile'
     | '/scout'
     | '/squad'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/compare'
     | '/competitions'
     | '/games'
+    | '/live'
     | '/profile'
     | '/scout'
     | '/squad'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   CompareRoute: typeof CompareRoute
   CompetitionsRoute: typeof CompetitionsRoute
   GamesRoute: typeof GamesRoute
+  LiveRoute: typeof LiveRoute
   ProfileRoute: typeof ProfileRoute
   ScoutRoute: typeof ScoutRoute
   SquadRoute: typeof SquadRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/live': {
+      id: '/live'
+      path: '/live'
+      fullPath: '/live'
+      preLoaderRoute: typeof LiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompareRoute: CompareRoute,
   CompetitionsRoute: CompetitionsRoute,
   GamesRoute: GamesRoute,
+  LiveRoute: LiveRoute,
   ProfileRoute: ProfileRoute,
   ScoutRoute: ScoutRoute,
   SquadRoute: SquadRoute,
