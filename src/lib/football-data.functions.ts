@@ -269,7 +269,7 @@ export const getMatchDetails = createServerFn({ method: "GET" })
           }, []);
 
         const lineups: MatchLineup[] = (lineupsJson?.response ?? []).map((l) => ({
-          team: { id: l.team?.id ?? 0, name: l.team?.name ?? "—", logo: l.team?.logo ?? "", colors: l.team?.colors },
+          team: { id: l.team?.id ?? 0, name: l.team?.name ?? "—", logo: l.team?.logo ?? "" },
           formation: l.formation ?? "—",
           coach: l.coach?.name ?? "—",
           startXI: (l.startXI ?? []).map((p) => ({
