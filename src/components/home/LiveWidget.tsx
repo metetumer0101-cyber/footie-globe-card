@@ -3,12 +3,14 @@ import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, Radio } from "lucide-react";
 import { buildMockFeed } from "@/lib/live";
+import { useLiveFeed } from "@/hooks/use-live-feed";
 
 /** Compact home-page snapshot of today's fixtures; full center lives at /live. */
 export function LiveWidget() {
   const { t } = useTranslation();
-  const feed = useMemo(() => buildMockFeed(), []);
-  const fixtures = feed.fixtures.slice(0, 3);
+  const { data } = useLiveFeed();
+  const fallback = useMemo(() => buildMockFeed(), []);
+  const fixtures = (data?.fixtures ?? fallback.fixtures).slice(0, 3);
   if (!fixtures.length) return null;
 
   return (
