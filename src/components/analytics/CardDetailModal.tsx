@@ -119,6 +119,10 @@ export function CardDetailModal({
               </div>
             </div>
 
+            <TransferTimeline playerId={card.id} />
+
+
+
             <AttributeList titleKey="technical" attrs={card.technical} />
             <AttributeList titleKey="physicalCat" attrs={card.physical} />
             <AttributeList titleKey="mental" attrs={card.mental} />
