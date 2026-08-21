@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Radio, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
-import { getLiveFeed } from "@/lib/live.functions";
+import { useLiveFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
 import { players } from "@/data/football";
 import { bumpBadgeStat } from "@/lib/badges";
 import type { LiveFixture } from "@/lib/live";
