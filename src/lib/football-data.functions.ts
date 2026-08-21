@@ -86,6 +86,7 @@ export type Fixture = {
   status: "scheduled" | "live" | "halftime" | "finished";
   minute?: number;
   elapsed?: number;
+  source?: "api-football" | "mock";
 };
 
 async function apiFootball<T>(path: string, apiKey: string): Promise<T | null> {
