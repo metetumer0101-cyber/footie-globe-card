@@ -90,7 +90,7 @@ export type TeamCardData = {
   avgAge: number;
 };
 
-export type CardData = PlayerCardData | ManagerCardData | TeamCardData;
+export type CardData = PlayerCardData | ManagerCardData;
 export type ComparableEntity = CardData;
 
 const tech = (v: number[]): DeepAttr[] =>
