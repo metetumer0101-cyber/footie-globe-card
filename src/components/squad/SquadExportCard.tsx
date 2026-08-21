@@ -5,6 +5,7 @@ import {
   formations,
   managerById,
   playerById,
+  shortName,
   type Chemistry,
   type SquadRatings,
   type SquadState,
@@ -70,7 +71,7 @@ export const SquadExportCard = forwardRef<
                 </div>
               </div>
               <div className="mt-1 truncate text-xl font-black">
-                {p ? p.name.split(" ").slice(-1)[0] : "—"}
+                {p ? shortName(p.name) : "—"}
               </div>
               <div className="text-lg font-bold text-primary">{node.role}</div>
             </div>

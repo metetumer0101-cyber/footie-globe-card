@@ -117,6 +117,15 @@ export const emptySquad = (formation: FormationKey = "4-3-3"): SquadState => ({
   managerId: null,
 });
 
+export const shortName = (name: string): string => {
+  const parts = name.split(" ").filter(Boolean);
+  const last = parts[parts.length - 1] ?? name;
+  if (/^(jr\.?|sr\.?|ii|iii)$/i.test(last) && parts.length > 1) return parts[parts.length - 2] ?? last;
+  const prev = parts[parts.length - 2];
+  if (prev && /^(van|de|der|dos|da|di|el)$/i.test(prev)) return `${prev} ${last}`;
+  return last;
+};
+
 export const playerById = (id: string | null): PlayerCardData | null =>
   (id && players.find((p) => p.id === id)) || null;
 
