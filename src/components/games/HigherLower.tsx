@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Flame } from "lucide-react";
+import { bumpBadgeStat } from "@/lib/badges";
 import { HL_BASE_XP, HL_PENALTY, newHLRound, streakMultiplier, type HLRound } from "@/lib/games";
 
 export function HigherLower({ onAward }: { onAward: (xp: number) => void }) {
@@ -21,6 +22,7 @@ export function HigherLower({ onAward }: { onAward: (xp: number) => void }) {
     setResult({ ok: correct, xp: gained });
     onAward(gained);
     if (correct) {
+      bumpBadgeStat("higherLowerWins");
       setStreak((s) => {
         const next = s + 1;
         setBest((b) => Math.max(b, next));
