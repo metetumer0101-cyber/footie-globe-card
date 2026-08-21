@@ -19,7 +19,7 @@ export function SlotChip({
   slotId: string;
   role: string;
   playerId: string | null;
-  chem?: number;
+  chem?: number | undefined;
   compact?: boolean;
   onClick: () => void;
   onDragStart?: (slotId: string, e: React.PointerEvent) => void;
