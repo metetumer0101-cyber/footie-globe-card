@@ -14,13 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          total_xp: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          id: string
+          total_xp?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          total_xp?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      xp_events: {
+        Row: {
+          created_at: string
+          game: string
+          id: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          created_at?: string
+          game: string
+          id?: string
+          user_id: string
+          xp: number
+        }
+        Update: {
+          created_at?: string
+          game?: string
+          id?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      award_xp: { Args: { _game: string; _xp: number }; Returns: number }
+      weekly_leaderboard: {
+        Args: never
+        Returns: {
+          display_name: string
+          id: string
+          xp: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
