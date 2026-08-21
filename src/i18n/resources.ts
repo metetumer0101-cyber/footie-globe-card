@@ -381,6 +381,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Compare",
         "squad": "Squad Builder",
         "competitions": "Competitions",
+        "games": "Games",
         "profile": "Profile"
       },
       "playerOfTheDay": "Player of the Day",
@@ -662,6 +663,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Karşılaştır",
         "squad": "Kadro Kur",
         "competitions": "Yarışmalar",
+        "games": "Oyunlar",
         "profile": "Profil"
       },
       "playerOfTheDay": "Günün Oyuncusu",
@@ -821,6 +823,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Comparar",
         "squad": "Crear plantilla",
         "competitions": "Competiciones",
+        "games": "Juegos",
         "profile": "Perfil"
       },
       "playerOfTheDay": "Jugador del día",
@@ -937,6 +940,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Vergleichen",
         "squad": "Kader bauen",
         "competitions": "Wettbewerbe",
+        "games": "Spiele",
         "profile": "Profil"
       },
       "playerOfTheDay": "Spieler des Tages",
@@ -1053,6 +1057,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Comparer",
         "squad": "Composer l'équipe",
         "competitions": "Compétitions",
+        "games": "Jeux",
         "profile": "Profil"
       },
       "playerOfTheDay": "Joueur du jour",
@@ -1169,6 +1174,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Confronta",
         "squad": "Crea rosa",
         "competitions": "Competizioni",
+        "games": "Giochi",
         "profile": "Profilo"
       },
       "playerOfTheDay": "Giocatore del giorno",
@@ -1285,6 +1291,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Comparar",
         "squad": "Montar equipa",
         "competitions": "Competições",
+        "games": "Jogos",
         "profile": "Perfil"
       },
       "playerOfTheDay": "Jogador do dia",
@@ -1401,6 +1408,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Comparar",
         "squad": "Montar time",
         "competitions": "Competições",
+        "games": "Games",
         "profile": "Perfil"
       },
       "playerOfTheDay": "Jogador do dia",
@@ -1517,6 +1525,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Vergelijken",
         "squad": "Team bouwen",
         "competitions": "Competities",
+        "games": "Games",
         "profile": "Profiel"
       },
       "playerOfTheDay": "Speler van de dag",
@@ -1633,6 +1642,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "قارن",
         "squad": "بناء الفريق",
         "competitions": "المسابقات",
+        "games": "Games",
         "profile": "الملف الشخصي"
       },
       "playerOfTheDay": "لاعب اليوم",
@@ -1749,6 +1759,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "比較",
         "squad": "スカッド作成",
         "competitions": "大会",
+        "games": "Games",
         "profile": "プロフィール"
       },
       "playerOfTheDay": "本日の選手",
@@ -1865,6 +1876,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "비교",
         "squad": "스쿼드 빌더",
         "competitions": "대회",
+        "games": "Games",
         "profile": "프로필"
       },
       "playerOfTheDay": "오늘의 선수",
@@ -1981,6 +1993,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "对比",
         "squad": "阵容搭建",
         "competitions": "赛事",
+        "games": "Games",
         "profile": "个人资料"
       },
       "playerOfTheDay": "今日球员",
@@ -2097,6 +2110,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Сравнить",
         "squad": "Состав",
         "competitions": "Турниры",
+        "games": "Games",
         "profile": "Профиль"
       },
       "playerOfTheDay": "Игрок дня",
@@ -2213,6 +2227,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Σύγκριση",
         "squad": "Δημιουργία ομάδας",
         "competitions": "Διοργανώσεις",
+        "games": "Games",
         "profile": "Προφίλ"
       },
       "playerOfTheDay": "Παίκτης της ημέρας",
@@ -2329,6 +2344,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Porównaj",
         "squad": "Buduj skład",
         "competitions": "Rozgrywki",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "Zawodnik dnia",
@@ -2445,6 +2461,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Usporedi",
         "squad": "Složi momčad",
         "competitions": "Natjecanja",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "Igrač dana",
@@ -2561,6 +2578,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Упореди",
         "squad": "Састави тим",
         "competitions": "Такмичења",
+        "games": "Games",
         "profile": "Профил"
       },
       "playerOfTheDay": "Играч дана",
@@ -2677,6 +2695,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Jämför",
         "squad": "Bygg trupp",
         "competitions": "Tävlingar",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "Dagens spelare",
@@ -2793,6 +2812,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Sammenlign",
         "squad": "Bygg lag",
         "competitions": "Turneringer",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "Dagens spiller",
@@ -2909,6 +2929,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Sammenlign",
         "squad": "Byg hold",
         "competitions": "Turneringer",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "Dagens spiller",
@@ -3025,6 +3046,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Vertaa",
         "squad": "Rakenna joukkue",
         "competitions": "Kilpailut",
+        "games": "Games",
         "profile": "Profiili"
       },
       "playerOfTheDay": "Päivän pelaaja",
@@ -3141,6 +3163,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Bandingkan",
         "squad": "Susun Skuad",
         "competitions": "Kompetisi",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "Pemain Hari Ini",
@@ -3257,6 +3280,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "तुलना करें",
         "squad": "टीम बनाएं",
         "competitions": "प्रतियोगिताएं",
+        "games": "Games",
         "profile": "प्रोफ़ाइल"
       },
       "playerOfTheDay": "आज का खिलाड़ी",
@@ -3373,6 +3397,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "مقایسه",
         "squad": "ساخت تیم",
         "competitions": "مسابقات",
+        "games": "Games",
         "profile": "پروفایل"
       },
       "playerOfTheDay": "بازیکن روز",
@@ -3489,6 +3514,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Порівняти",
         "squad": "Скласти склад",
         "competitions": "Турніри",
+        "games": "Games",
         "profile": "Профіль"
       },
       "playerOfTheDay": "Гравець дня",
@@ -3605,6 +3631,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Porovnat",
         "squad": "Sestavit tým",
         "competitions": "Soutěže",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "Hráč dne",
@@ -3721,6 +3748,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Compară",
         "squad": "Creează lotul",
         "competitions": "Competiții",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "Jucătorul zilei",
@@ -3837,6 +3865,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Összehasonlítás",
         "squad": "Keretépítő",
         "competitions": "Versenyek",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "A nap játékosa",
@@ -3953,6 +3982,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Сравни",
         "squad": "Състави отбор",
         "competitions": "Турнири",
+        "games": "Games",
         "profile": "Профил"
       },
       "playerOfTheDay": "Играч на деня",
@@ -4069,6 +4099,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "เปรียบเทียบ",
         "squad": "จัดทีม",
         "competitions": "การแข่งขัน",
+        "games": "Games",
         "profile": "โปรไฟล์"
       },
       "playerOfTheDay": "นักเตะประจำวัน",
@@ -4185,6 +4216,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "So sánh",
         "squad": "Xây đội hình",
         "competitions": "Giải đấu",
+        "games": "Games",
         "profile": "Hồ sơ"
       },
       "playerOfTheDay": "Cầu thủ trong ngày",
@@ -4301,6 +4333,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "השוואה",
         "squad": "בניית סגל",
         "competitions": "תחרויות",
+        "games": "Games",
         "profile": "פרופיל"
       },
       "playerOfTheDay": "שחקן היום",
@@ -4417,6 +4450,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Linganisha",
         "squad": "Unda Kikosi",
         "competitions": "Mashindano",
+        "games": "Games",
         "profile": "Wasifu"
       },
       "playerOfTheDay": "Mchezaji wa Siku",
@@ -4533,6 +4567,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Porovnať",
         "squad": "Zostaviť tím",
         "competitions": "Súťaže",
+        "games": "Games",
         "profile": "Profil"
       },
       "playerOfTheDay": "Hráč dňa",
