@@ -30,7 +30,7 @@ export const Route = createFileRoute("/live")({
   component: LivePage,
 });
 
-function statusLabel(fixture: LiveFixture, t: (k: string, o?: Record<string, unknown>) => string) {
+function statusLabel(fixture: LiveFixture, t: (k: string, o: { defaultValue: string }) => string) {
   if (fixture.status === "live") return `${fixture.minute}'`;
   if (fixture.status === "halftime") return t("liveCenter.halftime", { defaultValue: "HT" });
   if (fixture.status === "finished") return t("liveCenter.finished", { defaultValue: "FT" });
