@@ -32,8 +32,8 @@ export const Route = createFileRoute("/live")({
 
 function statusLabel(fixture: LiveFixture, t: (k: string, o?: Record<string, unknown>) => string) {
   if (fixture.status === "live") return `${fixture.minute}'`;
-  if (fixture.status === "halftime") return t("live.halftime", { defaultValue: "HT" });
-  if (fixture.status === "finished") return t("live.finished", { defaultValue: "FT" });
+  if (fixture.status === "halftime") return t("liveCenter.halftime", { defaultValue: "HT" });
+  if (fixture.status === "finished") return t("liveCenter.finished", { defaultValue: "FT" });
   return fixture.kickoff;
 }
 
@@ -65,10 +65,10 @@ function LivePage() {
           <div>
             <h1 className="flex items-center gap-2 text-lg font-extrabold">
               <Radio className="h-5 w-5 text-primary" />
-              {t("live.title", { defaultValue: "Live Matches" })}
+              {t("liveCenter.title", { defaultValue: "Live Matches" })}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {t("live.subtitle", {
+              {t("liveCenter.subtitle", {
                 defaultValue: "{{count}} match(es) in play · today's fixtures",
                 count: liveCount,
               })}
@@ -77,10 +77,10 @@ function LivePage() {
           <button
             onClick={() => {
               void refetch();
-              toast.success(t("live.refreshed", { defaultValue: "Scores refreshed" }));
+              toast.success(t("liveCenter.refreshed", { defaultValue: "Scores refreshed" }));
             }}
             className="grid h-10 w-10 place-items-center rounded-full bg-secondary text-foreground"
-            aria-label={t("live.refresh", { defaultValue: "Refresh" })}
+            aria-label={t("liveCenter.refresh", { defaultValue: "Refresh" })}
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           </button>
@@ -162,7 +162,7 @@ function LivePage() {
 
         {data?.source === "mock" && (
           <p className="pb-2 text-center text-[11px] text-muted-foreground">
-            {t("live.mockNote", { defaultValue: "Demo feed — connect a live data key for real fixtures." })}
+            {t("liveCenter.mockNote", { defaultValue: "Demo feed — connect a live data key for real fixtures." })}
           </p>
         )}
       </div>
