@@ -410,6 +410,12 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "startXI": "Starting XI",
         "bench": "Bench"
       },
+      "competitions": {
+        "subtitle": "League tables and fixtures from top competitions.",
+        "standings": "Standings",
+        "fixtures": "Fixtures",
+        "team": "Team"
+      },
       "badges": {
         "title": "Badge Collection"
       },
