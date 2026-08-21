@@ -726,6 +726,12 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "startXI": "İlk 11",
         "bench": "Yedekler"
       },
+      "competitions": {
+        "subtitle": "Önemli liglerin puan durumu ve fikstürleri.",
+        "standings": "Puan Durumu",
+        "fixtures": "Fikstür",
+        "team": "Takım"
+      },
       "badges": {
         "title": "Rozet Koleksiyonu"
       },
