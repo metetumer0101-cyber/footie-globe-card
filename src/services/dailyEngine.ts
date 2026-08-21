@@ -42,6 +42,35 @@ function pickFrom<T>(arr: readonly T[], rnd: () => number): T {
   return arr[Math.floor(rnd() * arr.length) % arr.length]!;
 }
 
+const tierWeight: Record<string, number> = { icon: 5, elite: 4, gold: 3, silver: 2, bronze: 1 };
+
+/** Popularity score used to bias daily puzzles toward trending players. */
+export function popularityScore(p: PlayerCardData): number {
+  const core = (p.core.pac + p.core.sho + p.core.pas + p.core.dri + p.core.def + p.core.phy) / 6;
+  return (tierWeight[p.tier] ?? 1) * 12 + p.form * 4 + core / 2 + Math.max(0, 26 - p.age);
+}
+
+/**
+ * The live player database, ordered by trending/popularity so daily puzzles
+ * automatically sample recognisable names as the database grows.
+ */
+export function trendingPlayers(limit = 12): PlayerCardData[] {
+  return [...players].sort((a, b) => popularityScore(b) - popularityScore(a)).slice(0, limit);
+}
+
+/** Weighted sample: popular players appear more often, everyone stays possible. */
+function pickWeighted(pool: readonly PlayerCardData[], rnd: () => number): PlayerCardData {
+  const weights = pool.map(popularityScore);
+  const total = weights.reduce((s, w) => s + w, 0);
+  let cursor = rnd() * total;
+  for (let i = 0; i < pool.length; i++) {
+    cursor -= weights[i]!;
+    if (cursor <= 0) return pool[i]!;
+  }
+  return pool[pool.length - 1]!;
+}
+
+
 export type DailyChallenge = {
   /** Stable id for the day, e.g. "2026-08-21". */
   id: string;
