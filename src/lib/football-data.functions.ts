@@ -108,27 +108,40 @@ function today(): string {
 }
 
 function mockStandings(leagueId: number, season: number): Standings {
-  const leagueTeams = teams.filter((t) => t.league.toLowerCase().includes(leagueIdToName(leagueId).toLowerCase()));
-  const pool = leagueTeams.length ? leagueTeams : teams.slice(0, 6);
+  const leagueName = leagueIdToName(leagueId);
+  const known = teams.filter((t) => t.league.toLowerCase().includes(leagueName.toLowerCase()));
+  const placeholders = [
+    "United", "City", "Rovers", "Wanderers", "Athletic", "Olympic", "Sporting", "Nacional",
+    "Dynamo", "Spartak", "Rangers", "Celtic", "Basel", "Roma", "Milan", "Lyon",
+  ];
+  const pool = known.length
+    ? known
+    : Array.from({ length: 10 }, (_, i) => ({
+        id: `mock-${leagueId}-${i}`,
+        name: `${leagueName.split(" ")[0]} ${placeholders[i % placeholders.length]}`,
+        club: `${leagueName.split(" ")[0]} ${placeholders[i % placeholders.length]}`,
+        league: leagueName,
+        nation: "🏳️",
+      }));
   const rows: StandingRow[] = pool
     .map((t, i) => ({
       rank: i + 1,
       team: { id: 1000 + i, name: t.name, logo: "" },
       points: Math.max(0, 60 - i * 8 + (i % 3) * 4),
       played: 20 + i,
-      wins: 12 - i,
+      wins: Math.max(0, 12 - i),
       draws: 4 + (i % 3),
       losses: i + 2,
-      goalsFor: 50 - i * 4,
+      goalsFor: Math.max(0, 50 - i * 4),
       goalsAgainst: 20 + i * 3,
-      goalDiff: 30 - i * 7,
+      goalDiff: Math.max(0, 50 - i * 4) - (20 + i * 3),
       form: ["W", "W", "D", "L", "W"].slice(i % 2, 5 - (i % 2)).join("") || "WDWLW",
     }))
     .sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff);
   return {
     leagueId,
     season,
-    leagueName: leagueIdToName(leagueId),
+    leagueName,
     logo: "",
     rows,
     source: "mock",
