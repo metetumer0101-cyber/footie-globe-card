@@ -105,6 +105,8 @@ export type SquadState = {
   starters: Record<string, string | null>;
   bench: (string | null)[];
   managerId: string | null;
+  /** Full cards of world-database players picked into this squad (persisted with saves). */
+  extras?: Record<string, PlayerCardData>;
 };
 
 export const BENCH_SLOTS = 7;
@@ -115,7 +117,19 @@ export const emptySquad = (formation: FormationKey = "4-3-3"): SquadState => ({
   starters: Object.fromEntries(formations[formation].map((n) => [n.id, null])),
   bench: Array.from({ length: BENCH_SLOTS }, () => null),
   managerId: null,
+  extras: {},
 });
+
+/** Map API-Football position words ("Goalkeeper", "Defender", …) to FootCard codes. */
+export const apiPositionCode = (pos?: string | null): string => {
+  if (!pos) return "CM";
+  const p = pos.trim().toLowerCase();
+  if (p.startsWith("goal")) return "GK";
+  if (p.startsWith("def")) return "CB";
+  if (p.startsWith("mid")) return "CM";
+  if (p.startsWith("att") || p.startsWith("for")) return "ST";
+  return pos.toUpperCase();
+};
 
 export const shortName = (name: string): string => {
   const parts = name.split(" ").filter(Boolean);
@@ -126,8 +140,11 @@ export const shortName = (name: string): string => {
   return last;
 };
 
-export const playerById = (id: string | null): PlayerCardData | null =>
-  (id && players.find((p) => p.id === id)) || null;
+export const playerById = (
+  id: string | null,
+  extras?: Record<string, PlayerCardData>,
+): PlayerCardData | null =>
+  (id && (extras?.[id] ?? players.find((p) => p.id === id))) || null;
 
 export const managerById = (id: string | null): ManagerCardData | null =>
   (id && managers.find((m) => m.id === id)) || null;
@@ -147,7 +164,7 @@ export const computeChemistry = (squad: SquadState): Chemistry => {
   let filled = 0;
 
   const entries = nodes
-    .map((n) => ({ node: n, player: playerById(squad.starters[n.id] ?? null) }))
+    .map((n) => ({ node: n, player: playerById(squad.starters[n.id] ?? null, squad.extras) }))
     .filter((e): e is { node: PitchNode; player: PlayerCardData } => e.player !== null);
 
   for (const { node, player } of entries) {
@@ -196,7 +213,7 @@ const parseValueM = (v: string) => {
 export const computeRatings = (squad: SquadState): SquadRatings => {
   const nodes = formations[squad.formation];
   const rows = nodes
-    .map((n) => ({ role: n.role, player: playerById(squad.starters[n.id] ?? null) }))
+    .map((n) => ({ role: n.role, player: playerById(squad.starters[n.id] ?? null, squad.extras) }))
     .filter((r): r is { role: string; player: PlayerCardData } => r.player !== null);
 
   const avg = (list: PlayerCardData[], pick: (p: PlayerCardData) => number) =>
