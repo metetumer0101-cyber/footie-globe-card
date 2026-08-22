@@ -1,7 +1,7 @@
 const KEY = "footcard:settings";
 const NAMES_KEY = "footcard:fav-names";
 
-export type UserSettings = { league?: string };
+export type UserSettings = { league?: string | undefined };
 
 export function readSettings(): UserSettings {
   if (typeof window === "undefined") return {};
