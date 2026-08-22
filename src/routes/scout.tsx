@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Globe2, LayoutGrid, Rows3, Search, SlidersHorizontal, Sparkles, Star, X } from "lucide-react";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { z } from "zod";
 import { AppShell } from "@/components/layout/AppShell";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
@@ -23,12 +21,12 @@ import {
 import type { CardData } from "@/data/football";
 import { cn } from "@/lib/utils";
 
-const scoutSearchSchema = z.object({
-  q: fallback(z.string(), "").default(""),
-});
+type ScoutSearch = { q?: string };
 
 export const Route = createFileRoute("/scout")({
-  validateSearch: zodValidator(scoutSearchSchema),
+  validateSearch: (search: Record<string, unknown>): ScoutSearch => ({
+    q: typeof search.q === "string" ? search.q : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Scout Engine — FootCard" },
