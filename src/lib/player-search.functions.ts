@@ -166,7 +166,6 @@ export const getLeagueTopPlayers = createServerFn({ method: "GET" })
           );
           rows = retry?.response ?? [];
         }
-        console.log('[top] rows', rows.length);
         const list = (rows ?? [])
           .filter((r) => r.player?.id)
           .map((r) => ({
