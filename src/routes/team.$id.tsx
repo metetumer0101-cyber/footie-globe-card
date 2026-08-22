@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { InfoRow } from "@/components/analytics/CardDetailModal";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { getTeamPage, getTeamPageByName, searchWorldTeams } from "@/lib/entity.functions";
 import { teams, tierStyles, type TeamStats } from "@/data/football";
 import { cn } from "@/lib/utils";
@@ -214,6 +215,7 @@ function TeamPage() {
                     </span>
                   )}
                 </div>
+                {name && <FavoriteButton type="team" id={id} name={name} />}
               </div>
 
               {api && (api.founded || api.venueName || api.country) && (

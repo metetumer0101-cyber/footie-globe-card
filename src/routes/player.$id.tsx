@@ -19,6 +19,7 @@ import { RadarChart } from "@/components/analytics/RadarChart";
 import { AttributeList } from "@/components/analytics/AttributeList";
 import { TransferTimeline } from "@/components/analytics/TransferTimeline";
 import { InfoRow } from "@/components/analytics/CardDetailModal";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { getWorldPlayerCard } from "@/lib/player-search.functions";
 import { players, tierStyles, type PlayerCardData } from "@/data/football";
 import { cn } from "@/lib/utils";
@@ -113,17 +114,20 @@ function PlayerPage() {
             {t("playerPage.back")}
           </Link>
           {card && (
-            <button
-              onClick={() => void share()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-secondary/60 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-secondary"
-            >
-              {copied ? (
-                <Check className="h-3.5 w-3.5 text-primary" />
-              ) : (
-                <Share2 className="h-3.5 w-3.5" />
-              )}
-              {copied ? t("playerPage.copied") : t("playerPage.share")}
-            </button>
+            <div className="flex items-center gap-2">
+              <FavoriteButton type="player" id={card.id} name={card.name} />
+              <button
+                onClick={() => void share()}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-secondary/60 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-secondary"
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-primary" />
+                ) : (
+                  <Share2 className="h-3.5 w-3.5" />
+                )}
+                {copied ? t("playerPage.copied") : t("playerPage.share")}
+              </button>
+            </div>
           )}
         </div>
 
