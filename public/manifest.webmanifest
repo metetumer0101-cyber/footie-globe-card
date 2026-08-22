@@ -1,0 +1,21 @@
+{
+  "name": "FootCard — Football Scout & Player Cards",
+  "short_name": "FootCard",
+  "description": "Mobile-first football scouting platform: player cards, comparisons, squad builder, live matches and competitions in 35 languages.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0F17",
+  "theme_color": "#10B981",
+  "lang": "en",
+  "categories": ["sports", "entertainment"],
+  "icons": [
+    { "src": "/icon-64.png", "sizes": "64x64", "type": "image/png" },
+    { "src": "/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
