@@ -27,6 +27,7 @@ import { Route as LiveFixtureIdRouteImport } from './routes/live.$fixtureId'
 import { Route as PlayerIdRouteImport } from './routes/player.$id'
 import { Route as TeamIdRouteImport } from './routes/team.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
+import { Route as AuthenticatedAdminCardsRouteImport } from './routes/_authenticated.admin.cards'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -117,6 +118,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminCardsRoute = AuthenticatedAdminCardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
+  '/admin/cards': typeof AuthenticatedAdminCardsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live': typeof LiveIndexRoute
+  '/admin/cards': typeof AuthenticatedAdminCardsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
+  '/_authenticated/admin/cards': typeof AuthenticatedAdminCardsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/player/$id'
     | '/team/$id'
     | '/live/'
+    | '/admin/cards'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/player/$id'
     | '/team/$id'
     | '/live'
+    | '/admin/cards'
     | '/admin'
   id:
     | '__root__'
@@ -231,6 +242,7 @@ export interface FileRouteTypes {
     | '/player/$id'
     | '/team/$id'
     | '/live/'
+    | '/_authenticated/admin/cards'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -379,14 +391,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/cards': {
+      id: '/_authenticated/admin/cards'
+      path: '/cards'
+      fullPath: '/admin/cards'
+      preLoaderRoute: typeof AuthenticatedAdminCardsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminCardsRoute: typeof AuthenticatedAdminCardsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminCardsRoute: AuthenticatedAdminCardsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
