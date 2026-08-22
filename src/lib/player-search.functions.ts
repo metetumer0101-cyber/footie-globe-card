@@ -23,6 +23,7 @@ export type WorldPlayer = {
 export type WorldSearchResult = {
   players: WorldPlayer[];
   source: "api-football" | "mock";
+  paging: { current: number; total: number };
 };
 
 async function apiFootball<T>(path: string, apiKey: string): Promise<T | null> {
@@ -52,6 +53,7 @@ function num(raw?: string | number | null): number | undefined {
 }
 
 type ProfileResponse = {
+  paging?: { current?: number; total?: number };
   response?: {
     player?: {
       id?: number;
@@ -72,6 +74,7 @@ function mockSearch(query: string): WorldSearchResult {
   const q = query.trim().toLowerCase();
   return {
     source: "mock",
+    paging: { current: 1, total: 1 },
     players: mockPlayers
       .filter((p) => !q || p.name.toLowerCase().includes(q))
       .map((p, i) => ({
@@ -94,7 +97,7 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<WorldSearchResult> => {
     const query = data.query.trim();
     const page = data.page ?? 1;
-    if (query.length < 3) return { players: [], source: "mock" };
+    if (query.length < 3) return { players: [], source: "mock", paging: { current: 1, total: 1 } };
 
     const apiKey = process.env["API_FOOTBALL_KEY"];
     const fallback = mockSearch(query);
@@ -123,8 +126,15 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
             heightCm: num(p.height?.replace(/\D/g, "")),
             weightKg: num(p.weight?.replace(/\D/g, "")),
           }));
-        if (!list.length) return null;
-        return { players: list, source: "api-football" as const };
+        // Page 1 with zero hits falls back to the local catalogue; an empty
+        // page beyond 1 just means the search is exhausted — stop paging.
+        if (!list.length && page === 1) return null;
+        const totalPages = json?.paging?.total ?? page;
+        return {
+          players: list,
+          paging: { current: json?.paging?.current ?? page, total: Math.max(totalPages, 1) },
+          source: "api-football" as const,
+        };
       },
       fallback,
     );
@@ -180,7 +190,11 @@ export const getLeagueTopPlayers = createServerFn({ method: "GET" })
             club: r.statistics?.[0]?.team?.name,
           }));
         if (!list.length) return null;
-        return { players: list, source: "api-football" as const };
+        return {
+          players: list,
+          paging: { current: 1, total: 1 },
+          source: "api-football" as const,
+        };
       },
       fallback,
     );

@@ -364,6 +364,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "local": "FootCard picks",
         "worldHint": "Type at least 3 letters to search every player in the world",
         "worldSearching": "Searching the world database…",
+        "loadMore": "Load more results",
+        "loadingMore": "Loading more…",
         "worldTop": "Top scorers",
         "loadingCard": "Building card…",
         "preset": {
@@ -692,6 +694,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "local": "FootCard seçkisi",
         "worldHint": "Dünyadaki tüm oyuncularda aramak için en az 3 harf yaz",
         "worldSearching": "Dünya veritabanında aranıyor…",
+        "loadMore": "Daha fazla sonuç yükle",
+        "loadingMore": "Yükleniyor…",
         "worldTop": "Gol kralları",
         "loadingCard": "Kart hazırlanıyor…",
         "preset": {
