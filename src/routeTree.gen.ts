@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CompareRouteImport } from './routes/compare'
@@ -20,14 +21,20 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ScoutRouteImport } from './routes/scout'
 import { Route as SquadRouteImport } from './routes/squad'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as LiveIndexRouteImport } from './routes/live.index'
 import { Route as LiveFixtureIdRouteImport } from './routes/live.$fixtureId'
 import { Route as PlayerIdRouteImport } from './routes/player.$id'
 import { Route as TeamIdRouteImport } from './routes/team.$id'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -80,6 +87,11 @@ const SquadRoute = SquadRouteImport.update({
   path: '/squad',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const LiveIndexRoute = LiveIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -100,6 +112,11 @@ const TeamIdRoute = TeamIdRouteImport.update({
   path: '/team/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -113,10 +130,12 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/live/$fixtureId': typeof LiveFixtureIdRoute
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,10 +152,12 @@ export interface FileRoutesByTo {
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live': typeof LiveIndexRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/compare': typeof CompareRoute
@@ -147,10 +168,12 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/live/$fixtureId': typeof LiveFixtureIdRoute
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -166,10 +189,12 @@ export interface FileRouteTypes {
     | '/profile'
     | '/scout'
     | '/squad'
+    | '/admin'
     | '/live/$fixtureId'
     | '/player/$id'
     | '/team/$id'
     | '/live/'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -186,9 +211,11 @@ export interface FileRouteTypes {
     | '/player/$id'
     | '/team/$id'
     | '/live'
+    | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/about'
     | '/auth'
     | '/compare'
@@ -199,14 +226,17 @@ export interface FileRouteTypes {
     | '/profile'
     | '/scout'
     | '/squad'
+    | '/_authenticated/admin'
     | '/live/$fixtureId'
     | '/player/$id'
     | '/team/$id'
     | '/live/'
+    | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   CompareRoute: typeof CompareRoute
@@ -228,6 +258,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -300,6 +337,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SquadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/live/': {
       id: '/live/'
       path: '/'
@@ -328,8 +372,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeamIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface LiveRouteChildren {
   LiveFixtureIdRoute: typeof LiveFixtureIdRoute
@@ -345,6 +418,7 @@ const LiveRouteWithChildren = LiveRoute._addFileChildren(LiveRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   CompareRoute: CompareRoute,
