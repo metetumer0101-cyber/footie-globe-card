@@ -43,6 +43,9 @@ export const revokeRole = createServerFn({ method: "POST" })
   .inputValidator((input: { userId: string; role: "admin" | "moderator" }) => input)
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
+    if (data.userId === context.userId && data.role === "admin") {
+      throw new Error("You cannot revoke your own admin role");
+    }
     const { error } = await context.supabase
       .from("user_roles")
       .delete()
@@ -50,6 +53,66 @@ export const revokeRole = createServerFn({ method: "POST" })
       .eq("role", data.role);
     if (error) throw error;
     return { ok: true };
+  });
+
+export type UserWithRoles = {
+  id: string;
+  displayName: string;
+  roles: ("admin" | "moderator")[];
+};
+
+export const listUsersWithRoles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { search?: string; page?: number; limit?: number }) => input)
+  .handler(async ({ data, context }): Promise<{ rows: UserWithRoles[]; count: number }> => {
+    await requireAdmin(context);
+    let query = context.supabase
+      .from("profiles")
+      .select("id, display_name", { count: "exact" });
+    if (data.search) {
+      const q = escapeLike(data.search);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        data.search.trim(),
+      );
+      query = isUuid
+        ? query.or(`display_name.ilike.%${q}%,id.eq.${data.search.trim()}`)
+        : query.ilike("display_name", `%${q}%`);
+    }
+    const limit = data.limit ?? DEFAULT_PAGE_SIZE;
+    const { from, to } = range(data.page ?? 1, limit);
+    const { data: profiles, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw error;
+
+    const ids = (profiles ?? []).map((p) => p.id);
+    // Also surface privileged users who have a role but no profile row yet.
+    const { data: allRoles, error: rolesError } = await context.supabase
+      .from("user_roles")
+      .select("user_id, role");
+    if (rolesError) throw rolesError;
+
+    const rolesByUser = new Map<string, ("admin" | "moderator")[]>();
+    for (const r of allRoles ?? []) {
+      const list = rolesByUser.get(r.user_id) ?? [];
+      list.push(r.role as "admin" | "moderator");
+      rolesByUser.set(r.user_id, list);
+    }
+
+    const rows: UserWithRoles[] = (profiles ?? []).map((p) => ({
+      id: p.id,
+      displayName: p.display_name,
+      roles: rolesByUser.get(p.id) ?? [],
+    }));
+
+    // Merge in role-holders missing from this page of profiles.
+    const seen = new Set(rows.map((r) => r.id));
+    for (const [userId, roles] of rolesByUser) {
+      if (!seen.has(userId)) {
+        rows.unshift({ id: userId, displayName: "(no profile)", roles });
+      }
+    }
+    return { rows, count: (count ?? 0) + (rows.length - (profiles?.length ?? 0)) };
   });
 
 export const listCards = createServerFn({ method: "GET" })

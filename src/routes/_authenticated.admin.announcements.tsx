@@ -11,6 +11,7 @@ import {
   deleteAnnouncement,
 } from "@/lib/admin.functions";
 import type { Database } from "@/integrations/supabase/types";
+import { useAdminRole } from "@/components/admin/role-context";
 
 export const Route = createFileRoute("/_authenticated/admin/announcements")({
   component: AdminAnnouncementsPage,
@@ -29,6 +30,7 @@ const emptyAnnouncement: AnnouncementInsert = {
 
 function AdminAnnouncementsPage() {
   const queryClient = useQueryClient();
+  const { isAdmin } = useAdminRole();
   const [editing, setEditing] = useState<AnnouncementRow | null>(null);
   const [creating, setCreating] = useState(false);
   const load = useServerFn(listAnnouncements);
@@ -77,7 +79,7 @@ function AdminAnnouncementsPage() {
                 <button onClick={() => setEditing(row)} className="rounded-lg p-2 hover:bg-secondary">
                   <Edit2 className="h-4 w-4" />
                 </button>
-                <DeleteButton id={row.id} title={row.title} />
+                {isAdmin && <DeleteButton id={row.id} title={row.title} />}
               </div>
             </div>
           ))}

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Edit2, Loader2, Plus, Trash2, X } from "lucide-react";
 import { listPages, createPage, updatePage, deletePage } from "@/lib/admin.functions";
 import type { Database } from "@/integrations/supabase/types";
+import { useAdminRole } from "@/components/admin/role-context";
 
 export const Route = createFileRoute("/_authenticated/admin/pages")({
   component: AdminPagesPage,
@@ -24,6 +25,7 @@ const emptyPage: PageInsert = {
 
 function AdminPagesPage() {
   const queryClient = useQueryClient();
+  const { isAdmin } = useAdminRole();
   const [editing, setEditing] = useState<PageRow | null>(null);
   const [creating, setCreating] = useState(false);
   const load = useServerFn(listPages);
@@ -72,7 +74,7 @@ function AdminPagesPage() {
                 <button onClick={() => setEditing(row)} className="rounded-lg p-2 hover:bg-secondary">
                   <Edit2 className="h-4 w-4" />
                 </button>
-                <DeleteButton slug={row.slug} title={row.title} />
+                {isAdmin && <DeleteButton slug={row.slug} title={row.title} />}
               </div>
             </div>
           ))}
