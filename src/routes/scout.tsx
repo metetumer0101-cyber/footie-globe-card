@@ -52,9 +52,11 @@ const sortKeys: SortKey[] = ["scoutRating", "valueM", "age", "potential", "form"
 
 function Page() {
   const { t } = useTranslation();
+  const { q } = Route.useSearch();
   const [filters, setFilters] = useState<ScoutFilterState>({
     ...defaultFilters,
     minStats: { ...emptyStats },
+    query: q ?? "",
   });
   const [sort, setSort] = useState<SortKey>("scoutRating");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
@@ -63,8 +65,16 @@ function Page() {
   const [preset, setPreset] = useState<PresetKey | null>(null);
   const [onlySaved, setOnlySaved] = useState(false);
   const [selected, setSelected] = useState<CardData | null>(null);
-  const [mode, setMode] = useState<"local" | "world">("local");
+  const [mode, setMode] = useState<"local" | "world">(q ? "world" : "local");
   const { has, toggle, ids } = useWatchlist();
+
+  // Keep the query in sync when arriving from the global header search.
+  useEffect(() => {
+    if (q) {
+      setMode("world");
+      setFilters((f) => (f.query === q ? f : { ...f, query: q }));
+    }
+  }, [q]);
 
   const results = useMemo(() => {
     const list = filterAndSort(filters, sort, dir);
