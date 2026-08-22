@@ -266,7 +266,7 @@ export const getWorldPlayerCard = createServerFn({ method: "GET" })
         const minutes = Math.max(90, s?.games?.minutes ?? apps * 60);
         const per90 = (v?: number) => ((v ?? 0) / minutes) * 90;
         const rating = parseFloat(s?.games?.rating ?? "6.6");
-        const base = clamp(50 + (Number.isFinite(rating) ? (rating - 6) * 12 : 6));
+        const base = clamp(40 + (Number.isFinite(rating) ? (rating - 5.5) * 24 : 22));
         const seed = String(p.id);
         const pos = (s?.games?.position ?? "MF").slice(0, 3).toUpperCase();
 
