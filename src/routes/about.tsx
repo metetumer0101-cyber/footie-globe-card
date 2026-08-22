@@ -1,16 +1,54 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, GitCompareArrows, Languages, Radar, Trophy, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  GitCompareArrows,
+  Languages,
+  Radar,
+  Trophy,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import brandIcon from "@/assets/footcard-icon.png";
+import { getPageBySlug } from "@/lib/cms.functions";
+
+const iconMap: Record<string, LucideIcon> = {
+  Users,
+  GitCompareArrows,
+  Radar,
+  Trophy,
+  Languages,
+};
+
+interface PageBlock {
+  icon?: keyof typeof iconMap;
+  title: string;
+  text: string;
+}
 
 export const Route = createFileRoute("/about")({
-  head: () => ({
+  loader: async () => {
+    const page = await getPageBySlug({ data: { slug: "about" } });
+    if (!page) throw notFound();
+    return page;
+  },
+  head: ({ loaderData }) => ({
     meta: [
-      { title: "About — FootCard" },
-      { name: "description", content: "Learn about FootCard: the football scouting and player card platform." },
-      { property: "og:title", content: "About — FootCard" },
-      { property: "og:description", content: "The football scouting platform: cards, comparisons, squads and live matches." },
+      { title: `${loaderData?.title ?? "About"} — FootCard` },
+      {
+        name: "description",
+        content:
+          (loaderData?.meta_description as string | undefined) ??
+          "Learn about FootCard: the football scouting and player card platform.",
+      },
+      { property: "og:title", content: `${loaderData?.title ?? "About"} — FootCard` },
+      {
+        property: "og:description",
+        content:
+          (loaderData?.meta_description as string | undefined) ??
+          "The football scouting platform: cards, comparisons, squads and live matches.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -18,16 +56,12 @@ export const Route = createFileRoute("/about")({
   component: AboutPage,
 });
 
-const pillars = [
-  { icon: Users, title: "Player & Manager Cards", text: "Two-stage interactive cards with tier frames, 6 core attributes and 30+ deep analytics — no overall rating, just pure detail." },
-  { icon: GitCompareArrows, title: "Comparison Engine", text: "Head-to-head radar overlays for players, managers and teams, with social-ready image export." },
-  { icon: Radar, title: "Scout Engine", text: "Multi-parametric search across the FootCard picks and the worldwide player database — filter by age, value, contract, stats and more." },
-  { icon: Trophy, title: "Live Center & Games", text: "Real fixtures with 30-second auto-refresh, plus daily puzzles, XP and global leaderboards." },
-  { icon: Languages, title: "35 Languages", text: "Fully localized experience for the top football nations, including RTL support." },
-];
-
 function AboutPage() {
   const { t } = useTranslation();
+  const page = Route.useLoaderData();
+  const body = (page.body ?? {}) as { blocks?: PageBlock[] };
+  const pillars = body.blocks ?? [];
+
   return (
     <AppShell>
       <article className="space-y-6">
@@ -47,17 +81,22 @@ function AboutPage() {
         </header>
 
         <section className="grid gap-3 sm:grid-cols-2">
-          {pillars.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="card-surface rounded-2xl p-4">
-              <div className="flex items-center gap-2">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary">
-                  <Icon className="h-4.5 w-4.5" />
-                </span>
-                <h2 className="text-sm font-bold">{title}</h2>
+          {pillars.map(({ icon, title, text }) => {
+            const Icon = icon ? iconMap[icon] : null;
+            return (
+              <div key={title} className="card-surface rounded-2xl p-4">
+                <div className="flex items-center gap-2">
+                  {Icon && (
+                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary">
+                      <Icon className="h-4.5 w-4.5" />
+                    </span>
+                  )}
+                  <h2 className="text-sm font-bold">{title}</h2>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{text}</p>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{text}</p>
-            </div>
-          ))}
+            );
+          })}
         </section>
 
         <p className="text-center text-xs text-muted-foreground/70">{t("footer.dataNote")}</p>

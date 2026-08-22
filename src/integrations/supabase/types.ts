@@ -35,6 +35,231 @@ export type Database = {
         }
         Relationships: []
       }
+      cms_announcements: {
+        Row: {
+          active: boolean
+          body: string | null
+          created_at: string
+          end_at: string | null
+          id: string
+          link: string | null
+          priority: number
+          start_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          end_at?: string | null
+          id?: string
+          link?: string | null
+          priority?: number
+          start_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          end_at?: string | null
+          id?: string
+          link?: string | null
+          priority?: number
+          start_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cms_cards: {
+        Row: {
+          age: number | null
+          api_id: number | null
+          avg_age: number | null
+          career_goals: number | null
+          club: string | null
+          club_badge: string | null
+          coach: Json | null
+          contract_until: string | null
+          core: Json | null
+          created_at: string
+          foot: string | null
+          form: number | null
+          formation: string | null
+          goals_for: number | null
+          height_cm: number | null
+          id: string
+          injuries: string | null
+          league: string | null
+          market_value: string | null
+          matches: number | null
+          mental: Json | null
+          name: string
+          nation: string | null
+          photo: string | null
+          physical: Json | null
+          position: string | null
+          published: boolean
+          slug: string
+          squad_value: string | null
+          stats: Json | null
+          style: string | null
+          technical: Json | null
+          tier: string | null
+          trophies: number | null
+          type: string
+          updated_at: string
+          weight_kg: number | null
+          win_rate: number | null
+        }
+        Insert: {
+          age?: number | null
+          api_id?: number | null
+          avg_age?: number | null
+          career_goals?: number | null
+          club?: string | null
+          club_badge?: string | null
+          coach?: Json | null
+          contract_until?: string | null
+          core?: Json | null
+          created_at?: string
+          foot?: string | null
+          form?: number | null
+          formation?: string | null
+          goals_for?: number | null
+          height_cm?: number | null
+          id?: string
+          injuries?: string | null
+          league?: string | null
+          market_value?: string | null
+          matches?: number | null
+          mental?: Json | null
+          name: string
+          nation?: string | null
+          photo?: string | null
+          physical?: Json | null
+          position?: string | null
+          published?: boolean
+          slug: string
+          squad_value?: string | null
+          stats?: Json | null
+          style?: string | null
+          technical?: Json | null
+          tier?: string | null
+          trophies?: number | null
+          type: string
+          updated_at?: string
+          weight_kg?: number | null
+          win_rate?: number | null
+        }
+        Update: {
+          age?: number | null
+          api_id?: number | null
+          avg_age?: number | null
+          career_goals?: number | null
+          club?: string | null
+          club_badge?: string | null
+          coach?: Json | null
+          contract_until?: string | null
+          core?: Json | null
+          created_at?: string
+          foot?: string | null
+          form?: number | null
+          formation?: string | null
+          goals_for?: number | null
+          height_cm?: number | null
+          id?: string
+          injuries?: string | null
+          league?: string | null
+          market_value?: string | null
+          matches?: number | null
+          mental?: Json | null
+          name?: string
+          nation?: string | null
+          photo?: string | null
+          physical?: Json | null
+          position?: string | null
+          published?: boolean
+          slug?: string
+          squad_value?: string | null
+          stats?: Json | null
+          style?: string | null
+          technical?: Json | null
+          tier?: string | null
+          trophies?: number | null
+          type?: string
+          updated_at?: string
+          weight_kg?: number | null
+          win_rate?: number | null
+        }
+        Relationships: []
+      }
+      cms_pages: {
+        Row: {
+          body: Json
+          created_at: string
+          id: string
+          meta_description: string | null
+          published: boolean
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: Json
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          published?: boolean
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: Json
+          created_at?: string
+          id?: string
+          meta_description?: string | null
+          published?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cms_translations: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          locale: string
+          namespace: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          locale: string
+          namespace?: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          locale?: string
+          namespace?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -269,6 +494,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       xp_events: {
         Row: {
           created_at: string
@@ -299,6 +545,13 @@ export type Database = {
     }
     Functions: {
       award_xp: { Args: { _game: string; _xp: number }; Returns: number }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       weekly_leaderboard: {
         Args: never
         Returns: {
@@ -309,7 +562,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -436,6 +689,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator"],
+    },
   },
 } as const

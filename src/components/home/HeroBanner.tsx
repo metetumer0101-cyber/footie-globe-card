@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { ChevronRight, Sparkles } from "lucide-react";
-import { players } from "@/data/football";
+import type { PlayerCardData } from "@/data/football";
 
-export function HeroBanner({ onOpen }: { onOpen?: () => void }) {
+export function HeroBanner({ players, onOpen }: { players: PlayerCardData[]; onOpen?: () => void }) {
   const { t } = useTranslation();
-  const p = players.find((x) => x.id === "arda") ?? players[0]!;
+  const p = players.find((x) => x.id === "arda") ?? players[0];
+  if (!p) return null;
+
   const core = [
     ["pac", p.core.pac],
     ["sho", p.core.sho],

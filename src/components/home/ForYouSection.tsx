@@ -4,11 +4,16 @@ import { ChevronRight, Sparkles } from "lucide-react";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useLiveFeed } from "@/hooks/use-live-feed";
 import { readFavNames } from "@/lib/settings";
-import { players, teams } from "@/data/football";
+import type { PlayerCardData, TeamCardData } from "@/data/football";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
 
+interface ForYouSectionProps {
+  players: PlayerCardData[];
+  teams: TeamCardData[];
+}
+
 /** Personalized home row: favorite teams' matches today + followed players. */
-export function ForYouSection() {
+export function ForYouSection({ players, teams }: ForYouSectionProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { favorites, ready } = useFavorites();

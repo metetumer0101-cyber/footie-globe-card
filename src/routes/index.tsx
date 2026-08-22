@@ -9,10 +9,20 @@ import { SectionRow } from "@/components/home/SectionRow";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
 import { ManagerFrontCard } from "@/components/cards/ManagerFrontCard";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
-import { players, managers, teams, type CardData } from "@/data/football";
+import { listPublishedCards } from "@/lib/cms.functions";
+import { mapPlayerCard, mapManagerCard, mapTeamCard } from "@/lib/cms-mappers";
+import type { CardData } from "@/data/football";
 import { activeCompetitions } from "@/components/home/data";
 
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    const rows = await listPublishedCards({ data: {} });
+    return {
+      players: rows.filter((r) => r.type === "player").map(mapPlayerCard),
+      managers: rows.filter((r) => r.type === "manager").map(mapManagerCard),
+      teams: rows.filter((r) => r.type === "team").map(mapTeamCard),
+    };
+  },
   head: () => ({
     meta: [
       { title: "FootCard — Football Scout & Player Cards" },
@@ -34,6 +44,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { players, managers, teams } = Route.useLoaderData();
   const [selected, setSelected] = useState<CardData | null>(null);
 
   const futureStars = players.filter((p) => p.age <= 21);
@@ -41,12 +52,11 @@ function Index() {
 
   return (
     <AppShell>
-      <HeroBanner onOpen={() => openPlayer("arda")} />
+      <HeroBanner players={players} onOpen={() => openPlayer("arda")} />
 
       <LiveWidget />
 
-      <ForYouSection />
-
+      <ForYouSection players={players} teams={teams} />
 
       <SectionRow titleKey="popularPlayers">
         {players.map((p) => (
@@ -72,9 +82,7 @@ function Index() {
               {team.clubBadge}
             </span>
             <h3 className="w-full truncate text-center text-sm font-semibold">{team.name}</h3>
-            <p className="w-full truncate text-center text-xs text-muted-foreground">
-              {team.league}
-            </p>
+            <p className="w-full truncate text-center text-xs text-muted-foreground">{team.league}</p>
           </Link>
         ))}
       </SectionRow>

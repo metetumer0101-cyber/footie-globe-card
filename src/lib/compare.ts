@@ -1,20 +1,7 @@
-import {
-  players,
-  managers,
-  teams,
-  type ManagerCardData,
-  type PlayerCardData,
-  type TeamCardData,
-} from "@/data/football";
+import type { ManagerCardData, PlayerCardData, TeamCardData } from "@/data/football";
 
 export type EntityKind = "player" | "manager" | "team";
 export type Entity = PlayerCardData | ManagerCardData | TeamCardData;
-
-export const pools: Record<EntityKind, Entity[]> = {
-  player: players,
-  manager: managers,
-  team: teams,
-};
 
 const avg = (list: { value: number }[]) =>
   Math.round(list.reduce((sum, a) => sum + a.value, 0) / Math.max(list.length, 1));
@@ -85,6 +72,6 @@ export const trendingMatchups: { kind: EntityKind; a: string; b: string }[] = [
   { kind: "team", a: "real-madrid", b: "man-city" },
 ];
 
-export function findEntity(kind: EntityKind, id: string): Entity {
-  return pools[kind].find((e) => e.id === id) ?? pools[kind][0]!;
+export function findEntity(kind: EntityKind, id: string, pool: Entity[]): Entity {
+  return pool.find((e) => e.id === id) ?? pool[0]!;
 }

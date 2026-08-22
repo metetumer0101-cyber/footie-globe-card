@@ -1,4 +1,5 @@
-import { players, type PlayerCardData } from "@/data/football";
+import type { PlayerCardData } from "@/data/football";
+export type { PlayerCardData };
 
 export const clubLeagues: Record<string, string> = {
   "Real Madrid": "La Liga",
@@ -51,30 +52,41 @@ const avgCore = (p: PlayerCardData) => {
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 };
 
-export const scoutPlayers: ScoutPlayer[] = players.map((p) => {
-  const base = avgCore(p);
-  const growth = Math.max(0, 24 - p.age) * 0.8;
-  const potential = Math.min(99, Math.round(base + growth));
-  return {
-    ...p,
-    league: clubLeagues[p.club] ?? "Other",
-    nationName: nationNames[p.nation] ?? p.nation,
-    valueM: parseValueM(p.marketValue),
-    contractYear: parseInt(p.contractUntil, 10) || 0,
-    potential,
-    scoutRating: Math.round(base * 0.6 + potential * 0.25 + p.form * 0.15),
-  };
-});
-
-export const leagues = Array.from(new Set(scoutPlayers.map((p) => p.league))).sort();
-export const nations = Array.from(new Set(scoutPlayers.map((p) => p.nationName))).sort();
-export const positionsList = Array.from(new Set(scoutPlayers.map((p) => p.position))).sort();
+export function buildScoutPlayers(players: PlayerCardData[]): ScoutPlayer[] {
+  return players.map((p) => {
+    const base = avgCore(p);
+    const growth = Math.max(0, 24 - p.age) * 0.8;
+    const potential = Math.min(99, Math.round(base + growth));
+    return {
+      ...p,
+      league: p.league ?? clubLeagues[p.club] ?? "Other",
+      nationName: nationNames[p.nation] ?? p.nation,
+      valueM: parseValueM(p.marketValue),
+      contractYear: parseInt(p.contractUntil, 10) || 0,
+      potential,
+      scoutRating: Math.round(base * 0.6 + potential * 0.25 + p.form * 0.15),
+    };
+  });
+}
 
 export const AGE_BOUNDS: [number, number] = [16, 40];
-export const VALUE_BOUNDS: [number, number] = [
-  0,
-  Math.ceil(Math.max(...scoutPlayers.map((p) => p.valueM)) / 10) * 10,
-];
+
+export function valueBounds(players: ScoutPlayer[]): [number, number] {
+  if (!players.length) return [0, 200];
+  return [0, Math.ceil(Math.max(...players.map((p) => p.valueM)) / 10) * 10];
+}
+
+export function leagues(players: ScoutPlayer[]) {
+  return Array.from(new Set(players.map((p) => p.league))).sort();
+}
+
+export function nations(players: ScoutPlayer[]) {
+  return Array.from(new Set(players.map((p) => p.nationName))).sort();
+}
+
+export function positionsList(players: ScoutPlayer[]) {
+  return Array.from(new Set(players.map((p) => p.position))).sort();
+}
 
 export type StatKey = "pac" | "sho" | "pas" | "dri" | "def" | "phy";
 
@@ -99,22 +111,34 @@ export const emptyStats: Record<StatKey, number> = {
   phy: 0,
 };
 
-export const defaultFilters: ScoutFilterState = {
-  query: "",
-  positions: [],
-  age: AGE_BOUNDS,
-  value: VALUE_BOUNDS,
-  foot: "all",
-  contractBefore: "all",
-  minStats: { ...emptyStats },
-  league: "all",
-  nation: "all",
-};
+export function defaultFilters(players: ScoutPlayer[]): ScoutFilterState {
+  return {
+    query: "",
+    positions: [],
+    age: AGE_BOUNDS,
+    value: valueBounds(players),
+    foot: "all",
+    contractBefore: "all",
+    minStats: { ...emptyStats },
+    league: "all",
+    nation: "all",
+  };
+}
 
 export type PresetKey = "wonderkids" | "expiring" | "pace" | "playmakers";
 
-export const applyPreset = (key: PresetKey): ScoutFilterState => {
-  const f: ScoutFilterState = { ...defaultFilters, minStats: { ...emptyStats } };
+export const applyPreset = (key: PresetKey, value: [number, number]): ScoutFilterState => {
+  const f: ScoutFilterState = {
+    query: "",
+    positions: [],
+    age: AGE_BOUNDS,
+    value,
+    foot: "all",
+    contractBefore: "all",
+    minStats: { ...emptyStats },
+    league: "all",
+    nation: "all",
+  };
   if (key === "wonderkids") return { ...f, age: [16, 21] };
   if (key === "expiring") return { ...f, contractBefore: 2027 };
   if (key === "pace") return { ...f, minStats: { ...emptyStats, pac: 90 } };
@@ -124,12 +148,13 @@ export const applyPreset = (key: PresetKey): ScoutFilterState => {
 export type SortKey = "scoutRating" | "valueM" | "age" | "potential" | "form" | StatKey;
 
 export const filterAndSort = (
+  players: ScoutPlayer[],
   f: ScoutFilterState,
   sort: SortKey,
   dir: "asc" | "desc",
 ): ScoutPlayer[] => {
   const q = f.query.trim().toLowerCase();
-  const out = scoutPlayers.filter((p) => {
+  const out = players.filter((p) => {
     if (q && !p.name.toLowerCase().includes(q) && !p.club.toLowerCase().includes(q)) return false;
     if (f.positions.length && !f.positions.includes(p.position)) return false;
     if (p.age < f.age[0] || p.age > f.age[1]) return false;

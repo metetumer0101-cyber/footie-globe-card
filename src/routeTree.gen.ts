@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CompareRouteImport } from './routes/compare'
@@ -20,14 +21,24 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ScoutRouteImport } from './routes/scout'
 import { Route as SquadRouteImport } from './routes/squad'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as LiveIndexRouteImport } from './routes/live.index'
 import { Route as LiveFixtureIdRouteImport } from './routes/live.$fixtureId'
 import { Route as PlayerIdRouteImport } from './routes/player.$id'
 import { Route as TeamIdRouteImport } from './routes/team.$id'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
+import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated.admin.announcements'
+import { Route as AuthenticatedAdminCardsRouteImport } from './routes/_authenticated.admin.cards'
+import { Route as AuthenticatedAdminPagesRouteImport } from './routes/_authenticated.admin.pages'
+import { Route as AuthenticatedAdminTranslationsRouteImport } from './routes/_authenticated.admin.translations'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -80,6 +91,11 @@ const SquadRoute = SquadRouteImport.update({
   path: '/squad',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const LiveIndexRoute = LiveIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -100,6 +116,33 @@ const TeamIdRoute = TeamIdRouteImport.update({
   path: '/team/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminAnnouncementsRoute =
+  AuthenticatedAdminAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminCardsRoute = AuthenticatedAdminCardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminPagesRoute = AuthenticatedAdminPagesRouteImport.update({
+  id: '/pages',
+  path: '/pages',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminTranslationsRoute =
+  AuthenticatedAdminTranslationsRouteImport.update({
+    id: '/translations',
+    path: '/translations',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -113,10 +156,16 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/live/$fixtureId': typeof LiveFixtureIdRoute
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
+  '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
+  '/admin/cards': typeof AuthenticatedAdminCardsRoute
+  '/admin/pages': typeof AuthenticatedAdminPagesRoute
+  '/admin/translations': typeof AuthenticatedAdminTranslationsRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,10 +182,16 @@ export interface FileRoutesByTo {
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live': typeof LiveIndexRoute
+  '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
+  '/admin/cards': typeof AuthenticatedAdminCardsRoute
+  '/admin/pages': typeof AuthenticatedAdminPagesRoute
+  '/admin/translations': typeof AuthenticatedAdminTranslationsRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/compare': typeof CompareRoute
@@ -147,10 +202,16 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/live/$fixtureId': typeof LiveFixtureIdRoute
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
+  '/_authenticated/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
+  '/_authenticated/admin/cards': typeof AuthenticatedAdminCardsRoute
+  '/_authenticated/admin/pages': typeof AuthenticatedAdminPagesRoute
+  '/_authenticated/admin/translations': typeof AuthenticatedAdminTranslationsRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -166,10 +227,16 @@ export interface FileRouteTypes {
     | '/profile'
     | '/scout'
     | '/squad'
+    | '/admin'
     | '/live/$fixtureId'
     | '/player/$id'
     | '/team/$id'
     | '/live/'
+    | '/admin/announcements'
+    | '/admin/cards'
+    | '/admin/pages'
+    | '/admin/translations'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -186,9 +253,15 @@ export interface FileRouteTypes {
     | '/player/$id'
     | '/team/$id'
     | '/live'
+    | '/admin/announcements'
+    | '/admin/cards'
+    | '/admin/pages'
+    | '/admin/translations'
+    | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/about'
     | '/auth'
     | '/compare'
@@ -199,14 +272,21 @@ export interface FileRouteTypes {
     | '/profile'
     | '/scout'
     | '/squad'
+    | '/_authenticated/admin'
     | '/live/$fixtureId'
     | '/player/$id'
     | '/team/$id'
     | '/live/'
+    | '/_authenticated/admin/announcements'
+    | '/_authenticated/admin/cards'
+    | '/_authenticated/admin/pages'
+    | '/_authenticated/admin/translations'
+    | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   CompareRoute: typeof CompareRoute
@@ -228,6 +308,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -300,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SquadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/live/': {
       id: '/live/'
       path: '/'
@@ -328,8 +422,73 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeamIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/announcements': {
+      id: '/_authenticated/admin/announcements'
+      path: '/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AuthenticatedAdminAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/cards': {
+      id: '/_authenticated/admin/cards'
+      path: '/cards'
+      fullPath: '/admin/cards'
+      preLoaderRoute: typeof AuthenticatedAdminCardsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pages': {
+      id: '/_authenticated/admin/pages'
+      path: '/pages'
+      fullPath: '/admin/pages'
+      preLoaderRoute: typeof AuthenticatedAdminPagesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/translations': {
+      id: '/_authenticated/admin/translations'
+      path: '/translations'
+      fullPath: '/admin/translations'
+      preLoaderRoute: typeof AuthenticatedAdminTranslationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAnnouncementsRoute: typeof AuthenticatedAdminAnnouncementsRoute
+  AuthenticatedAdminCardsRoute: typeof AuthenticatedAdminCardsRoute
+  AuthenticatedAdminPagesRoute: typeof AuthenticatedAdminPagesRoute
+  AuthenticatedAdminTranslationsRoute: typeof AuthenticatedAdminTranslationsRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAnnouncementsRoute: AuthenticatedAdminAnnouncementsRoute,
+  AuthenticatedAdminCardsRoute: AuthenticatedAdminCardsRoute,
+  AuthenticatedAdminPagesRoute: AuthenticatedAdminPagesRoute,
+  AuthenticatedAdminTranslationsRoute: AuthenticatedAdminTranslationsRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface LiveRouteChildren {
   LiveFixtureIdRoute: typeof LiveFixtureIdRoute
@@ -345,6 +504,7 @@ const LiveRouteWithChildren = LiveRoute._addFileChildren(LiveRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   CompareRoute: CompareRoute,
