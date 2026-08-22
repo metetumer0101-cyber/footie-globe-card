@@ -9,6 +9,7 @@ import { useLiveFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
 import { players } from "@/data/football";
 import { bumpBadgeStat } from "@/lib/badges";
 import type { LiveFixture } from "@/lib/live";
+import { sortFixtures } from "@/lib/live";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
