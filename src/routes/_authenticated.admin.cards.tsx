@@ -11,50 +11,23 @@ import {
   Plus,
   Search,
   Trash2,
-  X,
 } from "lucide-react";
-import {
-  listCards,
-  createCard,
-  updateCard,
-  deleteCard,
-} from "@/lib/admin.functions";
+import { listCards, deleteCard } from "@/lib/admin.functions";
 import type { Database } from "@/integrations/supabase/types";
+import { CardForm, emptyCard } from "@/components/admin/CardForm";
+import { useAdminRole } from "@/components/admin/role-context";
 
 export const Route = createFileRoute("/_authenticated/admin/cards")({
   component: AdminCardsPage,
 });
 
 type CardRow = Database["public"]["Tables"]["cms_cards"]["Row"];
-type CardInsert = Database["public"]["Tables"]["cms_cards"]["Insert"];
 
 const PAGE_SIZE = 25;
 
-const emptyCard: CardInsert = {
-  type: "player",
-  slug: "",
-  name: "",
-  published: true,
-  club: "",
-  nation: "",
-  league: "",
-  position: "",
-  tier: "bronze",
-  age: null,
-  api_id: null,
-  market_value: "",
-  contract_until: "",
-  photo: "",
-  core: null,
-  technical: null,
-  physical: null,
-  mental: null,
-  coach: null,
-  stats: null,
-};
-
 function AdminCardsPage() {
   const queryClient = useQueryClient();
+  const { isAdmin } = useAdminRole();
   const [type, setType] = useState<"" | "player" | "manager" | "team">("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -170,7 +143,7 @@ function AdminCardsPage() {
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
-                        <DeleteButton slug={row.slug} name={row.name} />
+                        {isAdmin && <DeleteButton slug={row.slug} name={row.name} />}
                       </div>
                     </td>
                   </tr>
@@ -211,7 +184,7 @@ function AdminCardsPage() {
       )}
 
       {(editing || creating) && (
-        <CardEditor
+        <CardForm
           initial={editing ?? emptyCard}
           isNew={creating}
           onClose={() => {
@@ -240,7 +213,7 @@ function DeleteButton({ slug, name }: { slug: string; name: string }) {
           await del({ data: { slug } });
           toast.success("Card deleted");
           queryClient.invalidateQueries({ queryKey: ["admin-cards"] });
-        } catch (e) {
+        } catch {
           toast.error("Failed to delete card");
         }
       }}
@@ -249,204 +222,5 @@ function DeleteButton({ slug, name }: { slug: string; name: string }) {
     >
       <Trash2 className="h-4 w-4" />
     </button>
-  );
-}
-
-function CardEditor({
-  initial,
-  isNew,
-  onClose,
-  onSaved,
-}: {
-  initial: CardInsert | CardRow;
-  isNew: boolean;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const [card, setCard] = useState<CardInsert>(() => ({ ...initial }));
-  const [saving, setSaving] = useState(false);
-  const create = useServerFn(createCard);
-  const update = useServerFn(updateCard);
-
-  const field = <K extends keyof CardInsert>(key: K) => ({
-    value: (card[key] ?? "") as string,
-    onChange: (value: unknown) => setCard((c) => ({ ...c, [key]: value })),
-  });
-
-  const save = async () => {
-    setSaving(true);
-    try {
-      if (isNew) {
-        await create({ data: card });
-      } else {
-        await update({ data: { slug: card.slug as string, data: card as CardInsert } });
-      }
-      toast.success(isNew ? "Card created" : "Card updated");
-      onSaved();
-    } catch (e) {
-      toast.error("Failed to save card");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 pt-10 backdrop-blur-sm">
-      <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black">{isNew ? "New card" : "Edit card"}</h2>
-          <button onClick={onClose} className="rounded-lg p-2 hover:bg-secondary">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Field label="Slug">
-            <input
-              disabled={!isNew}
-              value={card.slug ?? ""}
-              onChange={(e) => field("slug").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
-            />
-          </Field>
-          <Field label="Name">
-            <input
-              value={card.name ?? ""}
-              onChange={(e) => field("name").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Type">
-            <select
-              value={card.type ?? "player"}
-              onChange={(e) => field("type").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            >
-              <option value="player">Player</option>
-              <option value="manager">Manager</option>
-              <option value="team">Team</option>
-            </select>
-          </Field>
-          <Field label="Tier">
-            <select
-              value={card.tier ?? "bronze"}
-              onChange={(e) => field("tier").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            >
-              <option value="bronze">Bronze</option>
-              <option value="silver">Silver</option>
-              <option value="gold">Gold</option>
-              <option value="elite">Elite</option>
-              <option value="icon">Icon</option>
-            </select>
-          </Field>
-          <Field label="Club">
-            <input
-              value={card.club ?? ""}
-              onChange={(e) => field("club").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="League">
-            <input
-              value={card.league ?? ""}
-              onChange={(e) => field("league").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Nation">
-            <input
-              value={card.nation ?? ""}
-              onChange={(e) => field("nation").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Position">
-            <input
-              value={card.position ?? ""}
-              onChange={(e) => field("position").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="API-Football ID">
-            <input
-              type="number"
-              value={card.api_id ?? ""}
-              onChange={(e) =>
-                field("api_id").onChange(e.target.value ? Number(e.target.value) : null)
-              }
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Age">
-            <input
-              type="number"
-              value={card.age ?? ""}
-              onChange={(e) =>
-                field("age").onChange(e.target.value ? Number(e.target.value) : null)
-              }
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Market value">
-            <input
-              value={card.market_value ?? ""}
-              onChange={(e) => field("market_value").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Contract until">
-            <input
-              value={card.contract_until ?? ""}
-              onChange={(e) => field("contract_until").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Photo URL">
-            <input
-              value={card.photo ?? ""}
-              onChange={(e) => field("photo").onChange(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <Field label="Published">
-            <select
-              value={card.published ? "true" : "false"}
-              onChange={(e) => field("published").onChange(e.target.value === "true")}
-              className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            >
-              <option value="true">Published</option>
-              <option value="false">Draft</option>
-            </select>
-          </Field>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="rounded-xl border border-border bg-surface px-4 py-2 text-sm font-bold"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => void save()}
-            disabled={saving || !card.slug || !card.name}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
-          >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-semibold text-muted-foreground">{label}</span>
-      {children}
-    </label>
   );
 }
