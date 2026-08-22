@@ -2,12 +2,14 @@ import { useTranslation } from "react-i18next";
 import { RotateCcw } from "lucide-react";
 import {
   AGE_BOUNDS,
-  VALUE_BOUNDS,
+  buildScoutPlayers,
   defaultFilters,
   emptyStats,
   leagues,
   nations,
   positionsList,
+  valueBounds,
+  type PlayerCardData,
   type ScoutFilterState,
   type StatKey,
 } from "@/lib/scout";
@@ -32,21 +34,25 @@ const selectCls =
   "w-full rounded-xl bg-secondary/50 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary";
 
 export function ScoutFilters({
+  players,
   value,
   onChange,
 }: {
+  players: PlayerCardData[];
   value: ScoutFilterState;
   onChange: (f: ScoutFilterState) => void;
 }) {
   const { t } = useTranslation();
   const set = (patch: Partial<ScoutFilterState>) => onChange({ ...value, ...patch });
+  const scoutPlayers = buildScoutPlayers(players);
+  const VALUE_BOUNDS = valueBounds(scoutPlayers);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <span className="text-sm font-bold">{t("filters")}</span>
         <button
-          onClick={() => onChange({ ...defaultFilters, minStats: { ...emptyStats } })}
+          onClick={() => onChange({ ...defaultFilters(scoutPlayers), minStats: { ...emptyStats } })}
           className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <RotateCcw className="h-3.5 w-3.5" />
@@ -56,7 +62,7 @@ export function ScoutFilters({
 
       <Row label={t("position")}>
         <div className="flex flex-wrap gap-1.5">
-          {positionsList.map((p) => {
+          {positionsList(scoutPlayers).map((p) => {
             const on = value.positions.includes(p);
             return (
               <button
@@ -200,7 +206,7 @@ export function ScoutFilters({
           className={selectCls}
         >
           <option value="all">{t("scout.any")}</option>
-          {leagues.map((l) => (
+          {leagues(scoutPlayers).map((l) => (
             <option key={l} value={l}>
               {l}
             </option>
@@ -215,7 +221,7 @@ export function ScoutFilters({
           className={selectCls}
         >
           <option value="all">{t("scout.any")}</option>
-          {nations.map((n) => (
+          {nations(scoutPlayers).map((n) => (
             <option key={n} value={n}>
               {n}
             </option>
