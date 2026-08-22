@@ -3,12 +3,15 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { LogOut, Trophy, UserRound } from "lucide-react";
+import { LogOut, Settings2, Trophy, UserRound } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { RankBadge } from "@/components/games/RankBadge";
 import { useXp } from "@/hooks/use-xp";
 import { nextRank, rankFor, rankProgress } from "@/lib/ranks";
 import { supabase } from "@/integrations/supabase/client";
+import { languages, STORAGE_KEY } from "@/i18n";
+import { readSettings, writeSettings } from "@/lib/settings";
+import { teams } from "@/data/football";
 import { BadgeShowcase } from "@/components/profile/BadgeShowcase";
 import { emptyBadgeStats, readLocalBadgeStats, type BadgeStats } from "@/lib/badges";
 
@@ -26,8 +29,10 @@ export const Route = createFileRoute("/profile")({
   component: Page,
 });
 
+const LEAGUE_OPTIONS = [...new Set(teams.map((tm) => tm.league))].sort();
+
 function Page() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { xp, displayName, rename, isGuest, user } = useXp();
@@ -37,6 +42,17 @@ function Page() {
 
   const [badgeStats, setBadgeStats] = useState<BadgeStats>(emptyBadgeStats);
   useEffect(() => setBadgeStats(readLocalBadgeStats()), []);
+
+  const [favLeague, setFavLeague] = useState("");
+  useEffect(() => setFavLeague(readSettings().league ?? ""), []);
+
+  const changeLanguage = (code: string) => {
+    void i18n.changeLanguage(code);
+    window.localStorage.setItem(STORAGE_KEY, code);
+    const meta = languages.find((l) => l.code === code);
+    document.documentElement.lang = code;
+    document.documentElement.dir = meta?.rtl ? "rtl" : "ltr";
+  };
 
   const rank = rankFor(xp);
   const next = nextRank(xp);
@@ -74,6 +90,52 @@ function Page() {
         </section>
 
         <BadgeShowcase stats={{ ...badgeStats, xp }} />
+
+        <section className="card-surface space-y-3 rounded-3xl p-4">
+          <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            <Settings2 className="h-4 w-4" />
+            {t("settings.title")}
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-muted-foreground">
+                {t("settings.language")}
+              </span>
+              <select
+                value={i18n.resolvedLanguage ?? "en"}
+                onChange={(e) => changeLanguage(e.target.value)}
+                className="w-full rounded-2xl border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
+              >
+                {languages.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.flag} {l.native}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-muted-foreground">
+                {t("settings.league")}
+              </span>
+              <select
+                value={favLeague}
+                onChange={(e) => {
+                  const league = e.target.value;
+                  setFavLeague(league);
+                  writeSettings({ league: league || undefined });
+                }}
+                className="w-full rounded-2xl border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
+              >
+                <option value="">{t("settings.leagueNone")}</option>
+                {LEAGUE_OPTIONS.map((lg) => (
+                  <option key={lg} value={lg}>
+                    {lg}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </section>
 
         {isGuest ? (
           <Link
