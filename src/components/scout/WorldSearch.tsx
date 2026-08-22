@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { Globe2, Loader2 } from "lucide-react";
@@ -35,6 +35,7 @@ export function WorldSearch({
   const [debounced, setDebounced] = useState(query);
   const [league, setLeague] = useState<number>(39);
   const [pending, setPending] = useState<number | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const id = window.setTimeout(() => setDebounced(query), 400);
@@ -43,9 +44,13 @@ export function WorldSearch({
 
   const active = debounced.trim().length >= 3;
 
-  const searchQuery = useQuery({
+  const searchQuery = useInfiniteQuery({
     queryKey: ["world-search", debounced.trim().toLowerCase()],
-    queryFn: () => search({ data: { query: debounced.trim() } }),
+    queryFn: ({ pageParam }) =>
+      search({ data: { query: debounced.trim(), page: pageParam } }),
+    initialPageParam: 1,
+    getNextPageParam: (last) =>
+      last.paging.current < last.paging.total ? last.paging.current + 1 : undefined,
     enabled: active,
     staleTime: 10 * 60 * 1000,
   });
@@ -57,10 +62,35 @@ export function WorldSearch({
     staleTime: 30 * 60 * 1000,
   });
 
-  const list: WorldPlayer[] = active
-    ? (searchQuery.data?.players ?? [])
-    : (topQuery.data?.players ?? []);
+  // Merge all loaded pages, dropping duplicate player ids (the API can repeat
+  // entries across page boundaries).
+  const searched = useMemo(() => {
+    const seen = new Set<number>();
+    return (searchQuery.data?.pages ?? [])
+      .flatMap((pg) => pg.players)
+      .filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+  }, [searchQuery.data]);
+
+  const list: WorldPlayer[] = active ? searched : (topQuery.data?.players ?? []);
   const loading = active ? searchQuery.isPending : topQuery.isPending;
+
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = searchQuery;
+
+  // Auto-load the next page when the sentinel scrolls into view.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !active) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting) && hasNextPage && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "240px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [active, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const open = async (player: WorldPlayer) => {
     if (player.localId) {
@@ -113,42 +143,62 @@ export function WorldSearch({
           {t("noResults")}
         </p>
       ) : (
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {list.map((p) => (
-            <li key={p.id}>
-              <button
-                onClick={() => void open(p)}
-                className="card-surface flex w-full items-center gap-3 rounded-2xl p-2.5 text-start transition-colors hover:bg-secondary/40"
-              >
-                {p.photo ? (
-                  <img
-                    src={p.photo}
-                    alt={p.name}
-                    loading="lazy"
-                    className="h-11 w-11 shrink-0 rounded-full bg-secondary/50 object-cover"
-                  />
-                ) : (
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-secondary/50 text-xs font-bold text-muted-foreground">
-                    {p.name.slice(0, 2).toUpperCase()}
+        <>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {list.map((p) => (
+              <li key={p.id}>
+                <button
+                  onClick={() => void open(p)}
+                  className="card-surface flex w-full items-center gap-3 rounded-2xl p-2.5 text-start transition-colors hover:bg-secondary/40"
+                >
+                  {p.photo ? (
+                    <img
+                      src={p.photo}
+                      alt={p.name}
+                      loading="lazy"
+                      className="h-11 w-11 shrink-0 rounded-full bg-secondary/50 object-cover"
+                    />
+                  ) : (
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-secondary/50 text-xs font-bold text-muted-foreground">
+                      {p.name.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{p.name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {[p.club, p.position, p.nationality, p.age ? `${p.age}` : null]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
                   </span>
-                )}
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">{p.name}</span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {[p.club, p.position, p.nationality, p.age ? `${p.age}` : null]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
-                </span>
-                {pending === p.id ? (
-                  <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
-                ) : (
-                  <Globe2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
+                  {pending === p.id ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+                  ) : (
+                    <Globe2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {active && (
+            <div ref={sentinelRef} className="flex justify-center pt-1">
+              {isFetchingNextPage ? (
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("scout.loadingMore")}
+                </p>
+              ) : hasNextPage ? (
+                <button
+                  onClick={() => void fetchNextPage()}
+                  className="rounded-xl bg-secondary/60 px-4 py-2 text-xs font-semibold transition-colors hover:bg-secondary"
+                >
+                  {t("scout.loadMore")}
+                </button>
+              ) : null}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
