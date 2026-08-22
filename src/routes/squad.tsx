@@ -25,7 +25,7 @@ import {
   type SavedSquad,
   type SquadState,
 } from "@/lib/squad";
-import { players } from "@/data/football";
+import { players, type PlayerCardData } from "@/data/football";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/squad")({
@@ -105,6 +105,11 @@ function Page() {
       return { ...prev, starters, bench };
     });
     setTarget(null);
+  };
+
+  const assignCard = (card: PlayerCardData) => {
+    setSquad((prev) => ({ ...prev, extras: { ...prev.extras, [card.id]: card } }));
+    assign(card.id);
   };
 
   const swapSlots = (from: string, to: string) => {
@@ -212,6 +217,7 @@ function Page() {
         drag.slot.startsWith("b:")
           ? (squad.bench[Number(drag.slot.slice(2))] ?? null)
           : (squad.starters[drag.slot] ?? null),
+        squad.extras,
       )
     : null;
 
@@ -311,6 +317,7 @@ function Page() {
                     slotId={`b:${i}`}
                     role={t("sq.sub")}
                     playerId={squad.bench[i] ?? null}
+                    extras={squad.extras}
                     onClick={() => setTarget({ kind: "bench", index: i })}
                     onDragStart={onDragStart}
                   />
@@ -379,6 +386,7 @@ function Page() {
         usedIds={usedIds}
         currentId={currentId}
         onPick={(id) => assign(id)}
+        onPickWorld={assignCard}
         onClear={() => assign(null)}
         onClose={() => setTarget(null)}
       />
