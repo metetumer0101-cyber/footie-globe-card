@@ -22,6 +22,8 @@ import { Route as ScoutRouteImport } from './routes/scout'
 import { Route as SquadRouteImport } from './routes/squad'
 import { Route as LiveIndexRouteImport } from './routes/live.index'
 import { Route as LiveFixtureIdRouteImport } from './routes/live.$fixtureId'
+import { Route as PlayerIdRouteImport } from './routes/player.$id'
+import { Route as TeamIdRouteImport } from './routes/team.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +90,16 @@ const LiveFixtureIdRoute = LiveFixtureIdRouteImport.update({
   path: '/$fixtureId',
   getParentRoute: () => LiveRoute,
 } as any)
+const PlayerIdRoute = PlayerIdRouteImport.update({
+  id: '/player/$id',
+  path: '/player/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamIdRoute = TeamIdRouteImport.update({
+  id: '/team/$id',
+  path: '/team/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -102,6 +114,8 @@ export interface FileRoutesByFullPath {
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
   '/live/$fixtureId': typeof LiveFixtureIdRoute
+  '/player/$id': typeof PlayerIdRoute
+  '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
 }
 export interface FileRoutesByTo {
@@ -116,6 +130,8 @@ export interface FileRoutesByTo {
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
   '/live/$fixtureId': typeof LiveFixtureIdRoute
+  '/player/$id': typeof PlayerIdRoute
+  '/team/$id': typeof TeamIdRoute
   '/live': typeof LiveIndexRoute
 }
 export interface FileRoutesById {
@@ -132,6 +148,8 @@ export interface FileRoutesById {
   '/scout': typeof ScoutRoute
   '/squad': typeof SquadRoute
   '/live/$fixtureId': typeof LiveFixtureIdRoute
+  '/player/$id': typeof PlayerIdRoute
+  '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
 }
 export interface FileRouteTypes {
@@ -149,6 +167,8 @@ export interface FileRouteTypes {
     | '/scout'
     | '/squad'
     | '/live/$fixtureId'
+    | '/player/$id'
+    | '/team/$id'
     | '/live/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,6 +183,8 @@ export interface FileRouteTypes {
     | '/scout'
     | '/squad'
     | '/live/$fixtureId'
+    | '/player/$id'
+    | '/team/$id'
     | '/live'
   id:
     | '__root__'
@@ -178,6 +200,8 @@ export interface FileRouteTypes {
     | '/scout'
     | '/squad'
     | '/live/$fixtureId'
+    | '/player/$id'
+    | '/team/$id'
     | '/live/'
   fileRoutesById: FileRoutesById
 }
@@ -193,6 +217,8 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ScoutRoute: typeof ScoutRoute
   SquadRoute: typeof SquadRoute
+  PlayerIdRoute: typeof PlayerIdRoute
+  TeamIdRoute: typeof TeamIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -288,6 +314,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveFixtureIdRouteImport
       parentRoute: typeof LiveRoute
     }
+    '/player/$id': {
+      id: '/player/$id'
+      path: '/player/$id'
+      fullPath: '/player/$id'
+      preLoaderRoute: typeof PlayerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team/$id': {
+      id: '/team/$id'
+      path: '/team/$id'
+      fullPath: '/team/$id'
+      preLoaderRoute: typeof TeamIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -315,6 +355,8 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ScoutRoute: ScoutRoute,
   SquadRoute: SquadRoute,
+  PlayerIdRoute: PlayerIdRoute,
+  TeamIdRoute: TeamIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

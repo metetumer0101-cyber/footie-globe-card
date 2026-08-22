@@ -1,7 +1,9 @@
 import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import {
   Activity,
   CalendarClock,
+  ExternalLink,
   Footprints,
   Map,
   Ruler,
@@ -22,7 +24,7 @@ import { tierStyles, type CardData } from "@/data/football";
 import { TransferTimeline } from "./TransferTimeline";
 import { cn } from "@/lib/utils";
 
-function InfoRow({
+export function InfoRow({
   icon: Icon,
   label,
   value,
@@ -73,6 +75,18 @@ export function CardDetailModal({
             </div>
           </div>
         </DialogHeader>
+
+        {card.type === "player" && (
+          <Link
+            to="/player/$id"
+            params={{ id: card.id }}
+            onClick={() => onOpenChange(false)}
+            className="mt-2 flex items-center justify-center gap-1.5 rounded-xl bg-primary/15 px-3 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/25"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            {t("playerPage.openFull")}
+          </Link>
+        )}
 
         {card.type === "player" ? (
           <>
