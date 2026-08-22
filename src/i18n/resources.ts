@@ -793,6 +793,14 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
       "badges": {
         "title": "Rozet Koleksiyonu"
       },
+      "footer": {
+        "tagline": "Futbol keşif platformu: oyuncu kartları, karşılaştırmalar, kadro kurucu ve canlı maçlar 35 dilde.",
+        "product": "Ürün",
+        "company": "Şirket",
+        "about": "FootCard Hakkında",
+        "privacy": "Gizlilik Politikası",
+        "dataNote": "Canlı veriler API-Football tarafından sağlanır. FIFA, UEFA veya herhangi bir kulüple bağlantılı değildir."
+      },
       "transferHistory": "Transfer geçmişi",
       "playerOfTheDay": "Günün Oyuncusu",
       "popularPlayers": "Popüler Oyuncular",
