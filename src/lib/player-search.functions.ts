@@ -23,6 +23,7 @@ export type WorldPlayer = {
 export type WorldSearchResult = {
   players: WorldPlayer[];
   source: "api-football" | "mock";
+  paging: { current: number; total: number };
 };
 
 async function apiFootball<T>(path: string, apiKey: string): Promise<T | null> {
@@ -52,6 +53,7 @@ function num(raw?: string | number | null): number | undefined {
 }
 
 type ProfileResponse = {
+  paging?: { current?: number; total?: number };
   response?: {
     player?: {
       id?: number;
@@ -72,6 +74,7 @@ function mockSearch(query: string): WorldSearchResult {
   const q = query.trim().toLowerCase();
   return {
     source: "mock",
+    paging: { current: 1, total: 1 },
     players: mockPlayers
       .filter((p) => !q || p.name.toLowerCase().includes(q))
       .map((p, i) => ({
