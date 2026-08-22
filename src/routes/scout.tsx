@@ -4,13 +4,14 @@ import { useTranslation } from "react-i18next";
 import { Globe2, LayoutGrid, Rows3, Search, SlidersHorizontal, Sparkles, Star, X } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
-import { CardDetailModal } from "@/components/analytics/CardDetailModal";
+import { CardDetailModal } from "@components/analytics/CardDetailModal";
 import { ScoutFilters } from "@/components/scout/ScoutFilters";
 import { ResultsTable } from "@/components/scout/ResultsTable";
 import { WorldSearch } from "@/components/scout/WorldSearch";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import {
   applyPreset,
+  buildScoutPlayers,
   defaultFilters,
   emptyStats,
   filterAndSort,
@@ -18,6 +19,8 @@ import {
   type ScoutFilterState,
   type SortKey,
 } from "@/lib/scout";
+import { listPublishedCards } from "@/lib/cms.functions";
+import { mapPlayerCard } from "@/lib/cms-mappers";
 import type { CardData } from "@/data/football";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +48,10 @@ export const Route = createFileRoute("/scout")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  loader: async () => {
+    const rows = await listPublishedCards({ data: { type: "player", limit: 500 } });
+    return rows.map(mapPlayerCard);
+  },
   component: Page,
 });
 
@@ -54,8 +61,10 @@ const sortKeys: SortKey[] = ["scoutRating", "valueM", "age", "potential", "form"
 function Page() {
   const { t } = useTranslation();
   const { q } = Route.useSearch();
+  const players = Route.useLoaderData();
+  const scoutPlayers = useMemo(() => buildScoutPlayers(players), [players]);
   const [filters, setFilters] = useState<ScoutFilterState>({
-    ...defaultFilters,
+    ...defaultFilters(scoutPlayers),
     minStats: { ...emptyStats },
     query: q ?? "",
   });
@@ -69,7 +78,6 @@ function Page() {
   const [mode, setMode] = useState<"local" | "world">(q ? "world" : "local");
   const { has, toggle, ids } = useWatchlist();
 
-  // Keep the query in sync when arriving from the global header search.
   useEffect(() => {
     if (q) {
       setMode("world");
@@ -78,17 +86,17 @@ function Page() {
   }, [q]);
 
   const results = useMemo(() => {
-    const list = filterAndSort(filters, sort, dir);
+    const list = filterAndSort(scoutPlayers, filters, sort, dir);
     return onlySaved ? list.filter((p) => ids.includes(p.id)) : list;
-  }, [filters, sort, dir, onlySaved, ids]);
+  }, [scoutPlayers, filters, sort, dir, onlySaved, ids]);
 
   const pickPreset = (key: PresetKey) => {
     if (preset === key) {
       setPreset(null);
-      setFilters({ ...defaultFilters, minStats: { ...emptyStats } });
+      setFilters({ ...defaultFilters(scoutPlayers), minStats: { ...emptyStats } });
     } else {
       setPreset(key);
-      setFilters(applyPreset(key));
+      setFilters(applyPreset(key, [filters.value[0], filters.value[1]]));
     }
   };
 
@@ -163,7 +171,7 @@ function Page() {
         {mode === "local" && (
         <div className="flex gap-4">
           <aside className="card-surface hidden h-fit w-64 shrink-0 rounded-2xl p-4 lg:block">
-            <ScoutFilters value={filters} onChange={(f) => (setPreset(null), setFilters(f))} />
+            <ScoutFilters players={players} value={filters} onChange={(f) => (setPreset(null), setFilters(f))} />
           </aside>
 
           <div className="min-w-0 flex-1 space-y-3">
@@ -273,7 +281,7 @@ function Page() {
             >
               <X className="h-4 w-4" />
             </button>
-            <ScoutFilters value={filters} onChange={(f) => (setPreset(null), setFilters(f))} />
+            <ScoutFilters players={players} value={filters} onChange={(f) => (setPreset(null), setFilters(f))} />
           </div>
         </div>
       )}
