@@ -1,4 +1,5 @@
 import type { PlayerCardData } from "@/data/football";
+export type { PlayerCardData };
 
 export const clubLeagues: Record<string, string> = {
   "Real Madrid": "La Liga",
