@@ -43,6 +43,9 @@ export const revokeRole = createServerFn({ method: "POST" })
   .inputValidator((input: { userId: string; role: "admin" | "moderator" }) => input)
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
+    if (data.userId === context.userId && data.role === "admin") {
+      throw new Error("You cannot revoke your own admin role");
+    }
     const { error } = await context.supabase
       .from("user_roles")
       .delete()
@@ -50,6 +53,46 @@ export const revokeRole = createServerFn({ method: "POST" })
       .eq("role", data.role);
     if (error) throw error;
     return { ok: true };
+  });
+
+export type UserWithRoles = {
+  id: string;
+  displayName: string;
+  roles: ("admin" | "moderator")[];
+};
+
+export const listUsersWithRoles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { search?: string; page?: number; limit?: number }) => input)
+  .handler(async ({ data, context }): Promise<{ rows: UserWithRoles[]; count: number }> => {
+    await requireAdmin(context);
+    let query = context.supabase
+      .from("profiles")
+      .select("id, display_name", { count: "exact" });
+    if (data.search) {
+      const q = escapeLike(data.search);
+      query = query.or(`display_name.ilike.%${q}%,id.eq.${data.search}`);
+    }
+    const limit = data.limit ?? DEFAULT_PAGE_SIZE;
+    const { from, to } = range(data.page ?? 1, limit);
+    const { data: profiles, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw error;
+
+    const ids = (profiles ?? []).map((p) => p.id);
+    const { data: roles } = ids.length
+      ? await context.supabase.from("user_roles").select("user_id, role").in("user_id", ids)
+      : { data: [] };
+
+    const rows: UserWithRoles[] = (profiles ?? []).map((p) => ({
+      id: p.id,
+      displayName: p.display_name,
+      roles: (roles ?? [])
+        .filter((r) => r.user_id === p.id)
+        .map((r) => r.role as "admin" | "moderator"),
+    }));
+    return { rows, count: count ?? 0 };
   });
 
 export const listCards = createServerFn({ method: "GET" })
