@@ -51,6 +51,8 @@ export type PlayerCardData = {
   mental: DeepAttr[];
   form: number;
   careerGoals: number;
+  photo?: string | undefined;
+  league?: string | undefined;
 };
 
 export type ManagerCardData = {

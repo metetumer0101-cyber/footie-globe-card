@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { LayoutGrid, Rows3, Search, SlidersHorizontal, Sparkles, Star, X } from "lucide-react";
+import { Globe2, LayoutGrid, Rows3, Search, SlidersHorizontal, Sparkles, Star, X } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
 import { ScoutFilters } from "@/components/scout/ScoutFilters";
 import { ResultsTable } from "@/components/scout/ResultsTable";
+import { WorldSearch } from "@/components/scout/WorldSearch";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import {
   applyPreset,
@@ -57,6 +58,7 @@ function Page() {
   const [preset, setPreset] = useState<PresetKey | null>(null);
   const [onlySaved, setOnlySaved] = useState(false);
   const [selected, setSelected] = useState<CardData | null>(null);
+  const [mode, setMode] = useState<"local" | "world">("local");
   const { has, toggle, ids } = useWatchlist();
 
   const results = useMemo(() => {
@@ -92,6 +94,27 @@ function Page() {
           />
         </label>
 
+        <div className="flex items-center gap-1 rounded-xl bg-secondary/40 p-1">
+          {(["local", "world"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              )}
+            >
+              {m === "world" && <Globe2 className="h-3.5 w-3.5" />}
+              {t(`scout.${m}`)}
+            </button>
+          ))}
+        </div>
+
+        {mode === "world" && (
+          <WorldSearch query={filters.query} onSelect={(card) => setSelected(card)} />
+        )}
+
+        {mode === "local" && (
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {presets.map((p) => (
             <button
@@ -121,7 +144,9 @@ function Page() {
             {t("scout.watchlist")} ({ids.length})
           </button>
         </div>
+        )}
 
+        {mode === "local" && (
         <div className="flex gap-4">
           <aside className="card-surface hidden h-fit w-64 shrink-0 rounded-2xl p-4 lg:block">
             <ScoutFilters value={filters} onChange={(f) => (setPreset(null), setFilters(f))} />
@@ -217,6 +242,7 @@ function Page() {
             )}
           </div>
         </div>
+        )}
       </section>
 
       {drawer && (
