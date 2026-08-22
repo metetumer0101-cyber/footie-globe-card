@@ -97,7 +97,7 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<WorldSearchResult> => {
     const query = data.query.trim();
     const page = data.page ?? 1;
-    if (query.length < 3) return { players: [], source: "mock" };
+    if (query.length < 3) return { players: [], source: "mock", paging: { current: 1, total: 1 } };
 
     const apiKey = process.env["API_FOOTBALL_KEY"];
     const fallback = mockSearch(query);
@@ -190,7 +190,11 @@ export const getLeagueTopPlayers = createServerFn({ method: "GET" })
             club: r.statistics?.[0]?.team?.name,
           }));
         if (!list.length) return null;
-        return { players: list, source: "api-football" as const };
+        return {
+          players: list,
+          paging: { current: 1, total: 1 },
+          source: "api-football" as const,
+        };
       },
       fallback,
     );
