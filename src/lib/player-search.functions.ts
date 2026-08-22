@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { cached } from "@/lib/api-cache.server";
+import { cached, cachedMeta, type CachedResult } from "@/lib/api-cache.server";
+import { TTL } from "@/lib/freshness-config";
 import { players as mockPlayers, type PlayerCardData, type Tier } from "@/data/football";
 
 const API_BASE = "https://v3.football.api-sports.io";
@@ -126,7 +127,7 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
 
     return cached<WorldSearchResult>(
       `player-search:${query.toLowerCase()}:${leagueId ?? "all"}:${page}`,
-      86_400,
+      TTL.SEARCH,
       async () => {
         let players: WorldPlayer[] = [];
         let paging = { current: page, total: page };
@@ -209,7 +210,7 @@ export const getLeagueTopPlayers = createServerFn({ method: "GET" })
 
     return cached<WorldSearchResult>(
       `league-top:${data.leagueId}:${season}`,
-      21_600,
+      TTL.TOP_PLAYERS,
       async () => {
         const json = await apiFootball<{
           response?: {
@@ -285,14 +286,14 @@ export type WorldPlayerCard = { card: PlayerCardData; source: "api-football" | "
 /** Build a full FootCard profile for any world player id. */
 export const getWorldPlayerCard = createServerFn({ method: "GET" })
   .inputValidator((input: { playerId: number; season?: number }) => input)
-  .handler(async ({ data }): Promise<WorldPlayerCard | null> => {
+  .handler(async ({ data }): Promise<CachedResult<WorldPlayerCard | null>> => {
     const apiKey = process.env["API_FOOTBALL_KEY"];
-    if (!apiKey) return null;
+    if (!apiKey) return { data: null, fetchedAt: null };
     const season = data.season ?? currentSeason();
 
-    return cached<WorldPlayerCard | null>(
+    return cachedMeta<WorldPlayerCard | null>(
       `player-card:${data.playerId}:${season}`,
-      21_600,
+      TTL.PLAYER,
       async () => {
         const json = await apiFootball<{
           response?: {

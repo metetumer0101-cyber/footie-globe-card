@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { cached } from "@/lib/api-cache.server";
+import { TTL } from "@/lib/freshness-config";
 import { players, teams } from "@/data/football";
 
 const API_BASE = "https://v3.football.api-sports.io";
@@ -168,7 +169,7 @@ export const getStandings = createServerFn({ method: "GET" })
 
     return cached<Standings>(
       `standings:${data.leagueId}:${season}`,
-      21_600,
+      TTL.STANDINGS,
       async () => {
         const json = await apiFootball<{
           response?: {
@@ -239,7 +240,7 @@ export const getMatchDetails = createServerFn({ method: "GET" })
 
     return cached<MatchDetails>(
       `match-detail:${data.fixtureId}`,
-      60,
+      TTL.LIVE,
       async () => {
         const [eventsJson, statsJson, lineupsJson] = await Promise.all([
           apiFootball<{ response?: { time?: { elapsed?: number; extra?: number }; team?: { id?: number; name?: string }; player?: { id?: number; name?: string }; assist?: { id?: number; name?: string }; type?: string; detail?: string; comments?: string }[] }>(`/fixtures/events?fixture=${data.fixtureId}`, apiKey),
@@ -326,7 +327,7 @@ export const getInjuries = createServerFn({ method: "GET" })
 
     return cached<Injury[]>(
       `injuries:${data.teamId}:${season}`,
-      43_200,
+      TTL.INJURIES,
       async () => {
         const json = await apiFootball<{
           response?: { player?: { id?: number; name?: string; photo?: string }; team?: { id?: number; name?: string }; fixture?: { id?: number; date?: string }; type?: string; reason?: string; status?: string }[];
@@ -375,7 +376,7 @@ export const getFixturesByLeague = createServerFn({ method: "GET" })
 
     return cached<Fixture[]>(
       `fixtures-league:${data.leagueId}:${season}:${date}`,
-      60,
+      TTL.FIXTURES,
       async () => {
         const json = await apiFootball<{
           response?: {

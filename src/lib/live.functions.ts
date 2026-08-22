@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { buildMockFeed, mockTransfers, type LiveFeed, type LiveFixture, type TransferHistory } from "@/lib/live";
 import { cached } from "@/lib/api-cache.server";
+import { TTL } from "@/lib/freshness-config";
 
 type ApiFootballFixture = {
   fixture?: { id?: number; status?: { short?: string; elapsed?: number | null }; date?: string };
@@ -44,7 +45,7 @@ export const getLiveFeed = createServerFn({ method: "GET" }).handler(async (): P
 
   return cached<LiveFeed>(
     `live-feed:${fallback.date}`,
-    60,
+    TTL.LIVE,
     async () => {
       const json = await apiFootball<{ response?: ApiFootballFixture[] }>(
         `/fixtures?date=${fallback.date}`,
@@ -81,8 +82,8 @@ export const getLiveFeed = createServerFn({ method: "GET" }).handler(async (): P
 });
 
 /**
- * Historical transfer data for a player, cached for 24h (it barely changes).
- * Falls back to the local mock transfer history used by the Transfer Path game.
+ * Historical transfer data for a player, cached for 6h so fresh moves show up
+ * the same day. Falls back to the local mock transfer history.
  */
 export const getPlayerTransfers = createServerFn({ method: "GET" })
   .inputValidator((input: { playerId: string; apiPlayerId?: number }) => input)
@@ -93,7 +94,7 @@ export const getPlayerTransfers = createServerFn({ method: "GET" })
 
     return cached<TransferHistory>(
       `transfers:${data.apiPlayerId}`,
-      86_400,
+      TTL.TRANSFERS,
       async () => {
         const json = await apiFootball<{
           response?: { transfers?: { date?: string; teams?: { in?: { name?: string }; out?: { name?: string } } }[] }[];
