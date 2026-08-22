@@ -430,8 +430,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "stats": "Stats",
         "lineups": "Lineups",
         "noEvents": "No events yet.",
-        "noStats": "No statistics available.",
-        "noLineups": "No lineups available.",
+        "noStats": "Statistics are not provided for this competition by the live data feed.",
+        "noLineups": "Lineups are not provided for this competition by the live data feed.",
         "startXI": "Starting XI",
         "bench": "Bench"
       },
@@ -836,8 +836,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "stats": "İstatistikler",
         "lineups": "Kadrolar",
         "noEvents": "Henüz olay yok.",
-        "noStats": "İstatistik bulunmuyor.",
-        "noLineups": "Kadro bulunmuyor.",
+        "noStats": "Bu lig için canlı veri akışında istatistik sağlanmıyor.",
+        "noLineups": "Bu lig için canlı veri akışında kadro bilgisi sağlanmıyor.",
         "startXI": "İlk 11",
         "bench": "Yedekler"
       },

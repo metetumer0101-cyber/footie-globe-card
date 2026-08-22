@@ -9,6 +9,7 @@ import { useLiveFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
 import { players } from "@/data/football";
 import { bumpBadgeStat } from "@/lib/badges";
 import type { LiveFixture } from "@/lib/live";
+import { sortFixtures } from "@/lib/live";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -52,18 +53,18 @@ function LiveListPage() {
     ? Math.max(0, Math.ceil((dataUpdatedAt + LIVE_POLL_MS - now) / 1000))
     : Math.ceil(LIVE_POLL_MS / 1000);
 
-  const allFixtures = useMemo(() => data?.fixtures ?? [], [data]);
+  const allFixtures = useMemo(() => sortFixtures(data?.fixtures ?? []), [data]);
   const liveCount = allFixtures.filter((f) => f.status === "live" || f.status === "halftime").length;
   const finishedCount = allFixtures.filter((f) => f.status === "finished").length;
   const fixtures = useMemo(
     () =>
-      allFixtures.filter((f) =>
-        filter === "all"
-          ? true
-          : filter === "live"
-            ? f.status === "live" || f.status === "halftime"
-            : f.status === filter,
-      ),
+      filter === "all"
+        ? allFixtures
+        : allFixtures.filter((f) =>
+            filter === "live"
+              ? f.status === "live" || f.status === "halftime"
+              : f.status === filter,
+          ),
     [allFixtures, filter],
   );
 
