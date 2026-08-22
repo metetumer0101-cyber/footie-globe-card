@@ -49,12 +49,12 @@ function asCoachStats(v: unknown): CoachStats {
 function asTeamStats(v: unknown): TeamStats {
   const obj = (v ?? {}) as Record<string, number>;
   return {
-    att: obj.att ?? 60,
-    mid: obj.mid ?? 60,
-    tdef: obj.tdef ?? 60,
-    pos: obj.pos ?? 60,
-    prs: obj.prs ?? 60,
-    frm: obj.frm ?? 60,
+    att: obj["att"] ?? 60,
+    mid: obj["mid"] ?? 60,
+    tdef: obj["tdef"] ?? 60,
+    pos: obj["pos"] ?? 60,
+    prs: obj["prs"] ?? 60,
+    frm: obj["frm"] ?? 60,
   };
 }
 
