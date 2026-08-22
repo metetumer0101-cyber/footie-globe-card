@@ -53,6 +53,8 @@ export type PlayerCardData = {
   careerGoals: number;
   photo?: string | undefined;
   league?: string | undefined;
+  /** API-Football id when known; enables the live current-club overlay. */
+  apiId?: number | undefined;
 };
 
 export type ManagerCardData = {
@@ -139,6 +141,7 @@ export const players: PlayerCardData[] = [
     id: "mbappe",
     type: "player",
     name: "Kylian Mbappé",
+    apiId: 278,
     club: "Real Madrid",
     clubBadge: "⚪",
     nation: "🇫🇷",
@@ -162,6 +165,7 @@ export const players: PlayerCardData[] = [
     id: "haaland",
     type: "player",
     name: "Erling Haaland",
+    apiId: 1100,
     club: "Manchester City",
     clubBadge: "🔵",
     nation: "🇳🇴",
@@ -254,6 +258,7 @@ export const players: PlayerCardData[] = [
     id: "vinicius",
     type: "player",
     name: "Vinícius Jr.",
+    apiId: 762,
     club: "Real Madrid",
     clubBadge: "⚪",
     nation: "🇧🇷",

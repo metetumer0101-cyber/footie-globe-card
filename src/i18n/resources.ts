@@ -578,6 +578,18 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "squadValue": "Squad value",
         "avgAge": "Average age"
       },
+      "freshness": {
+        "refresh": "Refresh data",
+        "refreshing": "Refreshing…",
+        "refreshed": "Data refreshed",
+        "wait": "Please wait {{seconds}}s before refreshing again",
+        "failed": "Could not refresh data",
+        "updatedJustNow": "Updated just now",
+        "updatedMinutes": "Updated {{count}} min ago",
+        "updatedHours": "Updated {{count}} h ago",
+        "updatedDays": "Updated {{count}} d ago",
+        "newSigning": "New signing"
+      },
       "favorites": {
         "add": "Add to favorites",
         "remove": "Remove from favorites"
@@ -983,6 +995,18 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "trophies": "Kupalar",
         "squadValue": "Kadro değeri",
         "avgAge": "Ortalama yaş"
+      },
+      "freshness": {
+        "refresh": "Verileri yenile",
+        "refreshing": "Yenileniyor…",
+        "refreshed": "Veriler güncellendi",
+        "wait": "Tekrar yenilemeden önce {{seconds}} sn bekle",
+        "failed": "Veriler yenilenemedi",
+        "updatedJustNow": "Az önce güncellendi",
+        "updatedMinutes": "{{count}} dk önce güncellendi",
+        "updatedHours": "{{count}} sa önce güncellendi",
+        "updatedDays": "{{count}} g önce güncellendi",
+        "newSigning": "Yeni transfer"
       },
       "favorites": {
         "add": "Favorilere ekle",

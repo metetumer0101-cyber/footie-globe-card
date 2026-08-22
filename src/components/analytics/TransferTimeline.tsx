@@ -5,13 +5,22 @@ import { ArrowRight, History } from "lucide-react";
 import { getPlayerTransfers } from "@/lib/live.functions";
 
 /** Historical transfer timeline, served through the cached API proxy. */
-export function TransferTimeline({ playerId }: { playerId: string }) {
+export function TransferTimeline({
+  playerId,
+  apiPlayerId: apiPlayerIdProp,
+}: {
+  playerId: string;
+  /** Resolved API id for catalogue players (live history instead of mock). */
+  apiPlayerId?: number | undefined;
+}) {
   const { t } = useTranslation();
   const fetchTransfers = useServerFn(getPlayerTransfers);
-  const apiPlayerId = playerId.startsWith("api-") ? Number(playerId.slice(4)) : NaN;
+  const derived = playerId.startsWith("api-") ? Number(playerId.slice(4)) : NaN;
+  const apiPlayerId =
+    apiPlayerIdProp != null && Number.isFinite(apiPlayerIdProp) ? apiPlayerIdProp : derived;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["transfers", playerId],
+    queryKey: ["transfers", playerId, Number.isFinite(apiPlayerId) ? apiPlayerId : "local"],
     queryFn: () =>
       fetchTransfers({
         data: { playerId, ...(Number.isFinite(apiPlayerId) ? { apiPlayerId } : {}) },

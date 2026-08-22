@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { cached } from "@/lib/api-cache.server";
+import { cached, cachedMeta, type CachedResult } from "@/lib/api-cache.server";
+import { TTL } from "@/lib/freshness-config";
 import {
   fetchTeamById,
   fetchTeamByName,
@@ -11,22 +12,22 @@ import {
 /** Full team page payload (info + venue + squad) by API-Football team id. */
 export const getTeamPage = createServerFn({ method: "GET" })
   .inputValidator((input: { teamId: number }) => input)
-  .handler(async ({ data }): Promise<TeamPageData | null> => {
+  .handler(async ({ data }): Promise<CachedResult<TeamPageData | null>> => {
     const apiKey = process.env["API_FOOTBALL_KEY"];
-    if (!apiKey || !Number.isFinite(data.teamId)) return null;
-    return cached(`team:${data.teamId}`, 86_400, () => fetchTeamById(data.teamId, apiKey), null);
+    if (!apiKey || !Number.isFinite(data.teamId)) return { data: null, fetchedAt: null };
+    return cachedMeta(`team:${data.teamId}`, TTL.SQUAD, () => fetchTeamById(data.teamId, apiKey), null);
   });
 
 /** Resolve a catalogue team by display name, then load its live page data. */
 export const getTeamPageByName = createServerFn({ method: "GET" })
   .inputValidator((input: { name: string }) => input)
-  .handler(async ({ data }): Promise<TeamPageData | null> => {
+  .handler(async ({ data }): Promise<CachedResult<TeamPageData | null>> => {
     const apiKey = process.env["API_FOOTBALL_KEY"];
     const name = data.name.trim();
-    if (!apiKey || !name) return null;
-    return cached(
+    if (!apiKey || !name) return { data: null, fetchedAt: null };
+    return cachedMeta(
       `team-name:${name.toLowerCase()}`,
-      86_400,
+      TTL.SQUAD,
       () => fetchTeamByName(name, apiKey),
       null,
     );
@@ -41,7 +42,7 @@ export const searchWorldTeams = createServerFn({ method: "GET" })
     if (!apiKey || query.length < 3) return [];
     return cached(
       `team-search:${query.toLowerCase()}`,
-      86_400,
+      TTL.SEARCH,
       () => searchTeamsByName(query, apiKey),
       [],
     );

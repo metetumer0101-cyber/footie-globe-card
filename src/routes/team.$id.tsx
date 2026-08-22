@@ -18,7 +18,9 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { InfoRow } from "@/components/analytics/CardDetailModal";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { RefreshDataButton } from "@/components/RefreshDataButton";
 import { getTeamPage, getTeamPageByName, searchWorldTeams } from "@/lib/entity.functions";
+import { getTeamRecentTransfers } from "@/lib/freshness.functions";
 import { teams, tierStyles, type TeamStats } from "@/data/football";
 import { cn } from "@/lib/utils";
 
@@ -162,14 +164,27 @@ function TeamPage() {
   const apiId = id.startsWith("api-") ? Number(id.slice(4)) : NaN;
   const byId = useServerFn(getTeamPage);
   const byName = useServerFn(getTeamPageByName);
+  const loadTransfers = useServerFn(getTeamRecentTransfers);
 
-  const { data: api, isLoading } = useQuery({
+  const { data: result, isLoading } = useQuery({
     queryKey: ["team-page", id],
     queryFn: () =>
       local ? byName({ data: { name: local.name } }) : byId({ data: { teamId: apiId } }),
     enabled: Boolean(local) || Number.isFinite(apiId),
     staleTime: 60 * 60 * 1000,
   });
+
+  const api = result?.data ?? null;
+  const fetchedAt = result?.fetchedAt ?? null;
+
+  // Recent inbound transfers power the "new signing" badges on the squad list.
+  const { data: recentTransfers } = useQuery({
+    queryKey: ["team-transfers", api?.id],
+    queryFn: () => loadTransfers({ data: { teamId: api?.id ?? 0 } }),
+    enabled: Boolean(api?.id),
+    staleTime: 6 * 60 * 60 * 1000,
+  });
+  const newSignings = new Map((recentTransfers ?? []).map((tr) => [tr.playerId, tr.date]));
 
   const invalid = !local && !Number.isFinite(apiId);
   const notFound = invalid || (!local && !isLoading && !api);
@@ -221,7 +236,16 @@ function TeamPage() {
                     </span>
                   )}
                 </div>
-                {name && <FavoriteButton type="team" id={id} name={name} />}
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  {name && <FavoriteButton type="team" id={id} name={name} />}
+                  <RefreshDataButton
+                    kind="team"
+                    id={id}
+                    apiId={api?.id ?? (Number.isFinite(apiId) ? apiId : undefined)}
+                    name={local?.name ?? api?.name}
+                    fetchedAt={fetchedAt}
+                  />
+                </div>
               </div>
 
               {api && (api.founded || api.venueName || api.country) && (
@@ -310,8 +334,13 @@ function TeamPage() {
                                 className="h-9 w-9 shrink-0 rounded-full bg-secondary/50 object-cover"
                               />
                               <span className="min-w-0 flex-1">
-                                <span className="block truncate text-sm font-semibold">
-                                  {p.name}
+                                <span className="flex items-center gap-1.5 truncate text-sm font-semibold">
+                                  <span className="truncate">{p.name}</span>
+                                  {newSignings.has(p.id) && (
+                                    <span className="shrink-0 rounded-full bg-accent/20 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-accent">
+                                      {t("freshness.newSigning")}
+                                    </span>
+                                  )}
                                 </span>
                                 <span className="block truncate text-xs text-muted-foreground">
                                   {p.position}

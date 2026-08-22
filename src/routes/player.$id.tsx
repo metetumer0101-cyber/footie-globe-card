@@ -20,7 +20,9 @@ import { AttributeList } from "@/components/analytics/AttributeList";
 import { TransferTimeline } from "@/components/analytics/TransferTimeline";
 import { InfoRow } from "@/components/analytics/CardDetailModal";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { RefreshDataButton } from "@/components/RefreshDataButton";
 import { getWorldPlayerCard } from "@/lib/player-search.functions";
+import { getPlayerCurrentClub, resolveApiPlayerId } from "@/lib/freshness.functions";
 import { players, tierStyles, type PlayerCardData } from "@/data/football";
 import { cn } from "@/lib/utils";
 
@@ -69,19 +71,47 @@ function PlayerPage() {
   const { t } = useTranslation();
   const { id } = Route.useParams();
   const local = players.find((p) => p.id === id);
-  const apiId = id.startsWith("api-") ? Number(id.slice(4)) : NaN;
+  const directApiId = id.startsWith("api-") ? Number(id.slice(4)) : NaN;
   const loadCard = useServerFn(getWorldPlayerCard);
+  const resolveRef = useServerFn(resolveApiPlayerId);
+  const loadClub = useServerFn(getPlayerCurrentClub);
   const [copied, setCopied] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["player-page", apiId],
-    queryFn: () => loadCard({ data: { playerId: apiId } }),
-    enabled: !local && Number.isFinite(apiId),
+  const { data: cardResult, isLoading } = useQuery({
+    queryKey: ["player-page", directApiId],
+    queryFn: () => loadCard({ data: { playerId: directApiId } }),
+    enabled: !local && Number.isFinite(directApiId),
     staleTime: 30 * 60 * 1000,
   });
 
-  const card: PlayerCardData | null = local ?? data?.card ?? null;
+  // Catalogue players: resolve their API id once (cached 7d server-side).
+  const { data: resolved } = useQuery({
+    queryKey: ["player-ref", local?.id],
+    queryFn: () => resolveRef({ data: { name: local?.name ?? "" } }),
+    enabled: Boolean(local && !local.apiId),
+    staleTime: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  const apiPlayerId = Number.isFinite(directApiId)
+    ? directApiId
+    : (local?.apiId ?? resolved?.apiId ?? NaN);
+
+  // Live club overlay: the latest transfer is fresher than squad listings.
+  const { data: clubResult } = useQuery({
+    queryKey: ["current-club", apiPlayerId],
+    queryFn: () => loadClub({ data: { apiPlayerId } }),
+    enabled: Number.isFinite(apiPlayerId),
+    staleTime: 60 * 60 * 1000,
+  });
+
+  const baseCard: PlayerCardData | null = local ?? cardResult?.data?.card ?? null;
+  const liveClub = clubResult?.data ?? null;
+  const card: PlayerCardData | null =
+    baseCard && liveClub && liveClub.club && liveClub.club !== baseCard.club
+      ? { ...baseCard, club: liveClub.club }
+      : baseCard;
   const loading = !local && isLoading;
+  const fetchedAt = clubResult?.fetchedAt ?? cardResult?.fetchedAt ?? null;
 
   const share = async () => {
     const url = window.location.href;
@@ -116,6 +146,13 @@ function PlayerPage() {
           {card && (
             <div className="flex items-center gap-2">
               <FavoriteButton type="player" id={card.id} name={card.name} />
+              <RefreshDataButton
+                kind="player"
+                id={id}
+                apiId={Number.isFinite(apiPlayerId) ? apiPlayerId : undefined}
+                name={local?.name ?? card.name}
+                fetchedAt={fetchedAt}
+              />
               <button
                 onClick={() => void share()}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-secondary/60 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-secondary"
@@ -149,14 +186,26 @@ function PlayerPage() {
             </Link>
           </section>
         ) : (
-          <PlayerDetail card={card} />
+          <PlayerDetail
+            card={card}
+            clubLogo={liveClub?.logo ?? null}
+            apiPlayerId={Number.isFinite(apiPlayerId) ? apiPlayerId : undefined}
+          />
         )}
       </div>
     </AppShell>
   );
 }
 
-function PlayerDetail({ card }: { card: PlayerCardData }) {
+function PlayerDetail({
+  card,
+  clubLogo,
+  apiPlayerId,
+}: {
+  card: PlayerCardData;
+  clubLogo?: string | null | undefined;
+  apiPlayerId?: number | undefined;
+}) {
   const { t } = useTranslation();
   const tier = tierStyles[card.tier];
 
@@ -188,8 +237,19 @@ function PlayerDetail({ card }: { card: PlayerCardData }) {
           )}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-xl font-bold">{card.name}</h1>
-            <p className="truncate text-sm text-muted-foreground">
-              {card.clubBadge} {card.club}
+            <p className="flex items-center gap-1.5 truncate text-sm text-muted-foreground">
+              {clubLogo ? (
+                <img
+                  src={clubLogo}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-4 w-4 shrink-0 object-contain"
+                />
+              ) : (
+                <span>{card.clubBadge}</span>
+              )}
+              <span className="truncate">{card.club}</span>
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", tier.chip)}>
@@ -245,7 +305,7 @@ function PlayerDetail({ card }: { card: PlayerCardData }) {
         </div>
       </section>
 
-      <TransferTimeline playerId={card.id} />
+      <TransferTimeline playerId={card.id} apiPlayerId={apiPlayerId} />
 
       <div className="card-surface space-y-1 rounded-3xl p-4">
         <AttributeList titleKey="technical" attrs={card.technical} />
