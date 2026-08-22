@@ -67,7 +67,7 @@ function AdminCardsPage() {
     queryFn: () =>
       load({
         data: {
-          ...(type ? { type: type as CardInsert["type"] } : {}),
+          ...(type ? { type: type as "player" | "manager" | "team" } : {}),
           ...(search ? { search } : {}),
           page,
           limit: PAGE_SIZE,
