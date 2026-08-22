@@ -20,12 +20,12 @@ function asTier(t: string | null): Tier {
 function asCoreStats(v: unknown): CoreStats {
   const obj = (v ?? {}) as Record<string, number>;
   return {
-    pac: obj.pac ?? 60,
-    sho: obj.sho ?? 60,
-    pas: obj.pas ?? 60,
-    dri: obj.dri ?? 60,
-    def: obj.def ?? 60,
-    phy: obj.phy ?? 60,
+    pac: obj["pac"] ?? 60,
+    sho: obj["sho"] ?? 60,
+    pas: obj["pas"] ?? 60,
+    dri: obj["dri"] ?? 60,
+    def: obj["def"] ?? 60,
+    phy: obj["phy"] ?? 60,
   };
 }
 
