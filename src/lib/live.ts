@@ -29,6 +29,47 @@ export type LiveFeed = {
   fixtures: LiveFixture[];
 };
 
+/** Competitions users most often follow — surfaced first in lists. */
+const MAJOR_LEAGUES = [
+  "süper lig", "super lig", "premier league", "la liga", "serie a", "bundesliga",
+  "ligue 1", "champions league", "europa league", "conference league",
+  "eredivisie", "primeira liga", "championship", "mls", "major league soccer",
+  "1. lig", "tff", "fa cup", "copa", "dfb", "eredivisie", "belgian pro", "pro league",
+  "scottish premiership", "austrian bundesliga", "swiss super league", "super league",
+];
+
+function leagueRank(league: string): number {
+  const l = league.toLowerCase();
+  const idx = MAJOR_LEAGUES.findIndex((m) => l.includes(m));
+  return idx === -1 ? MAJOR_LEAGUES.length : idx;
+}
+
+const STATUS_ORDER: Record<LiveFixture["status"], number> = {
+  live: 0,
+  halftime: 0,
+  scheduled: 1,
+  finished: 2,
+};
+
+/**
+ * User-focused ordering: in-play matches first, then upcoming (by kickoff),
+ * then finished; major leagues always ahead of minor ones within a group.
+ * `favLeague` (if set) outranks everything inside its status group.
+ */
+export function sortFixtures(fixtures: LiveFixture[], favLeague?: string): LiveFixture[] {
+  return [...fixtures].sort((a, b) => {
+    const so = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+    if (so !== 0) return so;
+    if (favLeague) {
+      const fav = Number(b.league === favLeague) - Number(a.league === favLeague);
+      if (fav !== 0) return fav;
+    }
+    const lr = leagueRank(a.league) - leagueRank(b.league);
+    if (lr !== 0) return lr;
+    return a.kickoff.localeCompare(b.kickoff);
+  });
+}
+
 /** Deterministic offline feed so the module works with no API key configured. */
 export function buildMockFeed(now = new Date()): LiveFeed {
   const date = utcDateKey(now);
