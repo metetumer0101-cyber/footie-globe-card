@@ -11,13 +11,15 @@ import { MatchupCard } from "@/components/compare/MatchupCard";
 import {
   findEntity,
   metricsOf,
-  pools,
   radarOf,
   subtitleOf,
   trendingMatchups,
+  type Entity,
   type EntityKind,
 } from "@/lib/compare";
 import { tierStyles } from "@/data/football";
+import { listPublishedCards } from "@/lib/cms.functions";
+import { mapCardRow } from "@/lib/cms-mappers";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/compare")({
@@ -39,6 +41,10 @@ export const Route = createFileRoute("/compare")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  loader: async () => {
+    const rows = await listPublishedCards({ data: { limit: 1000 } });
+    return rows.map(mapCardRow);
+  },
   component: Page,
 });
 
@@ -51,6 +57,17 @@ const KIND_LABEL: Record<EntityKind, string> = {
 
 function Page() {
   const { t } = useTranslation();
+  const allCards = Route.useLoaderData();
+  const pools = useMemo(() => {
+    const out: Record<EntityKind, Entity[]> = { player: [], manager: [], team: [] };
+    for (const card of allCards) {
+      if (card.type === "player" || card.type === "manager" || card.type === "team") {
+        out[card.type].push(card);
+      }
+    }
+    return out;
+  }, [allCards]);
+
   const [kind, setKind] = useState<EntityKind>("player");
   const [ids, setIds] = useState<Record<EntityKind, [string, string]>>({
     player: ["haaland", "mbappe"],
@@ -62,8 +79,8 @@ function Page() {
   const exportRef = useRef<HTMLDivElement>(null);
 
   const [idA, idB] = ids[kind];
-  const a = findEntity(kind, idA);
-  const b = findEntity(kind, idB);
+  const a = findEntity(kind, idA, pools[kind]);
+  const b = findEntity(kind, idB, pools[kind]);
 
   const radarA = useMemo(() => radarOf(a), [a]);
   const radarB = useMemo(() => radarOf(b), [b]);
@@ -145,8 +162,8 @@ function Page() {
           </p>
           <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
             {trendingMatchups.map((m) => {
-              const ea = findEntity(m.kind, m.a);
-              const eb = findEntity(m.kind, m.b);
+              const ea = findEntity(m.kind, m.a, pools[m.kind]);
+              const eb = findEntity(m.kind, m.b, pools[m.kind]);
               return (
                 <button
                   key={`${m.kind}-${m.a}-${m.b}`}
