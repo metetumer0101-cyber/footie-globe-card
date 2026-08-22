@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/layout/AppShell";
 import { HeroBanner } from "@/components/home/HeroBanner";
@@ -8,8 +8,8 @@ import { SectionRow } from "@/components/home/SectionRow";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
 import { ManagerFrontCard } from "@/components/cards/ManagerFrontCard";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
-import { players, managers, type CardData } from "@/data/football";
-import { popularTeams, activeCompetitions } from "@/components/home/data";
+import { players, managers, teams, type CardData } from "@/data/football";
+import { activeCompetitions } from "@/components/home/data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,19 +32,21 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<CardData | null>(null);
 
   const futureStars = players.filter((p) => p.age <= 21);
+  const openPlayer = (id: string) => void navigate({ to: "/player/$id", params: { id } });
 
   return (
     <AppShell>
-      <HeroBanner onOpen={() => setSelected(players.find((p) => p.id === "arda") ?? null)} />
+      <HeroBanner onOpen={() => openPlayer("arda")} />
 
       <LiveWidget />
 
       <SectionRow titleKey="popularPlayers">
         {players.map((p) => (
-          <PlayerFrontCard key={p.id} player={p} onClick={() => setSelected(p)} />
+          <PlayerFrontCard key={p.id} player={p} onClick={() => openPlayer(p.id)} />
         ))}
       </SectionRow>
 
@@ -55,25 +57,27 @@ function Index() {
       </SectionRow>
 
       <SectionRow titleKey="popularTeams">
-        {popularTeams.map((team) => (
-          <article
+        {teams.map((team) => (
+          <Link
             key={team.id}
-            className="card-surface flex w-36 shrink-0 snap-start flex-col items-center gap-1.5 rounded-2xl p-3"
+            to="/team/$id"
+            params={{ id: team.id }}
+            className="card-surface flex w-36 shrink-0 snap-start flex-col items-center gap-1.5 rounded-2xl p-3 transition-colors hover:bg-secondary/40"
           >
             <span className="grid h-14 w-14 place-items-center rounded-full bg-secondary/50 text-2xl">
-              {team.badge}
+              {team.clubBadge}
             </span>
             <h3 className="w-full truncate text-center text-sm font-semibold">{team.name}</h3>
             <p className="w-full truncate text-center text-xs text-muted-foreground">
               {team.league}
             </p>
-          </article>
+          </Link>
         ))}
       </SectionRow>
 
       <SectionRow titleKey="futureStars">
         {futureStars.map((p) => (
-          <PlayerFrontCard key={p.id} player={p} onClick={() => setSelected(p)} />
+          <PlayerFrontCard key={p.id} player={p} onClick={() => openPlayer(p.id)} />
         ))}
       </SectionRow>
 

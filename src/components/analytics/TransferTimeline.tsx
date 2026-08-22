@@ -8,10 +8,14 @@ import { getPlayerTransfers } from "@/lib/live.functions";
 export function TransferTimeline({ playerId }: { playerId: string }) {
   const { t } = useTranslation();
   const fetchTransfers = useServerFn(getPlayerTransfers);
+  const apiPlayerId = playerId.startsWith("api-") ? Number(playerId.slice(4)) : NaN;
 
   const { data, isLoading } = useQuery({
     queryKey: ["transfers", playerId],
-    queryFn: () => fetchTransfers({ data: { playerId } }),
+    queryFn: () =>
+      fetchTransfers({
+        data: { playerId, ...(Number.isFinite(apiPlayerId) ? { apiPlayerId } : {}) },
+      }),
     staleTime: 60 * 60 * 1000,
   });
 

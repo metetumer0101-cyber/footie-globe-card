@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Globe2, Loader2, RotateCcw } from "lucide-react";
+import { ChevronRight, Loader2, RotateCcw } from "lucide-react";
 import {
   getLeagueTopPlayers,
-  getWorldPlayerCard,
   searchWorldPlayers,
   type WorldPlayer,
 } from "@/lib/player-search.functions";
-import { players as localPlayers, type PlayerCardData } from "@/data/football";
 import { cn } from "@/lib/utils";
 
 const LEAGUES = [
@@ -68,24 +67,17 @@ function inAgeBucket(age: number | undefined, bucket: AgeBucket): boolean {
   return true;
 }
 
-export function WorldSearch({
-  query,
-  onSelect,
-}: {
-  query: string;
-  onSelect: (card: PlayerCardData) => void;
-}) {
+export function WorldSearch({ query }: { query: string }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const search = useServerFn(searchWorldPlayers);
   const topPlayers = useServerFn(getLeagueTopPlayers);
-  const loadCard = useServerFn(getWorldPlayerCard);
   const [debounced, setDebounced] = useState(query);
   // league 0 = all leagues (search mode); browse mode always picks a league.
   const [league, setLeague] = useState<number>(39);
   const [pos, setPos] = useState<PosGroup | "any">("any");
   const [ageBucket, setAgeBucket] = useState<AgeBucket>("any");
   const [nation, setNation] = useState<string>("any");
-  const [pending, setPending] = useState<number | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -185,21 +177,11 @@ export function WorldSearch({
     }
   }, [active, loading, list.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const open = async (player: WorldPlayer) => {
-    if (player.localId) {
-      const local = localPlayers.find((p) => p.id === player.localId);
-      if (local) {
-        onSelect(local);
-        return;
-      }
-    }
-    setPending(player.id);
-    try {
-      const result = await loadCard({ data: { playerId: player.id } });
-      if (result?.card) onSelect(result.card);
-    } finally {
-      setPending(null);
-    }
+  const open = (player: WorldPlayer) => {
+    void navigate({
+      to: "/player/$id",
+      params: { id: player.localId ?? `api-${player.id}` },
+    });
   };
 
   return (
@@ -319,7 +301,7 @@ export function WorldSearch({
             {list.map((p) => (
               <li key={p.id}>
                 <button
-                  onClick={() => void open(p)}
+                  onClick={() => open(p)}
                   className="card-surface flex w-full items-center gap-3 rounded-2xl p-2.5 text-start transition-colors hover:bg-secondary/40"
                 >
                   {p.photo ? (
@@ -342,11 +324,7 @@ export function WorldSearch({
                         .join(" · ")}
                     </span>
                   </span>
-                  {pending === p.id ? (
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
-                  ) : (
-                    <Globe2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </button>
               </li>
             ))}

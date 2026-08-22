@@ -126,9 +126,7 @@ function Page() {
           ))}
         </div>
 
-        {mode === "world" && (
-          <WorldSearch query={filters.query} onSelect={(card) => setSelected(card)} />
-        )}
+        {mode === "world" && <WorldSearch query={filters.query} />}
 
         {mode === "local" && (
         <div className="flex gap-1.5 overflow-x-auto pb-1">
