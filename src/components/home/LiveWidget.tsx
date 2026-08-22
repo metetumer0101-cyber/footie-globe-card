@@ -27,6 +27,12 @@ export function LiveWidget() {
         </Link>
       </header>
       <ul className="space-y-1.5">
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, i) => (
+            <li key={`sk-${i}`}>
+              <FixtureRowSkeleton />
+            </li>
+          ))}
         {fixtures.map((f) => (
           <li key={f.id}>
             <Link
