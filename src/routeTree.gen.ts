@@ -32,6 +32,7 @@ import { Route as AuthenticatedAdminCardsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminPagesRouteImport } from './routes/_authenticated.admin.pages'
 import { Route as AuthenticatedAdminTranslationsRouteImport } from './routes/_authenticated.admin.translations'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
+import { Route as ApiPublicCronSyncPlayersRouteImport } from './routes/api/public/cron/sync-players'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -149,6 +150,12 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const ApiPublicCronSyncPlayersRoute =
+  ApiPublicCronSyncPlayersRouteImport.update({
+    id: '/api/public/cron/sync-players',
+    path: '/api/public/cron/sync-players',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/admin/translations': typeof AuthenticatedAdminTranslationsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/api/public/cron/sync-players': typeof ApiPublicCronSyncPlayersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -195,6 +203,7 @@ export interface FileRoutesByTo {
   '/admin/translations': typeof AuthenticatedAdminTranslationsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/api/public/cron/sync-players': typeof ApiPublicCronSyncPlayersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -221,6 +230,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/translations': typeof AuthenticatedAdminTranslationsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/api/public/cron/sync-players': typeof ApiPublicCronSyncPlayersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/admin/translations'
     | '/admin/users'
     | '/admin/'
+    | '/api/public/cron/sync-players'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -269,6 +280,7 @@ export interface FileRouteTypes {
     | '/admin/translations'
     | '/admin/users'
     | '/admin'
+    | '/api/public/cron/sync-players'
   id:
     | '__root__'
     | '/'
@@ -294,6 +306,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/translations'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/'
+    | '/api/public/cron/sync-players'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -311,6 +324,7 @@ export interface RootRouteChildren {
   SquadRoute: typeof SquadRoute
   PlayerIdRoute: typeof PlayerIdRoute
   TeamIdRoute: typeof TeamIdRoute
+  ApiPublicCronSyncPlayersRoute: typeof ApiPublicCronSyncPlayersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -476,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/public/cron/sync-players': {
+      id: '/api/public/cron/sync-players'
+      path: '/api/public/cron/sync-players'
+      fullPath: '/api/public/cron/sync-players'
+      preLoaderRoute: typeof ApiPublicCronSyncPlayersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -538,6 +559,7 @@ const rootRouteChildren: RootRouteChildren = {
   SquadRoute: SquadRoute,
   PlayerIdRoute: PlayerIdRoute,
   TeamIdRoute: TeamIdRoute,
+  ApiPublicCronSyncPlayersRoute: ApiPublicCronSyncPlayersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
