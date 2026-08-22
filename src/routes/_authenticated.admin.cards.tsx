@@ -113,7 +113,7 @@ function AdminCardsPage() {
         <select
           value={type}
           onChange={(e) => {
-            setType(e.target.value);
+            setType(e.target.value as "" | "player" | "manager" | "team");
             setPage(1);
           }}
           className="rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
