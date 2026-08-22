@@ -74,7 +74,14 @@ function MatchDetailPage() {
           <div className="mt-4 flex items-center justify-between gap-3">
             <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center">
               {fixture?.home.logo ? (
-                <img src={fixture.home.logo} alt={homeName} className="h-10 w-10 object-contain" />
+                <img
+                  src={fixture.home.logo}
+                  alt={homeName}
+                  width={40}
+                  height={40}
+                  decoding="async"
+                  className="h-10 w-10 object-contain"
+                />
               ) : (
                 <span className="text-3xl">{fixture?.home.badge ?? "⚽"}</span>
               )}
@@ -94,7 +101,14 @@ function MatchDetailPage() {
             </div>
             <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 text-center">
               {fixture?.away.logo ? (
-                <img src={fixture.away.logo} alt={awayName} className="h-10 w-10 object-contain" />
+                <img
+                  src={fixture.away.logo}
+                  alt={awayName}
+                  width={40}
+                  height={40}
+                  decoding="async"
+                  className="h-10 w-10 object-contain"
+                />
               ) : (
                 <span className="text-3xl">{fixture?.away.badge ?? "⚽"}</span>
               )}
