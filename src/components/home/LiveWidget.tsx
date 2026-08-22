@@ -4,14 +4,15 @@ import { useTranslation } from "react-i18next";
 import { ChevronRight, Radio } from "lucide-react";
 import { buildMockFeed } from "@/lib/live";
 import { useLiveFeed } from "@/hooks/use-live-feed";
+import { FixtureRowSkeleton } from "@/components/ui/card-skeleton";
 
 /** Compact home-page snapshot of today's fixtures; full center lives at /live. */
 export function LiveWidget() {
   const { t } = useTranslation();
-  const { data } = useLiveFeed();
+  const { data, isLoading } = useLiveFeed();
   const fallback = useMemo(() => buildMockFeed(), []);
-  const fixtures = (data?.fixtures ?? fallback.fixtures).slice(0, 3);
-  if (!fixtures.length) return null;
+  const fixtures = (data?.fixtures ?? (isLoading ? [] : fallback.fixtures)).slice(0, 3);
+  if (!fixtures.length && !isLoading) return null;
 
   return (
     <section className="card-surface mt-4 rounded-3xl p-4">
