@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Globe2, LayoutGrid, Rows3, Search, SlidersHorizontal, Sparkles, Star, X } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
-import { CardDetailModal } from "@components/analytics/CardDetailModal";
+import { CardDetailModal } from "@/components/analytics/CardDetailModal";
 import { ScoutFilters } from "@/components/scout/ScoutFilters";
 import { ResultsTable } from "@/components/scout/ResultsTable";
 import { WorldSearch } from "@/components/scout/WorldSearch";
