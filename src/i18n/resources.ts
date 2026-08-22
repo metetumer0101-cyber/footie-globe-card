@@ -578,6 +578,32 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "squadValue": "Squad value",
         "avgAge": "Average age"
       },
+      "favorites": {
+        "add": "Add to favorites",
+        "remove": "Remove from favorites"
+      },
+      "forYou": {
+        "title": "For You",
+        "teamMatches": "Your teams' matches",
+        "players": "Players you follow"
+      },
+      "settings": {
+        "title": "Settings",
+        "language": "Default language",
+        "league": "Favorite league",
+        "leagueNone": "None"
+      },
+      "onboarding": {
+        "skip": "Skip",
+        "next": "Next",
+        "start": "Start scouting",
+        "s1t": "Scout the whole world",
+        "s1b": "Search thousands of real players, filter by position, age, league and more.",
+        "s2t": "Compare and build",
+        "s2b": "Put cards head-to-head, then build your dream squad on the pitch.",
+        "s3t": "Play and earn XP",
+        "s3b": "Daily games, streak bonuses and a global leaderboard. Climb from Bronze to Legend."
+      },
       "attr": {
         "pac": "PAC",
         "sho": "SHO",
@@ -957,6 +983,32 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "trophies": "Kupalar",
         "squadValue": "Kadro değeri",
         "avgAge": "Ortalama yaş"
+      },
+      "favorites": {
+        "add": "Favorilere ekle",
+        "remove": "Favorilerden çıkar"
+      },
+      "forYou": {
+        "title": "Sana Özel",
+        "teamMatches": "Takımlarının maçları",
+        "players": "Takip ettiğin oyuncular"
+      },
+      "settings": {
+        "title": "Ayarlar",
+        "language": "Varsayılan dil",
+        "league": "Favori lig",
+        "leagueNone": "Yok"
+      },
+      "onboarding": {
+        "skip": "Atla",
+        "next": "İleri",
+        "start": "Keşfe başla",
+        "s1t": "Tüm dünyayı tara",
+        "s1b": "Binlerce gerçek oyuncuyu ara; mevki, yaş, lig ve daha fazlasına göre filtrele.",
+        "s2t": "Karşılaştır ve kur",
+        "s2b": "Kartları yan yana koy, sonra sahada hayalindeki kadroyu kur.",
+        "s3t": "Oyna ve XP kazan",
+        "s3b": "Günlük oyunlar, seri bonusları ve küresel liderlik. Bronz'dan Efsane'ye tırman."
       },
       "attr": {
         "pac": "PAC",

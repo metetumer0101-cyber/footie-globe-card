@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, Radio } from "lucide-react";
 import { buildMockFeed } from "@/lib/live";
 import { useLiveFeed } from "@/hooks/use-live-feed";
+import { readSettings } from "@/lib/settings";
 import { FixtureRowSkeleton } from "@/components/ui/card-skeleton";
 
 /** Compact home-page snapshot of today's fixtures; full center lives at /live. */
@@ -11,7 +12,13 @@ export function LiveWidget() {
   const { t } = useTranslation();
   const { data, isLoading } = useLiveFeed();
   const fallback = useMemo(() => buildMockFeed(), []);
-  const fixtures = (data?.fixtures ?? (isLoading ? [] : fallback.fixtures)).slice(0, 3);
+  const [favLeague, setFavLeague] = useState<string | undefined>(undefined);
+  useEffect(() => setFavLeague(readSettings().league), []);
+  const all = data?.fixtures ?? (isLoading ? [] : fallback.fixtures);
+  const fixtures = (favLeague
+    ? [...all].sort((a, b) => Number(b.league === favLeague) - Number(a.league === favLeague))
+    : all
+  ).slice(0, 3);
   if (!fixtures.length && !isLoading) return null;
 
   return (

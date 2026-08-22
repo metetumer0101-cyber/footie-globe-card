@@ -3,6 +3,7 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { TopHeader } from "./TopHeader";
 import { Footer } from "./Footer";
+import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -15,6 +16,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
         <Footer />
         <BottomNav />
+        <OnboardingDialog />
       </div>
     </div>
   );

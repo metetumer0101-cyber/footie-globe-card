@@ -35,6 +35,30 @@ export type Database = {
         }
         Relationships: []
       }
+      favorites: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       injuries: {
         Row: {
           fixture_date: string | null

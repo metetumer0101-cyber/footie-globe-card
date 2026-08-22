@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/layout/AppShell";
 import { HeroBanner } from "@/components/home/HeroBanner";
 import { LiveWidget } from "@/components/home/LiveWidget";
+import { ForYouSection } from "@/components/home/ForYouSection";
 import { SectionRow } from "@/components/home/SectionRow";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
 import { ManagerFrontCard } from "@/components/cards/ManagerFrontCard";
@@ -43,6 +44,9 @@ function Index() {
       <HeroBanner onOpen={() => openPlayer("arda")} />
 
       <LiveWidget />
+
+      <ForYouSection />
+
 
       <SectionRow titleKey="popularPlayers">
         {players.map((p) => (
