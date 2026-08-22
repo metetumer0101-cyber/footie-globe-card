@@ -1,6 +1,6 @@
 import { Plus, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { tierStyles } from "@/data/football";
+import { tierStyles, type PlayerCardData } from "@/data/football";
 import { playerById, shortName } from "@/lib/squad";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ export function SlotChip({
   slotId,
   role,
   playerId,
+  extras,
   chem,
   compact,
   onClick,
@@ -19,13 +20,14 @@ export function SlotChip({
   slotId: string;
   role: string;
   playerId: string | null;
+  extras?: Record<string, PlayerCardData> | undefined;
   chem?: number | undefined;
   compact?: boolean;
   onClick: () => void;
   onDragStart?: (slotId: string, e: React.PointerEvent) => void;
 }) {
   const { t } = useTranslation();
-  const player = playerById(playerId);
+  const player = playerById(playerId, extras);
   const tier = player ? tierStyles[player.tier] : null;
 
   return (
@@ -47,8 +49,21 @@ export function SlotChip({
           player && tier ? cn(tier.frame, tier.glow) : "from-white/20 to-white/5",
         )}
       >
-        <span className="flex h-full w-full items-center justify-center rounded-[14px] bg-background/85 text-lg">
-          {player ? player.nation : <Plus className="h-4 w-4 text-muted-foreground" />}
+        <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-[14px] bg-background/85 text-lg">
+          {player ? (
+            player.photo ? (
+              <img
+                src={player.photo}
+                alt={player.name}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              player.nation
+            )
+          ) : (
+            <Plus className="h-4 w-4 text-muted-foreground" />
+          )}
         </span>
         {player && typeof chem === "number" && (
           <span

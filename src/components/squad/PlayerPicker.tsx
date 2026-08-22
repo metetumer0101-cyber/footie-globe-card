@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, X } from "lucide-react";
-import { managers, players, tierStyles } from "@/data/football";
-import { roleFit, leagueOf } from "@/lib/squad";
+import { useQuery } from "@tanstack/react-query";
+import { Globe2, Loader2, Search, X } from "lucide-react";
+import { managers, players, tierStyles, type PlayerCardData } from "@/data/football";
+import { apiPositionCode, leagueOf, roleFit } from "@/lib/squad";
+import { getWorldPlayerCard, searchWorldPlayers } from "@/lib/player-search.functions";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -16,6 +18,7 @@ export function PlayerPicker({
   usedIds,
   currentId,
   onPick,
+  onPickWorld,
   onClear,
   onClose,
 }: {
@@ -23,12 +26,20 @@ export function PlayerPicker({
   usedIds: string[];
   currentId: string | null;
   onPick: (id: string) => void;
+  onPickWorld: (card: PlayerCardData) => void;
   onClear: () => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [pendingId, setPendingId] = useState<number | null>(null);
   const isManager = target?.kind === "manager";
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(query.trim()), 400);
+    return () => clearTimeout(id);
+  }, [query]);
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -59,6 +70,44 @@ export function PlayerPicker({
       }))
       .sort((a, b) => b.fit - a.fit || a.name.localeCompare(b.name));
   }, [query, isManager, target]);
+
+  const worldEnabled = !isManager && !!target && debounced.length >= 3;
+  const worldQuery = useQuery({
+    queryKey: ["squad-picker-world", debounced],
+    queryFn: () => searchWorldPlayers({ data: { query: debounced, page: 1 } }),
+    enabled: worldEnabled,
+    staleTime: 60_000,
+  });
+
+  const role = target?.kind === "starter" ? target.role : null;
+  const localNames = useMemo(
+    () => new Set(players.map((p) => p.name.toLowerCase())),
+    [],
+  );
+  const worldHits = useMemo(() => {
+    const rows = worldQuery.data?.players ?? [];
+    return rows
+      .filter((h) => !h.localId && !localNames.has(h.name.toLowerCase()))
+      .map((h) => {
+        const pos = apiPositionCode(h.position);
+        return { hit: h, pos, fit: role ? roleFit(role, pos) : (2 as const) };
+      })
+      .sort((a, b) => b.fit - a.fit || a.hit.name.localeCompare(b.hit.name));
+  }, [worldQuery.data, localNames, role]);
+
+  const pickWorld = async (playerId: number) => {
+    if (pendingId) return;
+    setPendingId(playerId);
+    try {
+      const res = await getWorldPlayerCard({ data: { playerId } });
+      const card = res.data?.card;
+      if (card) onPickWorld(card);
+    } catch {
+      /* network hiccup — user can retry */
+    } finally {
+      setPendingId(null);
+    }
+  };
 
   return (
     <Dialog open={!!target} onOpenChange={(o) => !o && onClose()}>
@@ -134,6 +183,84 @@ export function PlayerPicker({
                       )}
                     >
                       {item.fit === 2 ? t("sq.fitPerfect") : item.fit === 1 ? t("sq.fitOk") : t("sq.fitBad")}
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+
+          {!isManager && debounced.length > 0 && debounced.length < 3 && (
+            <li className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+              {t("scout.worldHint")}
+            </li>
+          )}
+
+          {worldEnabled && (
+            <li className="flex items-center gap-2 px-2 pt-2 text-[10px] font-black uppercase tracking-wide text-muted-foreground">
+              <Globe2 className="h-3.5 w-3.5" /> {t("sq.worldSection")}
+              {worldQuery.isFetching && <Loader2 className="h-3 w-3 animate-spin" />}
+            </li>
+          )}
+
+          {worldEnabled && worldQuery.isPending && (
+            <li className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+              {t("scout.worldSearching")}
+            </li>
+          )}
+
+          {worldEnabled && !worldQuery.isPending && worldHits.length === 0 && (
+            <li className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+              {t("sq.worldEmpty")}
+            </li>
+          )}
+
+          {worldHits.map(({ hit, pos, fit }) => {
+            const worldId = `api-${hit.id}`;
+            const used = usedIds.includes(worldId);
+            const busy = pendingId === hit.id;
+            return (
+              <li key={worldId}>
+                <button
+                  onClick={() => void pickWorld(hit.id)}
+                  disabled={used || pendingId !== null}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-2 text-start transition-colors",
+                    used || pendingId !== null ? "opacity-40" : "hover:border-accent/60",
+                  )}
+                >
+                  <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-accent/30 bg-background text-[9px] font-black">
+                    {hit.photo ? (
+                      <img
+                        src={hit.photo}
+                        alt={hit.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      pos
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold">{hit.name}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground">
+                      {[hit.club, pos, hit.nationality].filter(Boolean).join(" · ")}
+                    </span>
+                  </span>
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-accent" />
+                  ) : (
+                    <span
+                      className={cn(
+                        "rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase",
+                        fit === 2
+                          ? "bg-primary/20 text-primary"
+                          : fit === 1
+                            ? "bg-accent/20 text-accent"
+                            : "bg-destructive/20 text-destructive",
+                      )}
+                    >
+                      {fit === 2 ? t("sq.fitPerfect") : fit === 1 ? t("sq.fitOk") : t("sq.fitBad")}
                     </span>
                   )}
                 </button>

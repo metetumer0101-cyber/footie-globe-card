@@ -48,6 +48,7 @@ export function Pitch({
               slotId={node.id}
               role={node.role}
               playerId={pid}
+              extras={squad.extras}
               chem={pid ? chem.perPlayer[pid] : undefined}
               compact
               onClick={() => onSlot(node.id)}
