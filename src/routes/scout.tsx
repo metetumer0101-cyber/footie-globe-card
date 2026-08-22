@@ -21,12 +21,13 @@ import {
 import type { CardData } from "@/data/football";
 import { cn } from "@/lib/utils";
 
-type ScoutSearch = { q?: string };
+type ScoutSearch = { q?: string | undefined };
 
 export const Route = createFileRoute("/scout")({
-  validateSearch: (search: Record<string, unknown>): ScoutSearch => ({
-    q: typeof search.q === "string" ? search.q : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): ScoutSearch => {
+    const q = search["q"];
+    return typeof q === "string" && q.length > 0 ? { q } : {};
+  },
   head: () => ({
     meta: [
       { title: "Scout Engine — FootCard" },
