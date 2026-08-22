@@ -444,6 +444,14 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
       "badges": {
         "title": "Badge Collection"
       },
+      "footer": {
+        "tagline": "The football scouting platform: player cards, comparisons, squad builder and live matches in 35 languages.",
+        "product": "Product",
+        "company": "Company",
+        "about": "About FootCard",
+        "privacy": "Privacy Policy",
+        "dataNote": "Live data by API-Football. Not affiliated with FIFA, UEFA or any club."
+      },
       "transferHistory": "Transfer history",
       "playerOfTheDay": "Player of the Day",
       "popularPlayers": "Popular Players",
