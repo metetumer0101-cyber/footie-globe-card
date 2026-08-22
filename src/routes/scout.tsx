@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Globe2, LayoutGrid, Rows3, Search, SlidersHorizontal, Sparkles, Star, X } from "lucide-react";
@@ -21,7 +21,13 @@ import {
 import type { CardData } from "@/data/football";
 import { cn } from "@/lib/utils";
 
+type ScoutSearch = { q?: string | undefined };
+
 export const Route = createFileRoute("/scout")({
+  validateSearch: (search: Record<string, unknown>): ScoutSearch => {
+    const q = search["q"];
+    return typeof q === "string" && q.length > 0 ? { q } : {};
+  },
   head: () => ({
     meta: [
       { title: "Scout Engine — FootCard" },
@@ -47,9 +53,11 @@ const sortKeys: SortKey[] = ["scoutRating", "valueM", "age", "potential", "form"
 
 function Page() {
   const { t } = useTranslation();
+  const { q } = Route.useSearch();
   const [filters, setFilters] = useState<ScoutFilterState>({
     ...defaultFilters,
     minStats: { ...emptyStats },
+    query: q ?? "",
   });
   const [sort, setSort] = useState<SortKey>("scoutRating");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
@@ -58,8 +66,16 @@ function Page() {
   const [preset, setPreset] = useState<PresetKey | null>(null);
   const [onlySaved, setOnlySaved] = useState(false);
   const [selected, setSelected] = useState<CardData | null>(null);
-  const [mode, setMode] = useState<"local" | "world">("local");
+  const [mode, setMode] = useState<"local" | "world">(q ? "world" : "local");
   const { has, toggle, ids } = useWatchlist();
+
+  // Keep the query in sync when arriving from the global header search.
+  useEffect(() => {
+    if (q) {
+      setMode("world");
+      setFilters((f) => (f.query === q ? f : { ...f, query: q }));
+    }
+  }, [q]);
 
   const results = useMemo(() => {
     const list = filterAndSort(filters, sort, dir);
