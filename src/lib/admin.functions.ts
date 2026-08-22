@@ -71,7 +71,12 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       .select("id, display_name", { count: "exact" });
     if (data.search) {
       const q = escapeLike(data.search);
-      query = query.or(`display_name.ilike.%${q}%,id.eq.${data.search}`);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        data.search.trim(),
+      );
+      query = isUuid
+        ? query.or(`display_name.ilike.%${q}%,id.eq.${data.search.trim()}`)
+        : query.ilike("display_name", `%${q}%`);
     }
     const limit = data.limit ?? DEFAULT_PAGE_SIZE;
     const { from, to } = range(data.page ?? 1, limit);
