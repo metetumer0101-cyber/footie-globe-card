@@ -78,7 +78,6 @@ function mockSearch(query: string): WorldSearchResult {
         position: p.position,
         heightCm: p.heightCm,
         weightKg: p.weightKg,
-        club: p.club,
       })),
   };
 }
