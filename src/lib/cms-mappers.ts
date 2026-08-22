@@ -37,12 +37,12 @@ function asDeepAttrs(v: unknown): DeepAttr[] {
 function asCoachStats(v: unknown): CoachStats {
   const obj = (v ?? {}) as Record<string, number>;
   return {
-    att: obj.att ?? 60,
-    def: obj.def ?? 60,
-    pos: obj.pos ?? 60,
-    prs: obj.prs ?? 60,
-    dev: obj.dev ?? 60,
-    mgt: obj.mgt ?? 60,
+    att: obj["att"] ?? 60,
+    def: obj["def"] ?? 60,
+    pos: obj["pos"] ?? 60,
+    prs: obj["prs"] ?? 60,
+    dev: obj["dev"] ?? 60,
+    mgt: obj["mgt"] ?? 60,
   };
 }
 
