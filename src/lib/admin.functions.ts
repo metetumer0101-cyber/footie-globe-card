@@ -86,18 +86,33 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
     if (error) throw error;
 
     const ids = (profiles ?? []).map((p) => p.id);
-    const { data: roles } = ids.length
-      ? await context.supabase.from("user_roles").select("user_id, role").in("user_id", ids)
-      : { data: [] };
+    // Also surface privileged users who have a role but no profile row yet.
+    const { data: allRoles, error: rolesError } = await context.supabase
+      .from("user_roles")
+      .select("user_id, role");
+    if (rolesError) throw rolesError;
+
+    const rolesByUser = new Map<string, ("admin" | "moderator")[]>();
+    for (const r of allRoles ?? []) {
+      const list = rolesByUser.get(r.user_id) ?? [];
+      list.push(r.role as "admin" | "moderator");
+      rolesByUser.set(r.user_id, list);
+    }
 
     const rows: UserWithRoles[] = (profiles ?? []).map((p) => ({
       id: p.id,
       displayName: p.display_name,
-      roles: (roles ?? [])
-        .filter((r) => r.user_id === p.id)
-        .map((r) => r.role as "admin" | "moderator"),
+      roles: rolesByUser.get(p.id) ?? [],
     }));
-    return { rows, count: count ?? 0 };
+
+    // Merge in role-holders missing from this page of profiles.
+    const seen = new Set(rows.map((r) => r.id));
+    for (const [userId, roles] of rolesByUser) {
+      if (!seen.has(userId)) {
+        rows.unshift({ id: userId, displayName: "(no profile)", roles });
+      }
+    }
+    return { rows, count: (count ?? 0) + (rows.length - (profiles?.length ?? 0)) };
   });
 
 export const listCards = createServerFn({ method: "GET" })
