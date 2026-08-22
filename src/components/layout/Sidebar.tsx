@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { navItems } from "./nav-items";
 import { cn } from "@/lib/utils";
+import brandIcon from "@/assets/footcard-icon.png";
 
 export function Sidebar() {
   const { t } = useTranslation();
@@ -17,11 +18,17 @@ export function Sidebar() {
       )}
     >
       <Link to="/" className="mb-6 flex items-center gap-2 px-2 py-1">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl gradient-pitch text-lg">
-          ⚽
-        </span>
+        <img
+          src={brandIcon}
+          alt="FootCard logo"
+          width={36}
+          height={36}
+          className="h-9 w-9 shrink-0 rounded-xl"
+        />
         {!collapsed && (
-          <span className="truncate text-lg font-extrabold tracking-tight">FootCard</span>
+          <span className="truncate text-lg font-extrabold tracking-tight">
+            Foot<span className="text-primary">Card</span>
+          </span>
         )}
       </Link>
 
