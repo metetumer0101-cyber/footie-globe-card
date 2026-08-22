@@ -18,7 +18,7 @@ import brandIcon from "../assets/footcard-icon.png";
 
 function NotFoundComponent() {
   return (
-    <div className="pitch-bg flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="gradient-pitch flex min-h-screen items-center justify-center bg-background px-4">
       <div className="card-surface max-w-md rounded-3xl p-8 text-center">
         <img
           src={brandIcon}
