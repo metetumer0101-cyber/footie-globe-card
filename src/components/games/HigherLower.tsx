@@ -2,11 +2,14 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Flame } from "lucide-react";
 import { bumpBadgeStat } from "@/lib/badges";
+import { dailyHigherLowerRounds } from "@/services/dailyEngine";
 import { HL_BASE_XP, HL_PENALTY, newHLRound, streakMultiplier, type HLRound } from "@/lib/games";
 
 export function HigherLower({ onAward }: { onAward: (xp: number) => void }) {
   const { t } = useTranslation();
-  const [round, setRound] = useState<HLRound>(() => newHLRound());
+  // Deterministic first round (daily seed) keeps SSR and client render identical;
+  // subsequent rounds are random via next().
+  const [round, setRound] = useState<HLRound>(() => dailyHigherLowerRounds(new Date(), 1)[0]!);
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(0);
   const [result, setResult] = useState<{ ok: boolean; xp: number } | null>(null);

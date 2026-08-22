@@ -115,7 +115,13 @@ function TeamSearchBox() {
                 className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-start transition-colors hover:bg-secondary/40"
               >
                 {hit.logo ? (
-                  <img src={hit.logo} alt="" className="h-7 w-7 shrink-0 object-contain" />
+                  <img
+                    src={hit.logo}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-7 w-7 shrink-0 object-contain"
+                  />
                 ) : (
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-secondary/50 text-xs">
                     🛡️
