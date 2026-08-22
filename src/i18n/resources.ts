@@ -368,6 +368,19 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "loadingMore": "Loading more…",
         "worldTop": "Top scorers",
         "loadingCard": "Building card…",
+        "filters": {
+          "position": "Position",
+          "age": "Age",
+          "nationality": "Nation",
+          "allLeagues": "All leagues"
+        },
+        "ageBuckets": {
+          "any": "Any age",
+          "u21": "≤ 21",
+          "b22_26": "22–26",
+          "b27_31": "27–31",
+          "o31": "32 +"
+        },
         "preset": {
           "wonderkids": "Wonderkids",
           "expiring": "Free agents & expiring",
@@ -698,6 +711,19 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "loadingMore": "Yükleniyor…",
         "worldTop": "Gol kralları",
         "loadingCard": "Kart hazırlanıyor…",
+        "filters": {
+          "position": "Mevki",
+          "age": "Yaş",
+          "nationality": "Ülke",
+          "allLeagues": "Tüm ligler"
+        },
+        "ageBuckets": {
+          "any": "Tüm yaşlar",
+          "u21": "≤ 21",
+          "b22_26": "22–26",
+          "b27_31": "27–31",
+          "o31": "32 +"
+        },
         "preset": {
           "wonderkids": "Genç yetenekler",
           "expiring": "Sözleşmesi bitenler",
