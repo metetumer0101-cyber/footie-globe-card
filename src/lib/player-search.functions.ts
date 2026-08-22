@@ -91,12 +91,33 @@ function mockSearch(query: string): WorldSearchResult {
   };
 }
 
-/** Search every player indexed worldwide by name (min 3 characters). */
+type LeagueSearchResponse = {
+  paging?: { current?: number; total?: number };
+  response?: {
+    player?: {
+      id?: number;
+      name?: string;
+      firstname?: string;
+      lastname?: string;
+      age?: number;
+      nationality?: string;
+      height?: string;
+      weight?: string;
+      photo?: string;
+    };
+    statistics?: { team?: { name?: string }; games?: { position?: string } }[];
+  }[];
+};
+
+/** Search every player indexed worldwide by name (min 3 characters). When a
+ * leagueId is given, the search is scoped to that league via the stats
+ * endpoint (which also yields club + position for each hit). */
 export const searchWorldPlayers = createServerFn({ method: "GET" })
-  .inputValidator((input: { query: string; page?: number }) => input)
+  .inputValidator((input: { query: string; page?: number; leagueId?: number }) => input)
   .handler(async ({ data }): Promise<WorldSearchResult> => {
     const query = data.query.trim();
     const page = data.page ?? 1;
+    const leagueId = data.leagueId && data.leagueId > 0 ? data.leagueId : null;
     if (query.length < 3) return { players: [], source: "mock", paging: { current: 1, total: 1 } };
 
     const apiKey = process.env["API_FOOTBALL_KEY"];
@@ -104,37 +125,74 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
     if (!apiKey) return fallback;
 
     return cached<WorldSearchResult>(
-      `player-search:${query.toLowerCase()}:${page}`,
+      `player-search:${query.toLowerCase()}:${leagueId ?? "all"}:${page}`,
       86_400,
       async () => {
-        const json = await apiFootball<ProfileResponse>(
-          `/players/profiles?search=${encodeURIComponent(query)}&page=${page}`,
-          apiKey,
-        );
-        const list = (json?.response ?? [])
-          .map((r) => r.player)
-          .filter((p): p is NonNullable<typeof p> => Boolean(p?.id))
-          .map((p) => ({
-            id: p.id as number,
-            name: p.name ?? `${p.firstname ?? ""} ${p.lastname ?? ""}`.trim(),
-            firstname: p.firstname,
-            lastname: p.lastname,
-            age: p.age,
-            nationality: p.nationality,
-            position: p.position,
-            photo: p.photo,
-            heightCm: num(p.height?.replace(/\D/g, "")),
-            weightKg: num(p.weight?.replace(/\D/g, "")),
-          }));
+        let players: WorldPlayer[] = [];
+        let paging = { current: page, total: page };
+
+        if (leagueId) {
+          // League-scoped search; walk season candidates for free-tier keys.
+          for (const season of seasonCandidates()) {
+            const json = await apiFootball<LeagueSearchResponse>(
+              `/players?league=${leagueId}&season=${season}&search=${encodeURIComponent(query)}&page=${page}`,
+              apiKey,
+            );
+            const rows = json?.response ?? [];
+            if (!rows.length && page === 1) continue;
+            players = rows
+              .filter((r) => r.player?.id)
+              .map((r) => ({
+                id: r.player?.id as number,
+                name:
+                  r.player?.name ??
+                  `${r.player?.firstname ?? ""} ${r.player?.lastname ?? ""}`.trim(),
+                firstname: r.player?.firstname,
+                lastname: r.player?.lastname,
+                age: r.player?.age,
+                nationality: r.player?.nationality,
+                position: r.statistics?.[0]?.games?.position,
+                photo: r.player?.photo,
+                heightCm: num(r.player?.height?.replace(/\D/g, "")),
+                weightKg: num(r.player?.weight?.replace(/\D/g, "")),
+                club: r.statistics?.[0]?.team?.name,
+              }));
+            paging = {
+              current: json?.paging?.current ?? page,
+              total: Math.max(json?.paging?.total ?? page, 1),
+            };
+            break;
+          }
+        } else {
+          const json = await apiFootball<ProfileResponse>(
+            `/players/profiles?search=${encodeURIComponent(query)}&page=${page}`,
+            apiKey,
+          );
+          players = (json?.response ?? [])
+            .map((r) => r.player)
+            .filter((p): p is NonNullable<typeof p> => Boolean(p?.id))
+            .map((p) => ({
+              id: p.id as number,
+              name: p.name ?? `${p.firstname ?? ""} ${p.lastname ?? ""}`.trim(),
+              firstname: p.firstname,
+              lastname: p.lastname,
+              age: p.age,
+              nationality: p.nationality,
+              position: p.position,
+              photo: p.photo,
+              heightCm: num(p.height?.replace(/\D/g, "")),
+              weightKg: num(p.weight?.replace(/\D/g, "")),
+            }));
+          paging = {
+            current: json?.paging?.current ?? page,
+            total: Math.max(json?.paging?.total ?? page, 1),
+          };
+        }
+
         // Page 1 with zero hits falls back to the local catalogue; an empty
         // page beyond 1 just means the search is exhausted — stop paging.
-        if (!list.length && page === 1) return null;
-        const totalPages = json?.paging?.total ?? page;
-        return {
-          players: list,
-          paging: { current: json?.paging?.current ?? page, total: Math.max(totalPages, 1) },
-          source: "api-football" as const,
-        };
+        if (!players.length && page === 1) return null;
+        return { players, paging, source: "api-football" as const };
       },
       fallback,
     );
