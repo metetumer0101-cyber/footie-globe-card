@@ -53,7 +53,7 @@ export const SquadExportCard = forwardRef<
           </g>
         </svg>
         {nodes.map((node) => {
-          const p = playerById(squad.starters[node.id] ?? null);
+          const p = playerById(squad.starters[node.id] ?? null, squad.extras);
           return (
             <div
               key={node.id}
@@ -66,8 +66,16 @@ export const SquadExportCard = forwardRef<
                   p ? tierStyles[p.tier].frame : "from-white/20 to-white/5",
                 )}
               >
-                <div className="flex h-full w-full items-center justify-center rounded-[20px] bg-background/85 text-4xl">
-                  {p ? p.nation : ""}
+                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[20px] bg-background/85 text-4xl">
+                  {p ? (
+                    p.photo ? (
+                      <img src={p.photo} alt={p.name} className="h-full w-full object-cover" />
+                    ) : (
+                      p.nation
+                    )
+                  ) : (
+                    ""
+                  )}
                 </div>
               </div>
               <div className="mt-1 truncate text-xl font-black">

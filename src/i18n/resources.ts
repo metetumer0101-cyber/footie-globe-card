@@ -343,7 +343,9 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "savedSquads": "Saved squads",
         "delete": "Delete",
         "share": "Share squad",
-        "downloaded": "Squad image downloaded"
+        "downloaded": "Squad image downloaded",
+        "worldSection": "World database",
+        "worldEmpty": "No players found worldwide"
       },
       "scout": {
         "subtitle": "Multi-parametric search across the FootCard database.",
@@ -763,7 +765,9 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "savedSquads": "Kayıtlı kadrolar",
         "delete": "Sil",
         "share": "Kadroyu paylaş",
-        "downloaded": "Kadro görseli indirildi"
+        "downloaded": "Kadro görseli indirildi",
+        "worldSection": "Dünya veritabanı",
+        "worldEmpty": "Dünya veritabanında oyuncu bulunamadı"
       },
       "scout": {
         "subtitle": "FootCard veritabanında cok parametreli arama.",

@@ -341,10 +341,19 @@ export const getWorldPlayerCard = createServerFn({ method: "GET" })
         const rating = parseFloat(s?.games?.rating ?? "6.6");
         const base = clamp(40 + (Number.isFinite(rating) ? (rating - 5.5) * 24 : 22));
         const seed = String(p.id);
-        const pos = (s?.games?.position ?? "MF").slice(0, 3).toUpperCase();
+        const rawPos = (s?.games?.position ?? "").trim().toLowerCase();
+        const pos = rawPos.startsWith("goal")
+          ? "GK"
+          : rawPos.startsWith("def")
+            ? "CB"
+            : rawPos.startsWith("mid")
+              ? "CM"
+              : rawPos.startsWith("att") || rawPos.startsWith("for")
+                ? "ST"
+                : "CM";
 
         const core = {
-          pac: clamp(base + (pos === "DEF" ? -2 : 4) + ((hash(seed + "pac") % 13) - 6)),
+          pac: clamp(base + (pos === "CB" ? -2 : 4) + ((hash(seed + "pac") % 13) - 6)),
           sho: clamp(base + per90(s?.goals?.total) * 22 + per90(s?.shots?.total) * 4 - 6),
           pas: clamp(base + (s?.passes?.accuracy ?? 70) * 0.18 + per90(s?.passes?.key) * 6 - 12),
           dri: clamp(base + per90(s?.dribbles?.success) * 8 - 2),
@@ -352,7 +361,7 @@ export const getWorldPlayerCard = createServerFn({ method: "GET" })
             base +
               per90(s?.tackles?.total) * 8 +
               per90(s?.tackles?.interceptions) * 6 -
-              (pos === "ATT" ? 18 : 6),
+              (pos === "ST" ? 18 : 6),
           ),
           phy: clamp(
             base +
