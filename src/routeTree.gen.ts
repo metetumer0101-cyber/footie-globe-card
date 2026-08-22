@@ -27,7 +27,10 @@ import { Route as LiveFixtureIdRouteImport } from './routes/live.$fixtureId'
 import { Route as PlayerIdRouteImport } from './routes/player.$id'
 import { Route as TeamIdRouteImport } from './routes/team.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
+import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated.admin.announcements'
 import { Route as AuthenticatedAdminCardsRouteImport } from './routes/_authenticated.admin.cards'
+import { Route as AuthenticatedAdminPagesRouteImport } from './routes/_authenticated.admin.pages'
+import { Route as AuthenticatedAdminTranslationsRouteImport } from './routes/_authenticated.admin.translations'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -118,11 +121,28 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminAnnouncementsRoute =
+  AuthenticatedAdminAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCardsRoute = AuthenticatedAdminCardsRouteImport.update({
   id: '/cards',
   path: '/cards',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminPagesRoute = AuthenticatedAdminPagesRouteImport.update({
+  id: '/pages',
+  path: '/pages',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminTranslationsRoute =
+  AuthenticatedAdminTranslationsRouteImport.update({
+    id: '/translations',
+    path: '/translations',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -141,7 +161,10 @@ export interface FileRoutesByFullPath {
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
+  '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/admin/cards': typeof AuthenticatedAdminCardsRoute
+  '/admin/pages': typeof AuthenticatedAdminPagesRoute
+  '/admin/translations': typeof AuthenticatedAdminTranslationsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -159,7 +182,10 @@ export interface FileRoutesByTo {
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live': typeof LiveIndexRoute
+  '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/admin/cards': typeof AuthenticatedAdminCardsRoute
+  '/admin/pages': typeof AuthenticatedAdminPagesRoute
+  '/admin/translations': typeof AuthenticatedAdminTranslationsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -181,7 +207,10 @@ export interface FileRoutesById {
   '/player/$id': typeof PlayerIdRoute
   '/team/$id': typeof TeamIdRoute
   '/live/': typeof LiveIndexRoute
+  '/_authenticated/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
   '/_authenticated/admin/cards': typeof AuthenticatedAdminCardsRoute
+  '/_authenticated/admin/pages': typeof AuthenticatedAdminPagesRoute
+  '/_authenticated/admin/translations': typeof AuthenticatedAdminTranslationsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -203,7 +232,10 @@ export interface FileRouteTypes {
     | '/player/$id'
     | '/team/$id'
     | '/live/'
+    | '/admin/announcements'
     | '/admin/cards'
+    | '/admin/pages'
+    | '/admin/translations'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -221,7 +253,10 @@ export interface FileRouteTypes {
     | '/player/$id'
     | '/team/$id'
     | '/live'
+    | '/admin/announcements'
     | '/admin/cards'
+    | '/admin/pages'
+    | '/admin/translations'
     | '/admin'
   id:
     | '__root__'
@@ -242,7 +277,10 @@ export interface FileRouteTypes {
     | '/player/$id'
     | '/team/$id'
     | '/live/'
+    | '/_authenticated/admin/announcements'
     | '/_authenticated/admin/cards'
+    | '/_authenticated/admin/pages'
+    | '/_authenticated/admin/translations'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -391,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/announcements': {
+      id: '/_authenticated/admin/announcements'
+      path: '/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AuthenticatedAdminAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/cards': {
       id: '/_authenticated/admin/cards'
       path: '/cards'
@@ -398,16 +443,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCardsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/pages': {
+      id: '/_authenticated/admin/pages'
+      path: '/pages'
+      fullPath: '/admin/pages'
+      preLoaderRoute: typeof AuthenticatedAdminPagesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/translations': {
+      id: '/_authenticated/admin/translations'
+      path: '/translations'
+      fullPath: '/admin/translations'
+      preLoaderRoute: typeof AuthenticatedAdminTranslationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAnnouncementsRoute: typeof AuthenticatedAdminAnnouncementsRoute
   AuthenticatedAdminCardsRoute: typeof AuthenticatedAdminCardsRoute
+  AuthenticatedAdminPagesRoute: typeof AuthenticatedAdminPagesRoute
+  AuthenticatedAdminTranslationsRoute: typeof AuthenticatedAdminTranslationsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAnnouncementsRoute: AuthenticatedAdminAnnouncementsRoute,
   AuthenticatedAdminCardsRoute: AuthenticatedAdminCardsRoute,
+  AuthenticatedAdminPagesRoute: AuthenticatedAdminPagesRoute,
+  AuthenticatedAdminTranslationsRoute: AuthenticatedAdminTranslationsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
