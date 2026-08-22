@@ -126,8 +126,15 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
             heightCm: num(p.height?.replace(/\D/g, "")),
             weightKg: num(p.weight?.replace(/\D/g, "")),
           }));
-        if (!list.length) return null;
-        return { players: list, source: "api-football" as const };
+        // Page 1 with zero hits falls back to the local catalogue; an empty
+        // page beyond 1 just means the search is exhausted — stop paging.
+        if (!list.length && page === 1) return null;
+        const totalPages = json?.paging?.total ?? page;
+        return {
+          players: list,
+          paging: { current: json?.paging?.current ?? page, total: Math.max(totalPages, 1) },
+          source: "api-football" as const,
+        };
       },
       fallback,
     );
