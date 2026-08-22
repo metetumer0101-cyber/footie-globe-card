@@ -39,6 +39,12 @@ function currentSeason(): number {
   return now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
 }
 
+/** Seasons to try, newest first (free API tiers cap at older seasons). */
+function seasonCandidates(preferred?: number): number[] {
+  const base = preferred ?? currentSeason();
+  return [...new Set([base, base - 1, 2024, 2023])];
+}
+
 function num(raw?: string | number | null): number | undefined {
   if (raw == null) return undefined;
   const parsed = parseInt(String(raw), 10);
@@ -151,14 +157,15 @@ export const getLeagueTopPlayers = createServerFn({ method: "GET" })
             statistics?: { team?: { name?: string }; games?: { position?: string } }[];
           }[];
         }>(`/players/topscorers?league=${data.leagueId}&season=${season}`, apiKey);
-        const rows = json?.response?.length
-          ? json.response
-          : (
-              await apiFootball<typeof json>(
-                `/players/topscorers?league=${data.leagueId}&season=${season - 1}`,
-                apiKey,
-              )
-            )?.response ?? [];
+        let rows = json?.response ?? [];
+        for (const alt of seasonCandidates(season)) {
+          if (rows.length) break;
+          const retry = await apiFootball<typeof json>(
+            `/players/topscorers?league=${data.leagueId}&season=${alt}`,
+            apiKey,
+          );
+          rows = retry?.response ?? [];
+        }
         const list = (rows ?? [])
           .filter((r) => r.player?.id)
           .map((r) => ({
@@ -242,7 +249,16 @@ export const getWorldPlayerCard = createServerFn({ method: "GET" })
           }[];
         }>(`/players?id=${data.playerId}&season=${season}`, apiKey);
 
-        const entry = json?.response?.[0];
+        let payload = json;
+        for (const alt of seasonCandidates(season)) {
+          if (payload?.response?.length) break;
+          payload = await apiFootball<typeof json>(
+            `/players?id=${data.playerId}&season=${alt}`,
+            apiKey,
+          );
+        }
+
+        const entry = payload?.response?.[0];
         const p = entry?.player;
         if (!p?.id) return null;
         const s = entry?.statistics?.[0];
