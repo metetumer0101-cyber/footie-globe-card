@@ -55,7 +55,7 @@ const emptyCard: CardInsert = {
 
 function AdminCardsPage() {
   const queryClient = useQueryClient();
-  const [type, setType] = useState<string>("");
+  const [type, setType] = useState<"" | "player" | "manager" | "team">("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<CardRow | null>(null);
