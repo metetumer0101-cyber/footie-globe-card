@@ -35,6 +35,27 @@ export type Database = {
         }
         Relationships: []
       }
+      api_usage: {
+        Row: {
+          day: string
+          endpoint: string
+          requests: number
+          updated_at: string
+        }
+        Insert: {
+          day?: string
+          endpoint: string
+          requests?: number
+          updated_at?: string
+        }
+        Update: {
+          day?: string
+          endpoint?: string
+          requests?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cms_announcements: {
         Row: {
           active: boolean
@@ -515,6 +536,81 @@ export type Database = {
         }
         Relationships: []
       }
+      world_players: {
+        Row: {
+          age: number | null
+          api_id: number
+          appearances: number | null
+          assists: number | null
+          club: string | null
+          club_id: number | null
+          firstname: string | null
+          goals: number | null
+          height_cm: number | null
+          injured: boolean
+          lastname: string | null
+          league: string | null
+          league_id: number | null
+          minutes: number | null
+          name: string
+          nationality: string | null
+          photo: string | null
+          position: string | null
+          rating: number | null
+          season: number | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          age?: number | null
+          api_id: number
+          appearances?: number | null
+          assists?: number | null
+          club?: string | null
+          club_id?: number | null
+          firstname?: string | null
+          goals?: number | null
+          height_cm?: number | null
+          injured?: boolean
+          lastname?: string | null
+          league?: string | null
+          league_id?: number | null
+          minutes?: number | null
+          name: string
+          nationality?: string | null
+          photo?: string | null
+          position?: string | null
+          rating?: number | null
+          season?: number | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          age?: number | null
+          api_id?: number
+          appearances?: number | null
+          assists?: number | null
+          club?: string | null
+          club_id?: number | null
+          firstname?: string | null
+          goals?: number | null
+          height_cm?: number | null
+          injured?: boolean
+          lastname?: string | null
+          league?: string | null
+          league_id?: number | null
+          minutes?: number | null
+          name?: string
+          nationality?: string | null
+          photo?: string | null
+          position?: string | null
+          rating?: number | null
+          season?: number | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       xp_events: {
         Row: {
           created_at: string
@@ -551,6 +647,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_api_usage: {
+        Args: { _count?: number; _endpoint: string }
+        Returns: undefined
       }
       weekly_leaderboard: {
         Args: never
