@@ -120,6 +120,51 @@ export function buildMockFeed(now = new Date()): LiveFeed {
   return { date, source: "mock", fixtures };
 }
 
+/* ---------------- API-Football fixture mapping ---------------- */
+
+/** Raw API-Football fixture row (subset used by the proxy). */
+export type ApiFootballFixture = {
+  fixture?: { id?: number; status?: { short?: string; elapsed?: number | null }; date?: string };
+  league?: { name?: string };
+  teams?: {
+    home?: { id?: number; name?: string; logo?: string };
+    away?: { id?: number; name?: string; logo?: string };
+  };
+  goals?: { home?: number | null; away?: number | null };
+};
+
+export function mapFixtureStatus(short: string | undefined): LiveFixture["status"] {
+  if (!short) return "scheduled";
+  if (["1H", "2H", "ET", "P", "LIVE"].includes(short)) return "live";
+  if (short === "HT") return "halftime";
+  if (["FT", "AET", "PEN"].includes(short)) return "finished";
+  return "scheduled";
+}
+
+/** Normalize one raw API-Football row into the app fixture shape. */
+export function mapFixtureRow(row: ApiFootballFixture, fallbackId: string): LiveFixture {
+  return {
+    id: String(row.fixture?.id ?? fallbackId),
+    league: row.league?.name ?? "—",
+    home: {
+      name: row.teams?.home?.name ?? "Home",
+      badge: "⚽",
+      score: row.goals?.home ?? 0,
+      logo: row.teams?.home?.logo,
+    },
+    away: {
+      name: row.teams?.away?.name ?? "Away",
+      badge: "⚽",
+      score: row.goals?.away ?? 0,
+      logo: row.teams?.away?.logo,
+    },
+    status: mapFixtureStatus(row.fixture?.status?.short),
+    minute: row.fixture?.status?.elapsed ?? 0,
+    kickoff: (row.fixture?.date ?? "").slice(11, 16),
+    performers: [],
+  };
+}
+
 /* ---------------- Historical transfers ---------------- */
 
 export type TransferMove = { date: string; from: string; to: string };
