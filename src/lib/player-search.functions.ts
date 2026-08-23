@@ -23,29 +23,9 @@ export type WorldPlayer = {
 
 export type WorldSearchResult = {
   players: WorldPlayer[];
-  source: "api-football" | "mock";
+  source: "api-football" | "mock" | "database";
   paging: { current: number; total: number };
 };
-
-async function apiFootball<T>(path: string, apiKey: string): Promise<T | null> {
-  const res = await fetch(`${API_BASE}${path}`, { headers: { "x-apisports-key": apiKey } });
-  if (!res.ok) {
-    console.error(`[player-search] API-Football ${path} -> ${res.status}`);
-    return null;
-  }
-  return (await res.json()) as T;
-}
-
-function currentSeason(): number {
-  const now = new Date();
-  return now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
-}
-
-/** Seasons to try, newest first (free API tiers cap at older seasons). */
-function seasonCandidates(preferred?: number): number[] {
-  const base = preferred ?? currentSeason();
-  return [...new Set([base, base - 1, 2024, 2023])];
-}
 
 function num(raw?: string | number | null): number | undefined {
   if (raw == null) return undefined;
