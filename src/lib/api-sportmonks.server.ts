@@ -2,14 +2,13 @@
  * Shared server-only fetcher for SportMonks Soccer API (v3).
  *
  * This is the single source of truth (SSOT) for every SportMonks call, mirroring
- * the role `api-football.server.ts` plays for API-Football. It centralises the
- * base URL, authentication, HTTP error classification, quota detection, usage
- * tracking and the `sm:` cache-key prefix so that the porting work in later
- * steps (Step 2-4) routes all reads through one consistent client.
+ * every SportMonks call. It centralises the base URL, authentication, HTTP
+ * error classification, quota detection, usage tracking and the `sm:` cache-key
+ * prefix so all reads route through one consistent client.
  *
- * It is gated behind the `USE_SPORTMONKS=true` feature flag: when the flag is
- * off (the default) the existing API-Football behaviour is left untouched, so
- * rolling back is a single env change.
+ * This is the sole data provider now — the API-Football client was fully removed
+ * in Step 4 (cleanup), so there is no longer a `USE_SPORTMONKS` feature flag to
+ * toggle between providers. SportMonks is the only provider.
  *
  * NOTE ON THE SportMonks v3 data model (confirmed during research):
  *  - Base `https://api.sportmonks.com/v3/football`, auth via `?api_token=` query
@@ -33,14 +32,10 @@ export function sportMonksToken(): string | undefined {
   return process.env["SPORTMONKS_API_TOKEN"];
 }
 
-/**
- * Feature flag. Env-based: when `USE_SPORTMONKS` is exactly `"true"` the
- * SportMonks client is enabled; otherwise the codebase keeps using the existing
- * API-Football client. Used by the porting work in later steps — Step 1 only
- * establishes the layer, it does not re-route existing server functions.
- */
-export function isSportMonksEnabled(): boolean {
-  return process.env["USE_SPORTMONKS"] === "true";
+/** Calendar start-year of the current season (UTC: Jun+ means the new year). */
+export function currentSeason(): number {
+  const now = new Date();
+  return now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
 }
 
 /** Classify a SportMonks error response status for callers. */
@@ -116,7 +111,7 @@ function buildUrl(query: SportMonksQuery, token: string): string {
 /**
  * Fetch a single SportMonks endpoint and return the decoded body, or null on any
  * error. Every call is counted via `trackApiUsage` and its quota state reported
- * through the shared system-status tracker — consistent with `apiFootball`.
+ * through the shared system-status tracker.
  */
 export async function sportMonks<T>(query: SportMonksQuery): Promise<T | null> {
   const path = query.path;

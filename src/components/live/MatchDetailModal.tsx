@@ -16,9 +16,9 @@ import { useSystemStatus } from "@/hooks/use-system-status";
 import { getMatchDetails } from "@/lib/football-data.functions";
 import type { LiveFixture } from "@/lib/live";
 
-/** API-Football serves player headshots from a stable CDN path. */
+/** SportMonks serves player headshots from its CDN (id-based image_path). */
 function playerPhoto(id: number | undefined) {
-  return id ? `https://media.api-sports.io/football/players/${id}.png` : null;
+  return id ? `https://cdn.sportmonks.com/images/soccer/players/${id}/${id}.png` : null;
 }
 
 type DetailTab = "events" | "stats" | "lineups";

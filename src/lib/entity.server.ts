@@ -1,12 +1,10 @@
 /**
- * Server-only helpers for team pages (API-Football).
+ * Server-only helpers for team pages (SportMonks).
  * Imported exclusively by src/lib/entity.functions.ts (the thin wrapper).
  */
 
-import { isSportMonksEnabled, sportMonks, type SportMonksEnvelope, type SportMonksList } from "@/lib/api-sportmonks.server";
+import { sportMonks, type SportMonksEnvelope, type SportMonksList } from "@/lib/api-sportmonks.server";
 import { mapSmTeamHit, mapSmTeamPage, type SMTeam } from "@/lib/sportmonks.mappers";
-
-const API_BASE = "https://v3.football.api-sports.io";
 
 type SMVenue = { name?: string; city?: string; capacity?: number };
 type SMTeamWithVenue = SMTeam & { founded?: number; venue?: SMVenue | null };
@@ -39,124 +37,31 @@ export type TeamSearchHit = {
   country?: string | undefined;
 };
 
-type TeamsResponse = {
-  response?: {
-    team?: {
-      id?: number;
-      name?: string;
-      country?: string;
-      founded?: number;
-      logo?: string;
-    };
-    venue?: { name?: string; city?: string; capacity?: number };
-  }[];
-};
-
-async function apiFootball<T>(path: string, apiKey: string): Promise<T | null> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "x-apisports-key": apiKey },
+export async function fetchTeamById(teamId: number): Promise<TeamPageData | null> {
+  // `/teams/{id}?include=venue`. The `squad`/`player` includes 404 on the
+  // current plan, so the squad list is empty (honest) until a higher plan is
+  // granted; team identity + venue still render from the base payload.
+  const json = await sportMonks<SportMonksEnvelope<SMTeamWithVenue>>({ path: `/teams/${teamId}`, include: ["venue"] });
+  const t = json?.data;
+  if (!t?.id) return null;
+  return mapSmTeamPage(t, [], {
+    country: t.country_id != null ? String(t.country_id) : undefined,
+    founded: t.founded,
+    venue_name: t.venue?.name,
+    venue_city: t.venue?.city,
+    venue_capacity: t.venue?.capacity,
   });
-  if (!res.ok) {
-    console.error(`[entity] API-Football ${path} -> ${res.status}`);
-    return null;
-  }
-  return (await res.json()) as T;
 }
 
-export async function fetchTeamById(
-  teamId: number,
-  apiKey: string,
-): Promise<TeamPageData | null> {
-  if (isSportMonksEnabled()) {
-    // `/teams/{id}?include=venue`. The `squad`/`player` includes 404 on the
-    // current plan, so the squad list is empty (honest) until a higher plan is
-    // granted; team identity + venue still render from the base payload.
-    const json = await sportMonks<SportMonksEnvelope<SMTeamWithVenue>>({ path: `/teams/${teamId}`, include: ["venue"] });
-    const t = json?.data;
-    if (!t?.id) return null;
-    return mapSmTeamPage(t, [], {
-      country: t.country_id != null ? String(t.country_id) : undefined,
-      founded: t.founded,
-      venue_name: t.venue?.name,
-      venue_city: t.venue?.city,
-      venue_capacity: t.venue?.capacity,
-    });
-  }
-
-  const json = await apiFootball<TeamsResponse>(`/teams?id=${teamId}`, apiKey);
-  const entry = json?.response?.[0];
-  const team = entry?.team;
-  if (!team?.id) return null;
-
-  const squadJson = await apiFootball<{
-    response?: {
-      players?: {
-        id?: number;
-        name?: string;
-        age?: number;
-        number?: number;
-        position?: string;
-        photo?: string;
-      }[];
-    }[];
-  }>(`/players/squads?team=${teamId}`, apiKey);
-
-  const squad: SquadPlayer[] = (squadJson?.response?.[0]?.players ?? [])
-    .filter((p) => Boolean(p?.id && p?.name))
-    .map((p) => ({
-      id: p.id as number,
-      name: p.name as string,
-      age: p.age,
-      number: p.number,
-      position: p.position,
-      photo: p.photo ?? `https://media.api-sports.io/football/players/${p.id}.png`,
-    }));
-
-  return {
-    id: team.id,
-    name: team.name ?? "—",
-    logo: team.logo,
-    country: team.country,
-    founded: team.founded,
-    venueName: entry?.venue?.name,
-    venueCity: entry?.venue?.city,
-    venueCapacity: entry?.venue?.capacity,
-    squad,
-  };
-}
-
-export async function searchTeamsByName(
-  query: string,
-  apiKey: string,
-): Promise<TeamSearchHit[]> {
-  if (isSportMonksEnabled()) {
-    const json = await sportMonks<SportMonksList<SMTeam>>({ path: `/teams/search/${encodeURIComponent(query)}` });
-    return (json?.data ?? []).filter((tm) => tm.id).slice(0, 12).map(mapSmTeamHit);
-  }
-
-  const json = await apiFootball<TeamsResponse>(
-    `/teams?search=${encodeURIComponent(query)}`,
-    apiKey,
-  );
-  return (json?.response ?? [])
-    .map((r) => r.team)
-    .filter((tm) => Boolean(tm?.id && tm?.name))
-    .slice(0, 12)
-    .map((tm) => ({
-      id: tm?.id as number,
-      name: tm?.name as string,
-      logo: tm?.logo,
-      country: tm?.country,
-    }));
+export async function searchTeamsByName(query: string): Promise<TeamSearchHit[]> {
+  const json = await sportMonks<SportMonksList<SMTeam>>({ path: `/teams/search/${encodeURIComponent(query)}` });
+  return (json?.data ?? []).filter((tm) => tm.id).slice(0, 12).map(mapSmTeamHit);
 }
 
 /** Resolve a display name (e.g. a local catalogue team) to a live team page. */
-export async function fetchTeamByName(
-  name: string,
-  apiKey: string,
-): Promise<TeamPageData | null> {
-  const hits = await searchTeamsByName(name, apiKey);
+export async function fetchTeamByName(name: string): Promise<TeamPageData | null> {
+  const hits = await searchTeamsByName(name);
   const hit = hits.find((h) => h.name.toLowerCase() === name.toLowerCase()) ?? hits[0];
   if (!hit) return null;
-  return fetchTeamById(hit.id, apiKey);
+  return fetchTeamById(hit.id);
 }
