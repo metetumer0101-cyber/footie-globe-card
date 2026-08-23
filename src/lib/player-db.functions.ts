@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireAdmin, requireAdminOrModerator } from "@/lib/admin.server";
 import { syncLeaguePlayers, SYNC_LEAGUES } from "@/lib/player-db.server";
-import { isSportMonksEnabled } from "@/lib/api-sportmonks.server";
 
 /** Admin-triggered mirror of one league into world_players. */
 export const syncLeagueNow = createServerFn({ method: "POST" })
@@ -10,13 +9,8 @@ export const syncLeagueNow = createServerFn({ method: "POST" })
   .inputValidator((input: { leagueId: number }) => input)
   .handler(async ({ data, context }) => {
     await requireAdmin(context);
-    const key = isSportMonksEnabled()
-      ? process.env["SPORTMONKS_API_TOKEN"]
-      : process.env["API_FOOTBALL_KEY"];
-    if (!key)
-      throw new Error(
-        isSportMonksEnabled() ? "SPORTMONKS_API_TOKEN is not configured" : "API_FOOTBALL_KEY is not configured",
-      );
+    const key = process.env["SPORTMONKS_API_TOKEN"];
+    if (!key) throw new Error("SPORTMONKS_API_TOKEN is not configured");
     const result = await syncLeaguePlayers(data.leagueId, key);
     return (
       result ?? {

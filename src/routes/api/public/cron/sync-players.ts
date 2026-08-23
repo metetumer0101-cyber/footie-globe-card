@@ -38,11 +38,10 @@ async function handle(request: Request): Promise<Response> {
   }
   if (!authorized) return new Response("Unauthorized", { status: 401 });
 
-  const useSm = process.env["USE_SPORTMONKS"] === "true";
-  const key = useSm ? process.env["SPORTMONKS_API_TOKEN"] : process.env["API_FOOTBALL_KEY"];
+  const key = process.env["SPORTMONKS_API_TOKEN"];
   if (!key) {
     return Response.json(
-      { error: useSm ? "SPORTMONKS_API_TOKEN is not configured" : "API_FOOTBALL_KEY is not configured" },
+      { error: "SPORTMONKS_API_TOKEN is not configured" },
       { status: 500 },
     );
   }

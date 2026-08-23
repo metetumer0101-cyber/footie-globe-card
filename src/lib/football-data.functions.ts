@@ -1,10 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { cached, readCacheEntry } from "@/lib/api-cache.server";
+import { cached } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
 import { players, teams } from "@/data/football";
-import { apiFootball, apiFootballKey, currentSeason } from "@/lib/api-football.server";
 import {
-  isSportMonksEnabled,
+  currentSeason,
   resolveSeasonId,
   sportMonks,
   sportMonksCached,
@@ -18,14 +17,7 @@ import {
   type SMFixture,
   type SMStanding,
 } from "@/lib/sportmonks.mappers";
-import {
-  persistInjuries,
-  persistMatchDetails,
-  persistStandings,
-  readInjuriesDb,
-  readMatchDetailsDb,
-  readStandingsDb,
-} from "@/lib/football-data.server";
+import { persistStandings, readStandingsDb } from "@/lib/football-data.server";
 
 export type StandingRow = {
   rank: number;
@@ -175,93 +167,33 @@ export const getStandings = createServerFn({ method: "GET" })
     const season = data.season ?? currentSeason();
     const fallback = mockStandings(data.leagueId, season);
 
-    if (isSportMonksEnabled()) {
-      // `/standings?filter[league_id]&filter[season_id]&include=participant;form`
-      // is the documented SportMonks v3 call. NOTE: the current plan returns
-      // HTTP 400 "Filters should be passed as a string" (plan-gating) so this
-      // loader returns null and the existing DB/mock fallback below serves the
-      // table — kept wired for when standings filtering is granted.
-      const fallbackName = fallback.leagueName;
-      const smSeason = await resolveSeasonId(data.leagueId);
-      const result = await sportMonksCached<Standings | null>(
-        `standings:${data.leagueId}:${season}`,
-        TTL.STANDINGS,
-        async () => {
-          const filters: Record<string, number> = { league_id: data.leagueId };
-          if (smSeason != null) filters["season_id"] = smSeason;
-          const json = await sportMonks<SportMonksList<SMStanding>>({
-            path: "/standings",
-            filters,
-            include: ["participant", "form", "league"],
-          });
-          const rows = json?.data ?? [];
-          if (!rows.length) return null;
-          const mapped = mapSmStandings(rows, { id: data.leagueId }, fallbackName, season);
-          void persistStandings(mapped);
-          return mapped;
-        },
-        null,
-      );
-      if (result) return result;
-      const stored = await readStandingsDb(data.leagueId, season, fallback.leagueName);
-      return stored ?? fallback;
-    }
-
-    const apiKey = apiFootballKey();
-    const result = !apiKey
-      ? null
-      : await cached<Standings | null>(
-          `standings:${data.leagueId}:${season}`,
-          TTL.STANDINGS,
+    // `/standings?filter[league_id]&filter[season_id]&include=participant;form`
+    // is the documented SportMonks v3 call. NOTE: the current plan returns HTTP
+    // 400 "Filters should be passed as a string" (plan-gating) so this loader
+    // returns null and the existing DB/mock fallback below serves the table —
+    // kept wired for when standings filtering is granted.
+    const fallbackName = fallback.leagueName;
+    const smSeason = await resolveSeasonId(data.leagueId);
+    const result = await sportMonksCached<Standings | null>(
+      `standings:${data.leagueId}:${season}`,
+      TTL.STANDINGS,
       async () => {
-        const json = await apiFootball<{
-          response?: {
-            league?: { id?: number; name?: string; logo?: string; season?: number };
-            standings?: {
-              rank?: number;
-              team?: { id?: number; name?: string; logo?: string };
-              all?: { played?: number; win?: number; draw?: number; lose?: number; goals?: { for?: number; against?: number } };
-              points?: number;
-              form?: string;
-            }[][];
-          }[];
-        }>(`/standings?league=${data.leagueId}&season=${season}`, apiKey);
-        const first = json?.response?.[0];
-        const rows = (first?.standings?.[0] ?? []).map((r) => ({
-          rank: r.rank ?? 0,
-          team: {
-            id: r.team?.id ?? 0,
-            name: r.team?.name ?? "—",
-            logo: r.team?.logo ?? "",
-          },
-          points: r.points ?? 0,
-          played: r.all?.played ?? 0,
-          wins: r.all?.win ?? 0,
-          draws: r.all?.draw ?? 0,
-          losses: r.all?.lose ?? 0,
-          goalsFor: r.all?.goals?.for ?? 0,
-          goalsAgainst: r.all?.goals?.against ?? 0,
-          goalDiff: (r.all?.goals?.for ?? 0) - (r.all?.goals?.against ?? 0),
-          form: r.form ?? "",
-        }));
+        const filters: Record<string, number> = { league_id: data.leagueId };
+        if (smSeason != null) filters["season_id"] = smSeason;
+        const json = await sportMonks<SportMonksList<SMStanding>>({
+          path: "/standings",
+          filters,
+          include: ["participant", "form", "league"],
+        });
+        const rows = json?.data ?? [];
         if (!rows.length) return null;
-        const standings: Standings = {
-          leagueId: first?.league?.id ?? data.leagueId,
-          season: first?.league?.season ?? season,
-          leagueName: first?.league?.name ?? fallback.leagueName,
-          logo: first?.league?.logo ?? "",
-          rows,
-          source: "api-football",
-        };
-        // Mirror into the standings table so the table survives cache expiry.
-        void persistStandings(standings);
-        return standings;
+        const mapped = mapSmStandings(rows, { id: data.leagueId }, fallbackName, season);
+        void persistStandings(mapped);
+        return mapped;
       },
       null,
     );
-
     if (result) return result;
-    // Quota exhausted or upstream down — serve the last persisted table.
     const stored = await readStandingsDb(data.leagueId, season, fallback.leagueName);
     return stored ?? fallback;
   });
@@ -287,91 +219,21 @@ export const getMatchDetails = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<MatchDetails> => {
     const fallback = mockMatchDetails(data.fixtureId);
 
-    if (isSportMonksEnabled()) {
-      // Single call: `/fixtures/{id}?include=league;events;statistics;lineups`.
-      // Confirmed working includes on this plan: events, statistics, lineups.
-      // (`localTeam`/`visitorTeam` 404 and are deliberately omitted — the teams
-      // aren't recognised by the product types and the call drops to 404.)
-      return sportMonksCached<MatchDetails>(
-        `match-detail:${data.fixtureId}`,
-        TTL.LIVE,
-        async () => {
-          const json = await sportMonks<SportMonksEnvelope<SMFixture>>({
-            path: `/fixtures/${data.fixtureId}`,
-            include: ["league", "events", "statistics", "lineups"],
-          });
-          const f = json?.data;
-          if (!f) return null;
-          return mapSmMatchDetails(data.fixtureId, { ...f, state_id: f.state_id });
-        },
-        fallback,
-      );
-    }
-
-    const apiKey = process.env["API_FOOTBALL_KEY"];
-    if (!apiKey) return fallback;
-
-    return cached<MatchDetails>(
+    // Single call: `/fixtures/{id}?include=league;events;statistics;lineups`.
+    // Confirmed working includes on this plan: events, statistics, lineups.
+    // (`localTeam`/`visitorTeam` 404 and are deliberately omitted — the teams
+    // aren't recognised by the product types and the call drops to 404.)
+    return sportMonksCached<MatchDetails>(
       `match-detail:${data.fixtureId}`,
       TTL.LIVE,
       async () => {
-        const [eventsJson, statsJson, lineupsJson] = await Promise.all([
-          apiFootball<{ response?: { time?: { elapsed?: number; extra?: number }; team?: { id?: number; name?: string }; player?: { id?: number; name?: string }; assist?: { id?: number; name?: string }; type?: string; detail?: string; comments?: string }[] }>(`/fixtures/events?fixture=${data.fixtureId}`, apiKey),
-          apiFootball<{ response?: { team?: { id?: number; name?: string }; statistics?: { type?: string; value?: string | number }[] }[] }>(`/fixtures/statistics?fixture=${data.fixtureId}`, apiKey),
-          apiFootball<{
-            response?: {
-              team?: { id?: number; name?: string; logo?: string; colors?: unknown };
-              formation?: string;
-              coach?: { name?: string };
-              startXI?: { player?: { id?: number; name?: string; number?: number; pos?: string; grid?: string } }[];
-              substitutes?: { player?: { id?: number; name?: string; number?: number; pos?: string; grid?: string } }[];
-            }[];
-          }>(`/fixtures/lineups?fixture=${data.fixtureId}`, apiKey),
-        ]);
-
-        const events: MatchEvent[] = (eventsJson?.response ?? []).map((e) => ({
-          elapsed: e.time?.elapsed ?? 0,
-          extraTime: e.time?.extra,
-          team: { id: e.team?.id ?? 0, name: e.team?.name ?? "—" },
-          player: { id: e.player?.id ?? 0, name: e.player?.name ?? "—" },
-          assist: e.assist?.id ? { id: e.assist.id, name: e.assist.name } : undefined,
-          type: e.type ?? "",
-          detail: e.detail ?? "",
-          comments: e.comments,
-        }));
-
-        const stats: MatchStat[] = (statsJson?.response ?? [])
-          .flatMap((s) => (s.statistics ?? []).map((st) => ({ type: st.type ?? "", value: st.value })))
-          .reduce<MatchStat[]>((acc, cur, idx, arr) => {
-            const half = Math.ceil(arr.length / 2);
-            if (idx < half) {
-              const away = arr[idx + half];
-              acc.push({ type: cur.type, home: String(cur.value ?? ""), away: String(away?.value ?? "") });
-            }
-            return acc;
-          }, []);
-
-        const lineups: MatchLineup[] = (lineupsJson?.response ?? []).map((l) => ({
-          team: { id: l.team?.id ?? 0, name: l.team?.name ?? "—", logo: l.team?.logo ?? "" },
-          formation: l.formation ?? "—",
-          coach: l.coach?.name ?? "—",
-          startXI: (l.startXI ?? []).map((p) => ({
-            id: p.player?.id ?? 0,
-            name: p.player?.name ?? "—",
-            number: p.player?.number ?? 0,
-            pos: p.player?.pos ?? "—",
-            grid: p.player?.grid,
-          })),
-          substitutes: (l.substitutes ?? []).map((p) => ({
-            id: p.player?.id ?? 0,
-            name: p.player?.name ?? "—",
-            number: p.player?.number ?? 0,
-            pos: p.player?.pos ?? "—",
-            grid: p.player?.grid,
-          })),
-        }));
-
-        return { fixtureId: data.fixtureId, source: "api-football", events, stats, lineups };
+        const json = await sportMonks<SportMonksEnvelope<SMFixture>>({
+          path: `/fixtures/${data.fixtureId}`,
+          include: ["league", "events", "statistics", "lineups"],
+        });
+        const f = json?.data;
+        if (!f) return null;
+        return mapSmMatchDetails(data.fixtureId, { ...f, state_id: f.state_id });
       },
       fallback,
     );
@@ -393,36 +255,12 @@ function mockInjuries(teamId: number): Injury[] {
 export const getInjuries = createServerFn({ method: "GET" })
   .inputValidator((input: { teamId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<Injury[]> => {
-    if (isSportMonksEnabled()) {
-      // SportMonks v3 has no injuries route granted on the current plan
-      // (`/injuries/*` 404). Return an honest empty list rather than mocks.
-      return [];
-    }
-    const apiKey = process.env["API_FOOTBALL_KEY"];
-    const season = data.season ?? currentSeason();
-    const fallback = mockInjuries(data.teamId);
-    if (!apiKey) return fallback;
-
-    return cached<Injury[]>(
-      `injuries:${data.teamId}:${season}`,
-      TTL.INJURIES,
-      async () => {
-        const json = await apiFootball<{
-          response?: { player?: { id?: number; name?: string; photo?: string }; team?: { id?: number; name?: string }; fixture?: { id?: number; date?: string }; type?: string; reason?: string; status?: string }[];
-        }>(`/injuries?team=${data.teamId}&season=${season}`, apiKey);
-        const rows = json?.response ?? [];
-        if (!rows.length) return null;
-        return rows.map((r) => ({
-          player: { id: r.player?.id ?? 0, name: r.player?.name ?? "—", photo: r.player?.photo },
-          team: { id: r.team?.id ?? 0, name: r.team?.name ?? "—" },
-          fixture: r.fixture?.id ? { id: r.fixture.id, date: r.fixture.date } : undefined,
-          type: r.type,
-          reason: r.reason,
-          status: r.status,
-        }));
-      },
-      fallback,
-    );
+    // SportMonks v3 has no injuries route granted on the current plan
+    // (`/injuries/*` 404), and the legacy API-Football `/injuries` endpoint is no
+    // longer reachable (client removed in Step 4). Return an honest empty list
+    // rather than mocks.
+    void data;
+    return [];
   });
 
 function mockFixtures(leagueId: number, date: string): Fixture[] {
@@ -450,58 +288,20 @@ export const getFixturesByLeague = createServerFn({ method: "GET" })
     const date = data.date ?? today();
     const fallback = mockFixtures(data.leagueId, date);
 
-    if (isSportMonksEnabled()) {
-      // `/fixtures` filtering (`filter[league_id]`) returns "Filters should be
-      // passed as a string" on the current plan, so instead we pull the date's
-      // fixtures (which include the league object) and filter client-side.
-      return sportMonksCached<Fixture[]>(
-        `fixtures-league:${data.leagueId}:${season}:${date}`,
-        TTL.FIXTURES,
-        async () => {
-          const json = await sportMonks<SportMonksList<SMFixture>>({
-            path: `/fixtures/date/${date}`,
-            include: ["league"],
-          });
-          const rows = (json?.data ?? []).filter((r) => r.league_id === data.leagueId);
-          if (!rows.length) return null;
-          return rows.map((r) => mapSmFixtureBrief(r, data.leagueId, date));
-        },
-        fallback,
-      );
-    }
-
-    const apiKey = process.env["API_FOOTBALL_KEY"];
-    if (!apiKey) return fallback;
-
-    return cached<Fixture[]>(
+    // `/fixtures` filtering (`filter[league_id]`) returns "Filters should be
+    // passed as a string" on the current plan, so instead we pull the date's
+    // fixtures (which include the league object) and filter client-side.
+    return sportMonksCached<Fixture[]>(
       `fixtures-league:${data.leagueId}:${season}:${date}`,
       TTL.FIXTURES,
       async () => {
-        const json = await apiFootball<{
-          response?: {
-            fixture?: { id?: number; date?: string; status?: { short?: string; elapsed?: number | null } };
-            league?: { id?: number; name?: string; logo?: string };
-            teams?: { home?: { id?: number; name?: string; logo?: string }; away?: { id?: number; name?: string; logo?: string } };
-            goals?: { home?: number | null; away?: number | null };
-          }[];
-        }>(`/fixtures?league=${data.leagueId}&season=${season}&date=${date}`, apiKey);
-        const rows = json?.response ?? [];
-        if (!rows.length) return null;
-        return rows.map((r) => {
-          const short = r.fixture?.status?.short;
-          const status: Fixture["status"] =
-            ["1H", "2H", "ET", "P", "LIVE"].includes(short ?? "") ? "live" : short === "HT" ? "halftime" : ["FT", "AET", "PEN"].includes(short ?? "") ? "finished" : "scheduled";
-          return {
-            id: r.fixture?.id ?? 0,
-            date: r.fixture?.date ?? date,
-            league: { id: r.league?.id ?? data.leagueId, name: r.league?.name ?? "—", logo: r.league?.logo ?? "" },
-            home: { id: r.teams?.home?.id ?? 0, name: r.teams?.home?.name ?? "—", logo: r.teams?.home?.logo ?? "", score: r.goals?.home ?? undefined },
-            away: { id: r.teams?.away?.id ?? 0, name: r.teams?.away?.name ?? "—", logo: r.teams?.away?.logo ?? "", score: r.goals?.away ?? undefined },
-            status,
-            minute: r.fixture?.status?.elapsed ?? undefined,
-            source: "api-football",
-          };
+        const json = await sportMonks<SportMonksList<SMFixture>>({
+          path: `/fixtures/date/${date}`,
+          include: ["league"],
         });
+        const rows = (json?.data ?? []).filter((r) => r.league_id === data.leagueId);
+        if (!rows.length) return null;
+        return rows.map((r) => mapSmFixtureBrief(r, data.leagueId, date));
       },
       fallback,
     );
