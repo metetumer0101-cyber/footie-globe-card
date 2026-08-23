@@ -49,8 +49,14 @@ export const Route = createFileRoute("/scout")({
     ],
   }),
   loader: async () => {
-    const rows = await listPublishedCards({ data: { type: "player", limit: 500 } });
-    return rows.map(mapPlayerCard);
+    try {
+      const rows = await listPublishedCards({ data: { type: "player", limit: 500 } });
+      return rows.map(mapPlayerCard);
+    } catch {
+      // CMS/seed unavailable during SSR — render an empty (safe) scout state instead of
+      // crashing the page with a 500.
+      return [];
+    }
   },
   component: Page,
 });

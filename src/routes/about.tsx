@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -29,9 +29,14 @@ interface PageBlock {
 
 export const Route = createFileRoute("/about")({
   loader: async () => {
-    const page = await getPageBySlug({ data: { slug: "about" } });
-    if (!page) throw notFound();
-    return page;
+    try {
+      const page = await getPageBySlug({ data: { slug: "about" } });
+      return page;
+    } catch {
+      // CMS unavailable during SSR — fall back to the default About content below so the
+      // page renders (200) instead of throwing a 404/500.
+      return null;
+    }
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -56,11 +61,18 @@ export const Route = createFileRoute("/about")({
   component: AboutPage,
 });
 
+const DEFAULT_PILLARS: PageBlock[] = [
+  { icon: "Users", title: "Player Cards", text: "Deep player profiles with scouting attributes and market data." },
+  { icon: "GitCompareArrows", title: "Comparisons", text: "Head-to-head radar overlays and stat-by-stat breakdowns." },
+  { icon: "Radar", title: "Scout Engine", text: "Multi-parametric scouting to hunt wonderkids and playmakers." },
+  { icon: "Trophy", title: "Live Coverage", text: "Live scores, standings and squad building in 35 languages." },
+];
+
 function AboutPage() {
   const { t } = useTranslation();
   const page = Route.useLoaderData();
-  const body = (page.body ?? {}) as { blocks?: PageBlock[] };
-  const pillars = body.blocks ?? [];
+  const body = (page?.body ?? {}) as { blocks?: PageBlock[] };
+  const pillars = (body.blocks ?? []).length > 0 ? body.blocks! : DEFAULT_PILLARS;
 
   return (
     <AppShell>

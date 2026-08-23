@@ -588,6 +588,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "league": "League",
         "scan": "Scan to explore on FootCard",
         "noMatch": "No results",
+        "noData": "No cards are available to compare yet.",
         "vs": "VS",
         "wins": "leads"
       },
@@ -1050,6 +1051,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "league": "Lig",
         "scan": "FootCard'da keşfetmek için tara",
         "noMatch": "Sonuç yok",
+        "noData": "Karşılaştırılacak kart henüz yok.",
         "vs": "VS",
         "wins": "önde"
       },
