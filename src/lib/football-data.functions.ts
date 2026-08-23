@@ -4,6 +4,21 @@ import { TTL } from "@/lib/freshness-config";
 import { players, teams } from "@/data/football";
 import { apiFootball, apiFootballKey, currentSeason } from "@/lib/api-football.server";
 import {
+  isSportMonksEnabled,
+  resolveSeasonId,
+  sportMonks,
+  sportMonksCached,
+  type SportMonksEnvelope,
+  type SportMonksList,
+} from "@/lib/api-sportmonks.server";
+import {
+  mapSmFixtureBrief,
+  mapSmMatchDetails,
+  mapSmStandings,
+  type SMFixture,
+  type SMStanding,
+} from "@/lib/sportmonks.mappers";
+import {
   persistInjuries,
   persistMatchDetails,
   persistStandings,
@@ -157,10 +172,42 @@ function leagueIdToName(id: number): string {
 export const getStandings = createServerFn({ method: "GET" })
   .inputValidator((input: { leagueId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<Standings> => {
-    const apiKey = apiFootballKey();
     const season = data.season ?? currentSeason();
     const fallback = mockStandings(data.leagueId, season);
 
+    if (isSportMonksEnabled()) {
+      // `/standings?filter[league_id]&filter[season_id]&include=participant;form`
+      // is the documented SportMonks v3 call. NOTE: the current plan returns
+      // HTTP 400 "Filters should be passed as a string" (plan-gating) so this
+      // loader returns null and the existing DB/mock fallback below serves the
+      // table — kept wired for when standings filtering is granted.
+      const fallbackName = fallback.leagueName;
+      const smSeason = await resolveSeasonId(data.leagueId);
+      const result = await sportMonksCached<Standings | null>(
+        `standings:${data.leagueId}:${season}`,
+        TTL.STANDINGS,
+        async () => {
+          const filters: Record<string, number> = { league_id: data.leagueId };
+          if (smSeason != null) filters["season_id"] = smSeason;
+          const json = await sportMonks<SportMonksList<SMStanding>>({
+            path: "/standings",
+            filters,
+            include: ["participant", "form", "league"],
+          });
+          const rows = json?.data ?? [];
+          if (!rows.length) return null;
+          const mapped = mapSmStandings(rows, { id: data.leagueId }, fallbackName, season);
+          void persistStandings(mapped);
+          return mapped;
+        },
+        null,
+      );
+      if (result) return result;
+      const stored = await readStandingsDb(data.leagueId, season, fallback.leagueName);
+      return stored ?? fallback;
+    }
+
+    const apiKey = apiFootballKey();
     const result = !apiKey
       ? null
       : await cached<Standings | null>(
@@ -238,8 +285,30 @@ function mockMatchDetails(fixtureId: number): MatchDetails {
 export const getMatchDetails = createServerFn({ method: "GET" })
   .inputValidator((input: { fixtureId: number }) => input)
   .handler(async ({ data }): Promise<MatchDetails> => {
-    const apiKey = process.env["API_FOOTBALL_KEY"];
     const fallback = mockMatchDetails(data.fixtureId);
+
+    if (isSportMonksEnabled()) {
+      // Single call: `/fixtures/{id}?include=league;events;statistics;lineups`.
+      // Confirmed working includes on this plan: events, statistics, lineups.
+      // (`localTeam`/`visitorTeam` 404 and are deliberately omitted — the teams
+      // aren't recognised by the product types and the call drops to 404.)
+      return sportMonksCached<MatchDetails>(
+        `match-detail:${data.fixtureId}`,
+        TTL.LIVE,
+        async () => {
+          const json = await sportMonks<SportMonksEnvelope<SMFixture>>({
+            path: `/fixtures/${data.fixtureId}`,
+            include: ["league", "events", "statistics", "lineups"],
+          });
+          const f = json?.data;
+          if (!f) return null;
+          return mapSmMatchDetails(data.fixtureId, { ...f, state_id: f.state_id });
+        },
+        fallback,
+      );
+    }
+
+    const apiKey = process.env["API_FOOTBALL_KEY"];
     if (!apiKey) return fallback;
 
     return cached<MatchDetails>(
@@ -324,6 +393,11 @@ function mockInjuries(teamId: number): Injury[] {
 export const getInjuries = createServerFn({ method: "GET" })
   .inputValidator((input: { teamId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<Injury[]> => {
+    if (isSportMonksEnabled()) {
+      // SportMonks v3 has no injuries route granted on the current plan
+      // (`/injuries/*` 404). Return an honest empty list rather than mocks.
+      return [];
+    }
     const apiKey = process.env["API_FOOTBALL_KEY"];
     const season = data.season ?? currentSeason();
     const fallback = mockInjuries(data.teamId);
@@ -372,10 +446,31 @@ function mockFixtures(leagueId: number, date: string): Fixture[] {
 export const getFixturesByLeague = createServerFn({ method: "GET" })
   .inputValidator((input: { leagueId: number; season?: number; date?: string }) => input)
   .handler(async ({ data }): Promise<Fixture[]> => {
-    const apiKey = process.env["API_FOOTBALL_KEY"];
     const season = data.season ?? currentSeason();
     const date = data.date ?? today();
     const fallback = mockFixtures(data.leagueId, date);
+
+    if (isSportMonksEnabled()) {
+      // `/fixtures` filtering (`filter[league_id]`) returns "Filters should be
+      // passed as a string" on the current plan, so instead we pull the date's
+      // fixtures (which include the league object) and filter client-side.
+      return sportMonksCached<Fixture[]>(
+        `fixtures-league:${data.leagueId}:${season}:${date}`,
+        TTL.FIXTURES,
+        async () => {
+          const json = await sportMonks<SportMonksList<SMFixture>>({
+            path: `/fixtures/date/${date}`,
+            include: ["league"],
+          });
+          const rows = (json?.data ?? []).filter((r) => r.league_id === data.leagueId);
+          if (!rows.length) return null;
+          return rows.map((r) => mapSmFixtureBrief(r, data.leagueId, date));
+        },
+        fallback,
+      );
+    }
+
+    const apiKey = process.env["API_FOOTBALL_KEY"];
     if (!apiKey) return fallback;
 
     return cached<Fixture[]>(

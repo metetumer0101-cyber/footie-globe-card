@@ -7,6 +7,8 @@
  * exclusively by src/lib/freshness.functions.ts (the thin wrapper).
  */
 
+import { isSportMonksEnabled } from "@/lib/api-sportmonks.server";
+
 const API_BASE = "https://v3.football.api-sports.io";
 
 async function apiFootball<T>(path: string, apiKey: string): Promise<T | null> {
@@ -48,6 +50,11 @@ export async function fetchCurrentClub(
   apiPlayerId: number,
   apiKey: string,
 ): Promise<CurrentClub | null> {
+  if (isSportMonksEnabled()) {
+    // No granted SportMonks transfers route on the current plan; return null so
+    // the current-club overlay stays hidden rather than showing stale data.
+    return null;
+  }
   const json = await apiFootball<TransfersResponse>(`/transfers?player=${apiPlayerId}`, apiKey);
   const moves = (json?.response?.[0]?.transfers ?? [])
     .filter((m) => Boolean(m.teams?.in?.name))
@@ -78,6 +85,12 @@ export async function resolvePlayerIdByName(
   name: string,
   apiKey: string,
 ): Promise<number | null> {
+  if (isSportMonksEnabled()) {
+    // SportMonks player ids live in a different namespace to API-Football ids, so
+    // a name→API-Football-id resolution is meaningless under the flag. Return null
+    // (caller hides the overlay) until provider-aware id resolution is added.
+    return null;
+  }
   const cleaned = stripDiacritics(name.trim());
   const parts = cleaned.split(/\s+/).filter(Boolean);
   let query = parts[parts.length - 1] ?? cleaned;
@@ -133,6 +146,7 @@ export async function fetchRecentInboundTransfers(
   apiKey: string,
   withinDays = 45,
 ): Promise<TeamInboundTransfer[]> {
+  if (isSportMonksEnabled()) return []; // no granted SportMonks transfers route
   const json = await apiFootball<TransfersResponse>(`/transfers?team=${teamId}`, apiKey);
   const cutoff = Date.now() - withinDays * 86_400_000;
   const out: TeamInboundTransfer[] = [];

@@ -3,7 +3,13 @@
  * Imported exclusively by src/lib/entity.functions.ts (the thin wrapper).
  */
 
+import { isSportMonksEnabled, sportMonks, type SportMonksEnvelope, type SportMonksList } from "@/lib/api-sportmonks.server";
+import { mapSmTeamHit, mapSmTeamPage, type SMTeam } from "@/lib/sportmonks.mappers";
+
 const API_BASE = "https://v3.football.api-sports.io";
+
+type SMVenue = { name?: string; city?: string; capacity?: number };
+type SMTeamWithVenue = SMTeam & { founded?: number; venue?: SMVenue | null };
 
 export type SquadPlayer = {
   id: number;
@@ -61,6 +67,22 @@ export async function fetchTeamById(
   teamId: number,
   apiKey: string,
 ): Promise<TeamPageData | null> {
+  if (isSportMonksEnabled()) {
+    // `/teams/{id}?include=venue`. The `squad`/`player` includes 404 on the
+    // current plan, so the squad list is empty (honest) until a higher plan is
+    // granted; team identity + venue still render from the base payload.
+    const json = await sportMonks<SportMonksEnvelope<SMTeamWithVenue>>({ path: `/teams/${teamId}`, include: ["venue"] });
+    const t = json?.data;
+    if (!t?.id) return null;
+    return mapSmTeamPage(t, [], {
+      country: t.country_id != null ? String(t.country_id) : undefined,
+      founded: t.founded,
+      venue_name: t.venue?.name,
+      venue_city: t.venue?.city,
+      venue_capacity: t.venue?.capacity,
+    });
+  }
+
   const json = await apiFootball<TeamsResponse>(`/teams?id=${teamId}`, apiKey);
   const entry = json?.response?.[0];
   const team = entry?.team;
@@ -107,6 +129,11 @@ export async function searchTeamsByName(
   query: string,
   apiKey: string,
 ): Promise<TeamSearchHit[]> {
+  if (isSportMonksEnabled()) {
+    const json = await sportMonks<SportMonksList<SMTeam>>({ path: `/teams/search/${encodeURIComponent(query)}` });
+    return (json?.data ?? []).filter((tm) => tm.id).slice(0, 12).map(mapSmTeamHit);
+  }
+
   const json = await apiFootball<TeamsResponse>(
     `/teams?search=${encodeURIComponent(query)}`,
     apiKey,
