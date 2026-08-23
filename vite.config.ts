@@ -12,4 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Build the SSR bundle for Vercel (nitro `vercel` preset → `.output/`).
+  // @lovable.dev/vite-tanstack-config defaults to `cloudflare-module`; this opts us into
+  // Vercel's serverless output. In a Lovable sandbox the Nitro preset is forced back to
+  // cloudflare regardless — so always deploy from Vercel's own build (non-sandbox) — but
+  // locally it is respected, which lets us verify the `.output` shape here.
+  nitro: { preset: "vercel" },
 });
