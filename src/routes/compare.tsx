@@ -42,8 +42,14 @@ export const Route = createFileRoute("/compare")({
     ],
   }),
   loader: async () => {
-    const rows = await listPublishedCards({ data: { limit: 1000 } });
-    return rows.map(mapCardRow);
+    try {
+      const rows = await listPublishedCards({ data: { limit: 1000 } });
+      return rows.map(mapCardRow);
+    } catch {
+      // CMS/Supabase unavailable, or no seed data, during SSR (e.g. missing env vars
+      // or a DB error). Render a safe empty state below instead of crashing with a 500.
+      return [];
+    }
   },
   component: Page,
 });
