@@ -476,7 +476,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "noStats": "Statistics are not provided for this competition by the live data feed.",
         "noLineups": "Lineups are not provided for this competition by the live data feed.",
         "startXI": "Starting XI",
-        "bench": "Bench"
+        "bench": "Bench",
+        "viewFullPage": "Open full match page"
       },
       "competitions": {
         "subtitle": "League tables and fixtures from top competitions.",
@@ -937,7 +938,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "noStats": "Bu lig için canlı veri akışında istatistik sağlanmıyor.",
         "noLineups": "Bu lig için canlı veri akışında kadro bilgisi sağlanmıyor.",
         "startXI": "İlk 11",
-        "bench": "Yedekler"
+        "bench": "Yedekler",
+        "viewFullPage": "Maç sayfasını aç"
       },
       "competitions": {
         "subtitle": "Önemli liglerin puan durumu ve fikstürleri.",

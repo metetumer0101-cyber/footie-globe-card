@@ -41,7 +41,7 @@ function MatchDetailPage() {
     queryKey: ["match-details", id],
     queryFn: () => fetchDetails({ data: { fixtureId: id } }),
     enabled: !Number.isNaN(id),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
   });
 
   const homeName = fixture?.home.name ?? t("liveCenter.home", { defaultValue: "Home" });

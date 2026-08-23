@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Radio, RefreshCw, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
+import { MatchDetailModal } from "@/components/live/MatchDetailModal";
 import { QuotaStateCard } from "@/components/home/QuotaStateCard";
 import { useLiveFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
 import { useSystemStatus } from "@/hooks/use-system-status";
@@ -41,6 +42,7 @@ function statusLabel(fixture: LiveFixture, t: (k: string, o: { defaultValue: str
 function LiveListPage() {
   const { t } = useTranslation();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openFixture, setOpenFixture] = useState<LiveFixture | null>(null);
   const [filter, setFilter] = useState<"all" | "live" | "finished" | "scheduled">("all");
 
   const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useLiveFeed();
@@ -49,7 +51,7 @@ function LiveListPage() {
   // card shows immediately when quota is exhausted; system status is a backup.
   const quotaExhausted = data?.quotaExhausted === true || systemStatus?.status === "quota";
 
-  // Countdown to the next automatic 30s poll.
+  // Countdown to the next automatic 60s poll.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -176,7 +178,11 @@ function LiveListPage() {
               </span>
             </h2>
             {group.fixtures.map((fixture) => (
-          <article key={fixture.id} className="card-surface rounded-3xl p-4">
+          <article
+            key={fixture.id}
+            onClick={() => setOpenFixture(fixture)}
+            className="card-surface cursor-pointer rounded-3xl p-4 transition-colors hover:bg-secondary/40"
+          >
             <header className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{fixture.league}</span>
               <div className="flex items-center gap-2">
@@ -191,14 +197,17 @@ function LiveListPage() {
                 >
                   {statusLabel(fixture, t)}
                 </span>
-                <Link
-                  to="/live/$fixtureId"
-                  params={{ fixtureId: fixture.id }}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenFixture(fixture);
+                  }}
                   className="rounded-full bg-secondary p-1 text-muted-foreground transition-colors hover:text-foreground"
                   aria-label={t("liveCenter.details", { defaultValue: "Match details" })}
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
+                </button>
               </div>
             </header>
 
@@ -239,7 +248,10 @@ function LiveListPage() {
                 {fixture.performers.map((p, i) => (
                   <li key={`${fixture.id}-${p.playerId ?? i}`}>
                     <button
-                      onClick={() => p.playerId && setOpenId(p.playerId)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (p.playerId) setOpenId(p.playerId);
+                      }}
                       className="flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left text-xs transition-colors hover:bg-secondary/60"
                     >
                       <span className="min-w-0 truncate">
@@ -279,6 +291,7 @@ function LiveListPage() {
       </div>
 
       <CardDetailModal card={openCard} onOpenChange={(open) => !open && setOpenId(null)} />
+      <MatchDetailModal fixture={openFixture} onOpenChange={(open) => !open && setOpenFixture(null)} />
     </AppShell>
   );
 }
