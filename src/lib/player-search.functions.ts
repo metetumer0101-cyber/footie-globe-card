@@ -17,6 +17,10 @@ export type WorldPlayer = {
   heightCm?: number | undefined;
   weightKg?: number | undefined;
   club?: string | undefined;
+  /** Season goal tally (top-scorer context). */
+  goals?: number | undefined;
+  /** League name this stat row belongs to. */
+  league?: string | undefined;
   /** Set when the entry comes from the built-in FootCard catalogue. */
   localId?: string | undefined;
 };
@@ -235,6 +239,8 @@ export const getLeagueTopPlayers = createServerFn({ method: "GET" })
             heightCm: num(r.player?.height?.replace(/\D/g, "")),
             weightKg: num(r.player?.weight?.replace(/\D/g, "")),
             club: r.statistics?.[0]?.team?.name,
+            league: r.statistics?.[0]?.league?.name,
+            goals: r.statistics?.[0]?.goals?.total,
           }));
         if (!list.length) return null;
         return {
@@ -465,5 +471,63 @@ export const getHomeWeeklyBest = createServerFn({ method: "GET" }).handler(
       });
     }
     return out;
+  },
+);
+
+/* ---------------- Weekly XI game: real top-scorer pool ---------------- */
+
+export type WeeklyXiEntry = {
+  id: number;
+  name: string;
+  club?: string | undefined;
+  league?: string | undefined;
+  position?: string | undefined;
+  photo?: string | undefined;
+  /** Season goal tally — the value the game scores on. */
+  goals: number;
+};
+
+function shuffle<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
+const WXI_PER_LEAGUE = 8;
+
+/**
+ * Builds the Weekly XI game pool from the REAL top scorers of the six major
+ * leagues. Honest-by-construction: mock fallbacks are skipped and entries
+ * without a numeric goal tally are dropped, so the pool is never fabricated.
+ * The pool is returned shuffled so goal counts stay hidden until submit.
+ * Quota stays low because it reuses the server-cached getLeagueTopPlayers.
+ */
+export const getWeeklyXIPool = createServerFn({ method: "GET" }).handler(
+  async (): Promise<WeeklyXiEntry[]> => {
+    const seen = new Map<number, WeeklyXiEntry>();
+    for (const { league, leagueId } of HOME_LEAGUES) {
+      const res = await getLeagueTopPlayers({ data: { leagueId } });
+      if (!res || res.source === "mock") continue;
+      for (const p of res.players.slice(0, WXI_PER_LEAGUE)) {
+        if (typeof p.goals !== "number" || !Number.isFinite(p.goals)) continue;
+        const existing = seen.get(p.id);
+        // Dedupe across leagues keeping the higher goal tally.
+        if (!existing || p.goals > existing.goals) {
+          seen.set(p.id, {
+            id: p.id,
+            name: p.name,
+            club: p.club,
+            league: p.league ?? league,
+            position: p.position,
+            photo: p.photo,
+            goals: p.goals,
+          });
+        }
+      }
+    }
+    return shuffle([...seen.values()]);
   },
 );

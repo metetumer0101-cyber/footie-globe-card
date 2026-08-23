@@ -284,6 +284,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "higher_lower": { "name": "Higher or Lower" },
         "transfer_path": { "name": "Transfer Path" },
         "daily_player": { "name": "Daily Player" },
+        "weekly_xi": { "name": "Weekly XI" },
         "hl": {
           "streak": "Streak",
           "best": "Best",
@@ -305,6 +306,18 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
           "pos": "Pos",
           "age": "Age",
           "guessPlaceholder": "Guess a player…"
+        },
+        "wxi": {
+          "loading": "Loading this week’s top scorers…",
+          "empty": "No real player data available right now (the API quota may be exhausted). Try again later.",
+          "retry": "Retry",
+          "pick": "Pick the {{count}} players you think scored the most this season. Goals are hidden!",
+          "hidden": "Goals hidden",
+          "playedToday": "Played today — XP already earned",
+          "submit": "Submit my XI",
+          "result": "Your XI’s picks scored {{xp}} real goals",
+          "newPool": "New pool",
+          "goals": "goals"
         },
         "rank": {
           "bronze": "Bronze Scout",
@@ -706,6 +719,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "higher_lower": { "name": "Yüksek mi Düşük mü" },
         "transfer_path": { "name": "Transfer Rotası" },
         "daily_player": { "name": "Günün Oyuncusu" },
+        "weekly_xi": { "name": "Haftanın Kadrosu" },
         "hl": {
           "streak": "Seri",
           "best": "Rekor",
@@ -727,6 +741,18 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
           "pos": "Poz",
           "age": "Yaş",
           "guessPlaceholder": "Bir oyuncu tahmin et…"
+        },
+        "wxi": {
+          "loading": "Bu haftanın gol kralları yükleniyor…",
+          "empty": "Şu an gerçek oyuncu verisi yok (API kotası tükenmiş olabilir). Daha sonra tekrar dene.",
+          "retry": "Tekrar dene",
+          "pick": "Bu sezon en çok gol atacağını düşündüğün {{count}} oyuncuyu seç. Goller gizli!",
+          "hidden": "Goller gizli",
+          "playedToday": "Bugün oynandı — XP zaten verildi",
+          "submit": "Kadromu gönder",
+          "result": "Kadronun seçimleri {{xp}} gerçek gol attı",
+          "newPool": "Yeni havuz",
+          "goals": "gol"
         },
         "rank": {
           "bronze": "Bronz Scout",
