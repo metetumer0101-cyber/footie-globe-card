@@ -38,9 +38,13 @@ async function handle(request: Request): Promise<Response> {
   }
   if (!authorized) return new Response("Unauthorized", { status: 401 });
 
-  const apiKey = process.env["API_FOOTBALL_KEY"];
-  if (!apiKey) {
-    return Response.json({ error: "API_FOOTBALL_KEY is not configured" }, { status: 500 });
+  const useSm = process.env["USE_SPORTMONKS"] === "true";
+  const key = useSm ? process.env["SPORTMONKS_API_TOKEN"] : process.env["API_FOOTBALL_KEY"];
+  if (!key) {
+    return Response.json(
+      { error: useSm ? "SPORTMONKS_API_TOKEN is not configured" : "API_FOOTBALL_KEY is not configured" },
+      { status: 500 },
+    );
   }
 
   const leagueParam = new URL(request.url).searchParams.get("league");
@@ -53,7 +57,7 @@ async function handle(request: Request): Promise<Response> {
   }
 
   const { syncLeaguePlayers } = await import("@/lib/player-db.server");
-  const result = await syncLeaguePlayers(leagueId, apiKey);
+  const result = await syncLeaguePlayers(leagueId, key);
   return Response.json(
     result ?? { leagueId, season: 0, pages: 0, upserted: 0, note: "no data in any reachable season" },
   );
