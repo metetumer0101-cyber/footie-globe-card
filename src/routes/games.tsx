@@ -2,11 +2,12 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Gamepad2, Route as RouteIcon, ScanSearch, TrendingUp } from "lucide-react";
+import { Gamepad2, Route as RouteIcon, ScanSearch, Shield, TrendingUp } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { HigherLower } from "@/components/games/HigherLower";
 import { TransferPathGame } from "@/components/games/TransferPathGame";
 import { DailyPlayerGame } from "@/components/games/DailyPlayerGame";
+import { WeeklyXiGame } from "@/components/games/WeeklyXiGame";
 import { Leaderboard } from "@/components/games/Leaderboard";
 import { RankBadge } from "@/components/games/RankBadge";
 import { useXp } from "@/hooks/use-xp";
@@ -38,6 +39,7 @@ const games: { key: GameKey; icon: typeof Gamepad2 }[] = [
   { key: "higher_lower", icon: TrendingUp },
   { key: "transfer_path", icon: RouteIcon },
   { key: "daily_player", icon: ScanSearch },
+  { key: "weekly_xi", icon: Shield },
 ];
 
 function GamesPage() {
@@ -99,7 +101,7 @@ function GamesPage() {
           )}
         </section>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {games.map(({ key, icon: Icon }) => (
             <button
               key={key}
@@ -121,6 +123,7 @@ function GamesPage() {
           {active === "higher_lower" && <HigherLower onAward={handleAward("higher_lower")} />}
           {active === "transfer_path" && <TransferPathGame onAward={handleAward("transfer_path")} />}
           {active === "daily_player" && <DailyPlayerGame onAward={handleAward("daily_player")} />}
+          {active === "weekly_xi" && <WeeklyXiGame onAward={handleAward("weekly_xi")} />}
         </section>
 
         <Leaderboard currentUserId={user?.id ?? null} />

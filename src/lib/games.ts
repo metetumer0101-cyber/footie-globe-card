@@ -1,6 +1,6 @@
 import { players, type PlayerCardData } from "@/data/football";
 
-export type GameKey = "higher_lower" | "transfer_path" | "daily_player";
+export type GameKey = "higher_lower" | "transfer_path" | "daily_player" | "weekly_xi";
 
 export type StatKey = "pac" | "sho" | "pas" | "dri" | "def" | "phy";
 export const statKeys: StatKey[] = ["pac", "sho", "pas", "dri", "def", "phy"];
@@ -85,6 +85,23 @@ export function dailyPlayer(date = new Date()): PlayerCardData {
 
 export function dailyXp(guessesUsed: number): number {
   return Math.max(30, DAILY_BASE_XP - (guessesUsed - 1) * DAILY_GUESS_COST);
+}
+
+/* ---------------- Weekly XI (pick the top performers) ---------------- */
+
+export const WXI_PICK_COUNT = 5;
+export const WXI_BASE_XP = 20;
+export const WXI_MAX_BONUS = 100;
+
+/**
+ * XP for the Weekly XI game. Scored by the total real goals of the five
+ * players the user picked, relative to the ideal five (highest scorers).
+ * base is always granted for participation; the bonus scales with how good
+ * the pick was.
+ */
+export function weeklyXiXp(score: number, ideal: number): number {
+  const ratio = ideal > 0 ? Math.min(1, score / ideal) : 0;
+  return Math.round(WXI_BASE_XP + ratio * WXI_MAX_BONUS);
 }
 
 export type Clue = "hit" | "close" | "miss";

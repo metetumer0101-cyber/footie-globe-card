@@ -201,6 +201,8 @@ function rowToWorldPlayer(row: WorldPlayerRow): WorldPlayer {
     heightCm: row.height_cm ?? undefined,
     weightKg: row.weight_kg ?? undefined,
     club: row.club ?? undefined,
+    league: row.league ?? undefined,
+    goals: row.goals ?? undefined,
   };
 }
 
