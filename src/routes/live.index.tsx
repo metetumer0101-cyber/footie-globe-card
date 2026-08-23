@@ -9,7 +9,7 @@ import { useLiveFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
 import { players } from "@/data/football";
 import { bumpBadgeStat } from "@/lib/badges";
 import type { LiveFixture } from "@/lib/live";
-import { sortFixtures } from "@/lib/live";
+import { groupFixturesByLeague, sortFixtures } from "@/lib/live";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -67,6 +67,10 @@ function LiveListPage() {
           ),
     [allFixtures, filter],
   );
+
+  // Group under league headings, ordered by worldwide popularity (client-side,
+  // over the already-cached serverFn payload — no extra API calls).
+  const groups = useMemo(() => groupFixturesByLeague(fixtures), [fixtures]);
 
   useEffect(() => {
     if (liveCount > 0) bumpBadgeStat("liveMatchesViewed", liveCount);
@@ -144,7 +148,24 @@ function LiveListPage() {
           </div>
         )}
 
-        {fixtures.map((fixture) => (
+        {groups.length === 0 && !isLoading && (
+          <div className="rounded-3xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            {t("liveCenter.empty", {
+              defaultValue: "No matches in this view right now — try another filter.",
+            })}
+          </div>
+        )}
+
+        {groups.map((group) => (
+          <div key={group.key} className="space-y-3">
+            <h2 className="flex items-center gap-2 px-1 pt-1 text-sm font-extrabold uppercase tracking-wide text-muted-foreground">
+              <span className="h-3 w-1 rounded-full bg-primary" />
+              {group.league}
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold normal-case text-muted-foreground">
+                {group.fixtures.length}
+              </span>
+            </h2>
+            {group.fixtures.map((fixture) => (
           <article key={fixture.id} className="card-surface rounded-3xl p-4">
             <header className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{fixture.league}</span>
@@ -236,6 +257,8 @@ function LiveListPage() {
               </ul>
             )}
           </article>
+            ))}
+          </div>
         ))}
 
         {data?.source === "mock" && (
