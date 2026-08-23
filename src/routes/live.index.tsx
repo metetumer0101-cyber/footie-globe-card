@@ -45,7 +45,9 @@ function LiveListPage() {
 
   const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useLiveFeed();
   const { data: systemStatus } = useSystemStatus();
-  const quotaExhausted = systemStatus?.status === "quota";
+  // Quota flag comes from the live feed itself (synchronous) so the empty-state
+  // card shows immediately when quota is exhausted; system status is a backup.
+  const quotaExhausted = data?.quotaExhausted === true || systemStatus?.status === "quota";
 
   // Countdown to the next automatic 30s poll.
   const [now, setNow] = useState(() => Date.now());

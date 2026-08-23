@@ -10,6 +10,7 @@ import {
 import { cached } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
 import { apiFootball, apiFootballKey } from "@/lib/api-football.server";
+import { isQuotaExhausted } from "@/lib/system-status.server";
 import { ensureMidnightRefresh } from "@/lib/midnight-refresh.server";
 import { utcDateKey } from "@/services/dailyEngine";
 
@@ -18,10 +19,16 @@ const LIVE_SNAPSHOT_TTL = 30;
 /**
  * A feed with no fixtures — used as the honest "no live data" state instead of
  * a fabricated local mock. Consumers (e.g. the home page) treat an empty
- * fixtures list as "no real live data to show" and never invent scores.
+ * fixtures list as "no real live data to show" and never invent scores. The
+ * `quotaExhausted` flag lets them show a clear quota empty-state card.
  */
 function emptyFeed(): LiveFeed {
-  return { date: utcDateKey(new Date()), source: "api-football", fixtures: [] };
+  return {
+    date: utcDateKey(new Date()),
+    source: "api-football",
+    fixtures: [],
+    quotaExhausted: isQuotaExhausted(),
+  };
 }
 
 /**
@@ -80,7 +87,7 @@ export const getLiveFeed = createServerFn({ method: "GET" }).handler(async (): P
   const byId = new Map((daily ?? []).map((f) => [f.id, f]));
   for (const live of liveNow) byId.set(live.id, live);
 
-  return { date, source: "api-football", fixtures: [...byId.values()] };
+  return { date, source: "api-football", fixtures: [...byId.values()], quotaExhausted: isQuotaExhausted() };
 });
 
 /**

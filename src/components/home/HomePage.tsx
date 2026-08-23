@@ -488,7 +488,11 @@ function HomeHero() {
 
 export function HomePage() {
   const { data: systemStatus } = useSystemStatus();
-  const quotaExhausted = systemStatus?.status === "quota";
+  const { data: liveFeed } = useLiveFeed();
+  // Quota is read from the live feed itself (synchronous with its data) so the
+  // empty-state card appears immediately, not after a separate status query.
+  const quotaExhausted =
+    liveFeed?.quotaExhausted === true || systemStatus?.status === "quota";
 
   return (
     <div>

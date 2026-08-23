@@ -45,3 +45,9 @@ export function getSystemStatus(): SystemStatus {
     lastUpstreamAt: lastUpstreamAt ? new Date(lastUpstreamAt).toISOString() : null,
   };
 }
+
+/** Quick boolean for callers that want the flag inline with their own data. */
+export function isQuotaExhausted(): boolean {
+  return quotaExhaustedAt !== null;
+}
+

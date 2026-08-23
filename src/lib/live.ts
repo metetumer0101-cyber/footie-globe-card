@@ -27,6 +27,12 @@ export type LiveFeed = {
   date: string;
   source: "api-football" | "mock";
   fixtures: LiveFixture[];
+  /**
+   * True when the upstream provider reported the daily quota exhausted during
+   * the fetch that produced this feed. Carried with the data so consumers can
+   * render an honest empty state from the same payload (no cross-query race).
+   */
+  quotaExhausted?: boolean;
 };
 
 /** Normalize a league name for ranking & grouping (lowercase, accent-free, collapsed spaces). */
