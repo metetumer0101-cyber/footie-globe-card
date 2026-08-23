@@ -536,10 +536,31 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_config: {
+        Row: {
+          key: string
+          value: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       world_players: {
         Row: {
           age: number | null
-          api_id: number
+          api_id: number | null
+          id: string
+          sportmonks_id: number | null
+          provider: string
           appearances: number | null
           assists: number | null
           club: string | null
@@ -563,7 +584,10 @@ export type Database = {
         }
         Insert: {
           age?: number | null
-          api_id: number
+          api_id?: number | null
+          id?: string
+          sportmonks_id?: number | null
+          provider?: string
           appearances?: number | null
           assists?: number | null
           club?: string | null
@@ -587,7 +611,10 @@ export type Database = {
         }
         Update: {
           age?: number | null
-          api_id?: number
+          api_id?: number | null
+          id?: string
+          sportmonks_id?: number | null
+          provider?: string
           appearances?: number | null
           assists?: number | null
           club?: string | null
