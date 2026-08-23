@@ -267,6 +267,25 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "displayName": "Display name",
         "saved": "Saved"
       },
+      "home": {
+        "heroTag": "Football scouting, reimagined",
+        "heroTitle": "Scout. Compare. Build your squad.",
+        "heroSubtitle": "Follow your favorite team, discover the week's best players and the biggest derbies — all in one dark, fast feed.",
+        "pickTeamTitle": "Pick your favorite team",
+        "pickTeamSubtitle": "Search any club in the world — we'll surface its matches here.",
+        "teamSearchPlaceholder": "Search a club… e.g. Galatasaray",
+        "loading": "Loading…",
+        "noTeamResults": "No clubs found. Try another name.",
+        "derby": "DERBY",
+        "vs": "vs",
+        "favMatchesTitle": "Your team's matches",
+        "noTeamMatches": "No upcoming or recent matches found for {{teamName}}.",
+        "nextMatch": "Next · {{teamName}}",
+        "prevMatch": "Prev · {{teamName}}",
+        "weeklyBestTitle": "Weekly best of each league",
+        "topScorer": "Top scorer",
+        "keyMatchesTitle": "Matches & derbies of the week"
+      },
       "games": {
         "title": "Games Hub",
         "subtitle": "Play, earn XP and climb the scout ranks.",
@@ -701,6 +720,25 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "checkEmail": "Hesap oluşturuldu — onay için e-postanı kontrol et.",
         "displayName": "Görünen ad",
         "saved": "Kaydedildi"
+      },
+      "home": {
+        "heroTag": "Futbol keşifçiliği, yeniden tasarlandı",
+        "heroTitle": "Keşfet. Karşılaştır. Kadronu kur.",
+        "heroSubtitle": "Favori takımını takip et, haftanın en iyi oyuncularını ve en büyük derbileri keşfet — karanlık ve hızlı tek bir akışta.",
+        "pickTeamTitle": "Favori takımını seç",
+        "pickTeamSubtitle": "Dünyadaki herhangi bir kulübü ara — maçlarını burada göstereceğiz.",
+        "teamSearchPlaceholder": "Bir kulüp ara… ör. Galatasaray",
+        "loading": "Yükleniyor…",
+        "noTeamResults": "Kulüp bulunamadı. Başka bir ad dene.",
+        "derby": "DERBİ",
+        "vs": "vs",
+        "favMatchesTitle": "Takımının maçları",
+        "noTeamMatches": "{{teamName}} için yaklaşan veya geçmiş maç bulunamadı.",
+        "nextMatch": "Sıradaki · {{teamName}}",
+        "prevMatch": "Önceki · {{teamName}}",
+        "weeklyBestTitle": "Her ligin haftanın en iyisi",
+        "topScorer": "Gol kralı",
+        "keyMatchesTitle": "Haftanın maçları ve derbileri"
       },
       "games": {
         "title": "Oyun Merkezi",
