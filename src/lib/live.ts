@@ -29,17 +29,59 @@ export type LiveFeed = {
   fixtures: LiveFixture[];
 };
 
-/** Competitions users most often follow — surfaced first in lists. */
+/** Normalize a league name for ranking & grouping (lowercase, accent-free, collapsed spaces). */
+export function normalizeLeague(league: string): string {
+  return league
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+/** Grouping key — normalized name so "Süper Lig" and "Super Lig" share a league group. */
+export function leagueGroupKey(league: string): string {
+  return normalizeLeague(league);
+}
+
+/**
+ * Competitions ordered by worldwide popularity for the Live tab's league-group
+ * headings. Expected top order: UEFA Champions League → Premier League →
+ * La Liga → Serie A → Bundesliga → Ligue 1 → Süper Lig → remaining majors →
+ * then everything else (ranked last). Entries are normalized (lowercase,
+ * accent-free) to match `leagueRank`'s substring matching.
+ */
 const MAJOR_LEAGUES = [
-  "süper lig", "super lig", "premier league", "la liga", "serie a", "bundesliga",
-  "ligue 1", "champions league", "europa league", "conference league",
-  "eredivisie", "primeira liga", "championship", "mls", "major league soccer",
-  "1. lig", "tff", "fa cup", "copa", "dfb", "eredivisie", "belgian pro", "pro league",
-  "scottish premiership", "austrian bundesliga", "swiss super league", "super league",
+  "champions league",
+  "premier league",
+  "la liga",
+  "serie a",
+  "bundesliga",
+  "ligue 1",
+  "super lig",
+  "europa league",
+  "conference league",
+  "eredivisie",
+  "primeira liga",
+  "championship",
+  "mls",
+  "major league soccer",
+  "1. lig",
+  "tff",
+  "fa cup",
+  "copa",
+  "dfb",
+  "belgian pro",
+  "pro league",
+  "scottish premiership",
+  "austrian bundesliga",
+  "swiss super league",
+  "super league",
 ];
 
-function leagueRank(league: string): number {
-  const l = league.toLowerCase();
+/** Smaller rank = shown earlier. Leagues not in {@link MAJOR_LEAGUES} rank last. */
+export function leagueRank(league: string): number {
+  const l = normalizeLeague(league);
   const idx = MAJOR_LEAGUES.findIndex((m) => l.includes(m));
   return idx === -1 ? MAJOR_LEAGUES.length : idx;
 }
@@ -68,6 +110,31 @@ export function sortFixtures(fixtures: LiveFixture[], favLeague?: string): LiveF
     if (lr !== 0) return lr;
     return a.kickoff.localeCompare(b.kickoff);
   });
+}
+
+export type LeagueGroup = { league: string; key: string; fixtures: LiveFixture[] };
+
+/**
+ * Group fixtures under league headings, ordered by worldwide popularity
+ * (`leagueRank`); within each league, in-play matches first, then upcoming by
+ * kickoff, then finished. Feed it the already status-filtered list.
+ * Pure client-side (uses the cached serverFn payload) — costs no API calls.
+ */
+export function groupFixturesByLeague(fixtures: LiveFixture[]): LeagueGroup[] {
+  const byKey = new Map<string, LeagueGroup>();
+  for (const f of fixtures) {
+    const key = leagueGroupKey(f.league);
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.fixtures.push(f);
+    } else {
+      byKey.set(key, { league: f.league, key, fixtures: [f] });
+    }
+  }
+  const groups = [...byKey.values()];
+  groups.sort((a, b) => leagueRank(a.league) - leagueRank(b.league));
+  for (const g of groups) g.fixtures = sortFixtures(g.fixtures);
+  return groups;
 }
 
 /** Deterministic offline feed so the module works with no API key configured. */
