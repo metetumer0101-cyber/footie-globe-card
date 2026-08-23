@@ -20,9 +20,10 @@ import { sortFixtures } from "@/lib/live";
 import { cn } from "@/lib/utils";
 import type { LiveFixture } from "@/lib/live";
 import { searchWorldTeams } from "@/lib/entity.functions";
+import { getFavoriteTeamMatches } from "@/lib/team-matches.functions";
 import { getHomeWeeklyBest, type HomeLeagueBest } from "@/lib/player-search.functions";
 import { favoriteTeamMetaFor, saveTeamMeta } from "@/lib/team-meta";
-import { isDerbyMatth, isFeaturedMatch, teamNextPrev } from "./homeData";
+import { isDerbyMatth, isFeaturedMatch } from "./homeData";
 
 const PICKER_KEY = "footcard:fav-team-intro";
 
@@ -260,20 +261,46 @@ function MatchRow({ fixture, isDerby }: { fixture: LiveFixture; isDerby: boolean
 function FavoriteTeamMatches() {
   const { t } = useTranslation();
   const { favorites, ready } = useFavorites();
-  const { data, isLoading } = useLiveFeed();
+  const fetchMatches = useServerFn(getFavoriteTeamMatches);
 
   const favoriteId = favorites.teams[0];
   // Resolve the favorite's display identity (persisted when it was picked).
   const teamMeta = favoriteId ? favoriteTeamMetaFor(favoriteId) : undefined;
   const teamName = teamMeta?.name ?? favoriteId;
+  const teamId = favoriteId ? Number(favoriteId) : undefined;
 
-  const { next, prev } = useMemo(() => {
-    const fixtures = data?.fixtures ?? [];
-    return teamNextPrev(fixtures, teamName);
-  }, [data, teamName]);
+  // Real next/prev from the team's own season fixtures (not just today's feed),
+  // so the section renders even when the team has no match today.
+  const { data, isLoading } = useQuery({
+    queryKey: ["fav-team-matches", favoriteId],
+    queryFn: () => fetchMatches({ data: { teamId: Number(favoriteId) } }),
+    enabled: ready && Boolean(teamId && Number.isFinite(teamId)),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const next = data?.next;
+  const prev = data?.prev;
 
   if (!ready) return null;
-  if (!teamName || (!next && !prev)) return null;
+  if (!teamName) return null;
+
+  // Honest empty state — never fabricate data: if the API found no matches,
+  // say so instead of silently hiding the section (or inventing scores).
+  if (!isLoading && !next && !prev) {
+    return (
+      <section className="mt-6">
+        <h2 className="mb-3 flex items-center gap-2 text-base font-bold">
+          <Sparkles className="h-4 w-4 text-accent" />
+          {t("home.favMatchesTitle", { defaultValue: "Your team's matches" })}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {t("home.noTeamMatches", {
+            defaultValue: `No upcoming or recent matches found for ${teamName}.`,
+          })}
+        </p>
+      </section>
+    );
+  }
 
   const cards = [
     next ? (
