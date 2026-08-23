@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useLiveFeed } from "@/hooks/use-live-feed";
+import { useSystemStatus } from "@/hooks/use-system-status";
+import { QuotaStateCard } from "@/components/home/QuotaStateCard";
 import { sortFixtures } from "@/lib/live";
 import { cn } from "@/lib/utils";
 import type { LiveFixture } from "@/lib/live";
@@ -485,10 +487,18 @@ function HomeHero() {
 /* ---------------- Page ---------------- */
 
 export function HomePage() {
+  const { data: systemStatus } = useSystemStatus();
+  const { data: liveFeed } = useLiveFeed();
+  // Quota is read from the live feed itself (synchronous with its data) so the
+  // empty-state card appears immediately, not after a separate status query.
+  const quotaExhausted =
+    liveFeed?.quotaExhausted === true || systemStatus?.status === "quota";
+
   return (
     <div>
       <HomeHero />
       <TeamSearchPicker />
+      {quotaExhausted && <QuotaStateCard className="mt-4" />}
       <FavoriteTeamMatches />
       <WeeklyBestPlayers />
       <KeyMatches />

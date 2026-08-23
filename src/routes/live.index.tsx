@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { Radio, RefreshCw, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
+import { QuotaStateCard } from "@/components/home/QuotaStateCard";
 import { useLiveFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
+import { useSystemStatus } from "@/hooks/use-system-status";
 import { players } from "@/data/football";
 import { bumpBadgeStat } from "@/lib/badges";
 import type { LiveFixture } from "@/lib/live";
@@ -42,6 +44,10 @@ function LiveListPage() {
   const [filter, setFilter] = useState<"all" | "live" | "finished" | "scheduled">("all");
 
   const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useLiveFeed();
+  const { data: systemStatus } = useSystemStatus();
+  // Quota flag comes from the live feed itself (synchronous) so the empty-state
+  // card shows immediately when quota is exhausted; system status is a backup.
+  const quotaExhausted = data?.quotaExhausted === true || systemStatus?.status === "quota";
 
   // Countdown to the next automatic 30s poll.
   const [now, setNow] = useState(() => Date.now());
@@ -150,9 +156,13 @@ function LiveListPage() {
 
         {groups.length === 0 && !isLoading && (
           <div className="rounded-3xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            {t("liveCenter.empty", {
-              defaultValue: "No matches in this view right now — try another filter.",
-            })}
+            {quotaExhausted ? (
+              <QuotaStateCard />
+            ) : (
+              t("liveCenter.empty", {
+                defaultValue: "No matches in this view right now — try another filter.",
+              })
+            )}
           </div>
         )}
 
