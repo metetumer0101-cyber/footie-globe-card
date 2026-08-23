@@ -111,7 +111,7 @@ async function upsertPage(
       const rating = parseFloat(s?.games?.rating ?? "");
       return {
         api_id: p.id as number,
-        name: p.name ?? `${p.firstname ?? ""} ${p.lastname ?? ""}`.trim() || "—",
+        name: (p.name ?? `${p.firstname ?? ""} ${p.lastname ?? ""}`.trim()) || "—",
         firstname: p.firstname ?? null,
         lastname: p.lastname ?? null,
         age: p.age ?? null,
