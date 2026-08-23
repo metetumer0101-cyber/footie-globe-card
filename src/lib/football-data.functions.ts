@@ -1,9 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
-import { cached } from "@/lib/api-cache.server";
+import { cached, readCacheEntry } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
 import { players, teams } from "@/data/football";
-
-const API_BASE = "https://v3.football.api-sports.io";
+import { apiFootball, apiFootballKey, currentSeason } from "@/lib/api-football.server";
+import {
+  persistInjuries,
+  persistMatchDetails,
+  persistStandings,
+  readInjuriesDb,
+  readMatchDetailsDb,
+  readStandingsDb,
+} from "@/lib/football-data.server";
 
 export type StandingRow = {
   rank: number;
@@ -67,6 +74,8 @@ export type MatchDetails = {
   events: MatchEvent[];
   stats: MatchStat[];
   lineups: MatchLineup[];
+  /** Finished matches never change — cached/persisted permanently. */
+  finished?: boolean;
 };
 
 export type Injury = {
@@ -89,20 +98,6 @@ export type Fixture = {
   elapsed?: number | undefined;
   source?: "api-football" | "mock" | undefined;
 };
-
-async function apiFootball<T>(path: string, apiKey: string): Promise<T | null> {
-  const res = await fetch(`${API_BASE}${path}`, { headers: { "x-apisports-key": apiKey } });
-  if (!res.ok) {
-    console.error(`[football-data] API-Football ${path} -> ${res.status}`);
-    return null;
-  }
-  return (await res.json()) as T;
-}
-
-function currentSeason(): number {
-  const now = new Date();
-  return now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
-}
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -162,14 +157,15 @@ function leagueIdToName(id: number): string {
 export const getStandings = createServerFn({ method: "GET" })
   .inputValidator((input: { leagueId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<Standings> => {
-    const apiKey = process.env["API_FOOTBALL_KEY"];
+    const apiKey = apiFootballKey();
     const season = data.season ?? currentSeason();
     const fallback = mockStandings(data.leagueId, season);
-    if (!apiKey) return fallback;
 
-    return cached<Standings>(
-      `standings:${data.leagueId}:${season}`,
-      TTL.STANDINGS,
+    const result = !apiKey
+      ? null
+      : await cached<Standings | null>(
+          `standings:${data.leagueId}:${season}`,
+          TTL.STANDINGS,
       async () => {
         const json = await apiFootball<{
           response?: {
@@ -202,7 +198,7 @@ export const getStandings = createServerFn({ method: "GET" })
           form: r.form ?? "",
         }));
         if (!rows.length) return null;
-        return {
+        const standings: Standings = {
           leagueId: first?.league?.id ?? data.leagueId,
           season: first?.league?.season ?? season,
           leagueName: first?.league?.name ?? fallback.leagueName,
@@ -210,9 +206,17 @@ export const getStandings = createServerFn({ method: "GET" })
           rows,
           source: "api-football",
         };
+        // Mirror into the standings table so the table survives cache expiry.
+        void persistStandings(standings);
+        return standings;
       },
-      fallback,
+      null,
     );
+
+    if (result) return result;
+    // Quota exhausted or upstream down — serve the last persisted table.
+    const stored = await readStandingsDb(data.leagueId, season, fallback.leagueName);
+    return stored ?? fallback;
   });
 
 function mockMatchDetails(fixtureId: number): MatchDetails {
