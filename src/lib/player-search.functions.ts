@@ -101,7 +101,11 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
     const leagueId = data.leagueId && data.leagueId > 0 ? data.leagueId : null;
     if (query.length < 3) return { players: [], source: "mock", paging: { current: 1, total: 1 } };
 
-    const apiKey = process.env["API_FOOTBALL_KEY"];
+    // Local mirror first: instant, quota-free, covers every synced league.
+    const mirrored = await searchWorldPlayersDb({ query, page, leagueId });
+    if (mirrored) return mirrored;
+
+    const apiKey = apiFootballKey();
     const fallback = mockSearch(query);
     if (!apiKey) return fallback;
 
@@ -183,7 +187,11 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
 export const getLeagueTopPlayers = createServerFn({ method: "GET" })
   .inputValidator((input: { leagueId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<WorldSearchResult> => {
-    const apiKey = process.env["API_FOOTBALL_KEY"];
+    // Local mirror first (nightly sync keeps it fresh); API only as fallback.
+    const mirrored = await leagueTopPlayersDb(data.leagueId);
+    if (mirrored) return mirrored;
+
+    const apiKey = apiFootballKey();
     const season = data.season ?? currentSeason();
     const fallback = mockSearch("");
     if (!apiKey) return fallback;
@@ -267,7 +275,7 @@ export type WorldPlayerCard = { card: PlayerCardData; source: "api-football" | "
 export const getWorldPlayerCard = createServerFn({ method: "GET" })
   .inputValidator((input: { playerId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<CachedResult<WorldPlayerCard | null>> => {
-    const apiKey = process.env["API_FOOTBALL_KEY"];
+    const apiKey = apiFootballKey();
     if (!apiKey) return { data: null, fetchedAt: null };
     const season = data.season ?? currentSeason();
 
