@@ -258,6 +258,79 @@ function MatchRow({ fixture, isDerby }: { fixture: LiveFixture; isDerby: boolean
   );
 }
 
+/* ---------------- Skeleton loaders (dark-theme placeholders while data fetches) ---------------- */
+
+/** One pulsing grey bar — the base building block for every skeleton. */
+function SkeletonBar({ className }: { className?: string }) {
+  return <div aria-hidden="true" className={cn("animate-pulse rounded-full bg-secondary/60", className)} />;
+}
+
+/** Skeleton matching the layout of {@link MatchRow} (home/away names, score, kickoff pill). */
+function MatchRowSkeleton() {
+  return (
+    <div aria-hidden="true" className="card-surface flex items-center justify-between gap-2 rounded-2xl px-3 py-2.5">
+      <div className="min-w-0 flex-1 space-y-2">
+        <SkeletonBar className="ms-auto h-3 w-24" />
+        <SkeletonBar className="ms-auto h-2 w-16" />
+      </div>
+      <div className="shrink-0 space-y-1.5 text-center">
+        <SkeletonBar className="mx-auto h-4 w-8" />
+        <SkeletonBar className="mx-auto h-2.5 w-10" />
+      </div>
+      <div className="min-w-0 flex-1 space-y-2">
+        <SkeletonBar className="h-3 w-24" />
+        <SkeletonBar className="h-2 w-16" />
+      </div>
+    </div>
+  );
+}
+
+/** Skeleton matching a weekly-best player row (avatar, name, league, chevron). */
+function PlayerRowSkeleton() {
+  return (
+    <div aria-hidden="true" className="card-surface flex items-center gap-3 rounded-2xl p-3">
+      <SkeletonBar className="h-12 w-12 shrink-0 rounded-full" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <SkeletonBar className="h-3 w-28" />
+        <SkeletonBar className="h-2 w-40" />
+        <SkeletonBar className="h-2 w-16" />
+      </div>
+      <SkeletonBar className="h-4 w-4 shrink-0 rounded-full" />
+    </div>
+  );
+}
+
+function FavoriteMatchesSkeleton({ ariaLabel }: { ariaLabel: string }) {
+  return (
+    <div role="status" aria-label={ariaLabel} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <MatchRowSkeleton />
+      <MatchRowSkeleton />
+    </div>
+  );
+}
+
+function WeeklyBestSkeleton({ ariaLabel }: { ariaLabel: string }) {
+  return (
+    <div role="status" aria-label={ariaLabel} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <PlayerRowSkeleton />
+      <PlayerRowSkeleton />
+      <PlayerRowSkeleton />
+      <PlayerRowSkeleton />
+    </div>
+  );
+}
+
+function KeyMatchesSkeleton({ ariaLabel }: { ariaLabel: string }) {
+  return (
+    <div role="status" aria-label={ariaLabel} className="space-y-2">
+      <MatchRowSkeleton />
+      <MatchRowSkeleton />
+      <MatchRowSkeleton />
+      <MatchRowSkeleton />
+    </div>
+  );
+}
+
 /* ---------------- Rule 2: favorite team's next + previous match ---------------- */
 
 function FavoriteTeamMatches() {
@@ -331,14 +404,15 @@ function FavoriteTeamMatches() {
         <Sparkles className="h-4 w-4 text-accent" />
         {t("home.favMatchesTitle", { defaultValue: "Your team's matches" })}
       </h2>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {cards.filter(Boolean)}
-        {isLoading && (
-          <p className="text-sm text-muted-foreground">
-            {t("home.loading", { defaultValue: "Loading…" })}
-          </p>
-        )}
-      </div>
+      {isLoading && !next && !prev ? (
+        <FavoriteMatchesSkeleton
+          ariaLabel={t("home.favMatchesLoadingAria", {
+            defaultValue: "Loading your team's upcoming and last matches",
+          })}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{cards.filter(Boolean)}</div>
+      )}
     </section>
   );
 }
@@ -365,49 +439,52 @@ function WeeklyBestPlayers() {
           {t("home.weeklyBestTitle", { defaultValue: "Weekly best of each league" })}
         </h2>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {sections.map(({ league, player }) => (
-          <button
-            key={league}
-            onClick={() =>
-              void navigate({ to: "/player/$id", params: { id: `api-${player.id}` } })
-            }
-            className="card-surface flex items-center gap-3 rounded-2xl p-3 text-left transition-colors hover:bg-secondary/40"
-          >
-            {player.photo ? (
-              <img
-                src={player.photo}
-                alt=""
-                loading="lazy"
-                className="h-12 w-12 shrink-0 rounded-full bg-white/10 object-cover"
-              />
-            ) : (
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-secondary/50 text-xl">
-                ⚽
-              </span>
-            )}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <Star className="h-3.5 w-3.5 shrink-0 text-accent" />
-                <h3 className="truncate text-sm font-bold">{player.name}</h3>
+      {isLoading ? (
+        <WeeklyBestSkeleton
+          ariaLabel={t("home.weeklyBestLoadingAria", {
+            defaultValue: "Loading this week's best players",
+          })}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {sections.map(({ league, player }) => (
+            <button
+              key={league}
+              onClick={() =>
+                void navigate({ to: "/player/$id", params: { id: `api-${player.id}` } })
+              }
+              className="card-surface flex items-center gap-3 rounded-2xl p-3 text-left transition-colors hover:bg-secondary/40"
+            >
+              {player.photo ? (
+                <img
+                  src={player.photo}
+                  alt=""
+                  loading="lazy"
+                  className="h-12 w-12 shrink-0 rounded-full bg-white/10 object-cover"
+                />
+              ) : (
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-secondary/50 text-xl">
+                  ⚽
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <Star className="h-3.5 w-3.5 shrink-0 text-accent" />
+                  <h3 className="truncate text-sm font-bold">{player.name}</h3>
+                </div>
+                <p className="truncate text-xs text-muted-foreground">
+                  {[player.club, player.nation, player.position].filter(Boolean).join(" · ")} · {league}
+                </p>
+                <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-primary">
+                  <Flame className="h-3 w-3" />
+                  {t("home.topScorer", { defaultValue: "Top scorer" })}
+                </p>
               </div>
-              <p className="truncate text-xs text-muted-foreground">
-                {[player.club, player.nation, player.position].filter(Boolean).join(" · ")} · {league}
-              </p>
-              <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-primary">
-                <Flame className="h-3 w-3" />
-                {t("home.topScorer", { defaultValue: "Top scorer" })}
-              </p>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </button>
-        ))}
-        {isLoading && (
-          <p className="text-sm text-muted-foreground">
-            {t("home.loading", { defaultValue: "Loading…" })}
-          </p>
-        )}
-      </div>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -444,16 +521,19 @@ function KeyMatches() {
         <Trophy className="h-4 w-4 text-primary" />
         {t("home.keyMatchesTitle", { defaultValue: "Matches & derbies of the week" })}
       </h2>
-      <div className="space-y-2">
-        {rows.map(({ fixture, derby }) => (
-          <MatchRow key={fixture.id} fixture={fixture} isDerby={derby} />
-        ))}
-        {!rows.length && (
-          <p className="text-sm text-muted-foreground">
-            {t("home.loading", { defaultValue: "Loading…" })}
-          </p>
-        )}
-      </div>
+      {isLoading && !rows.length ? (
+        <KeyMatchesSkeleton
+          ariaLabel={t("home.keyMatchesLoadingAria", {
+            defaultValue: "Loading this week's key matches and derbies",
+          })}
+        />
+      ) : (
+        <div className="space-y-2">
+          {rows.map(({ fixture, derby }) => (
+            <MatchRow key={fixture.id} fixture={fixture} isDerby={derby} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
