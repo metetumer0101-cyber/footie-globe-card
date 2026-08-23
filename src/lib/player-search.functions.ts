@@ -2,8 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { cached, cachedMeta, type CachedResult } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
 import { players as mockPlayers, type PlayerCardData, type Tier } from "@/data/football";
-
-const API_BASE = "https://v3.football.api-sports.io";
+import { apiFootball, apiFootballKey, currentSeason, seasonCandidates } from "@/lib/api-football.server";
+import { leagueTopPlayersDb, searchWorldPlayersDb } from "@/lib/player-db.server";
 
 export type WorldPlayer = {
   id: number;
