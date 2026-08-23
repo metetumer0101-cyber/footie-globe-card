@@ -1,22 +1,39 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, ChevronRight, Flame, Heart, Sparkles, Star, Trophy } from "lucide-react";
-import { teams } from "@/data/football";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  CalendarDays,
+  ChevronRight,
+  Flame,
+  Heart,
+  Loader2,
+  Search,
+  Sparkles,
+  Star,
+  Trophy,
+} from "lucide-react";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useLiveFeed } from "@/hooks/use-live-feed";
 import { sortFixtures } from "@/lib/live";
 import { cn } from "@/lib/utils";
 import type { LiveFixture } from "@/lib/live";
-import { favoriteTeamName, isDerbyMatth, isFeaturedMatch, teamNextPrev, weeklyBestByLeague } from "./homeData";
+import { searchWorldTeams } from "@/lib/entity.functions";
+import { getHomeWeeklyBest, type HomeLeagueBest } from "@/lib/player-search.functions";
+import { favoriteTeamMetaFor, saveTeamMeta } from "@/lib/team-meta";
+import { isDerbyMatth, isFeaturedMatch, teamNextPrev } from "./homeData";
 
 const PICKER_KEY = "footcard:fav-team-intro";
 
-/* ---------------- Rule 1: favorite team picker ---------------- */
+type TeamSearchHitItem = { id: number; name: string; logo?: string; country?: string };
 
-function FavoriteTeamPicker() {
+/* ---------------- Rule 1: favorite team search box ---------------- */
+
+function TeamSearchPicker() {
   const { t } = useTranslation();
   const { favorites, toggle, ready } = useFavorites();
+  const searchApi = useServerFn(searchWorldTeams);
 
   const [hidden, setHidden] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -26,6 +43,60 @@ function FavoriteTeamPicker() {
       return false;
     }
   });
+
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [results, setResults] = useState<TeamSearchHitItem[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  // Debounce the query input (300 ms) before hitting the server function.
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebounced(query.trim()), 300);
+    return () => window.clearTimeout(id);
+  }, [query]);
+
+  // Run the worldwide team search once the debounced query is long enough.
+  useEffect(() => {
+    let cancelled = false;
+    if (debounced.length < 3) {
+      setResults([]);
+      setSearched(false);
+      setOpen(false);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setSearched(true);
+    searchApi({ data: { query: debounced } })
+      .then((hits) => {
+        if (cancelled) return;
+        setResults((hits ?? []).map((h) => ({ id: h.id, name: h.name, logo: h.logo, country: h.country })));
+        setOpen(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setResults([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debounced, searchApi]);
+
+  // Close the dropdown on outside click.
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
 
   if (!ready || hidden || favorites.teams.length > 0) return null;
 
@@ -38,8 +109,12 @@ function FavoriteTeamPicker() {
     setHidden(true);
   };
 
-  const pick = (id: string) => {
+  const pick = (hit: TeamSearchHitItem) => {
+    const id = String(hit.id);
+    // Store the API-Football team id as the favorite (matches what fixtures use).
     toggle("team", id);
+    // Remember the display identity so Rule 2 can render name/logo + match fixtures.
+    saveTeamMeta({ id, name: hit.name, logo: hit.logo, country: hit.country });
     dismiss();
   };
 
@@ -54,7 +129,7 @@ function FavoriteTeamPicker() {
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {t("home.pickTeamSubtitle", {
-              defaultValue: "We'll surface your team's matches here every time you visit.",
+              defaultValue: "Search any club in the world — we'll surface its matches here.",
             })}
           </p>
         </div>
@@ -67,30 +142,65 @@ function FavoriteTeamPicker() {
         </button>
       </header>
 
-      <div className="relative mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
-        {teams.map((team) => {
-          const selected = favorites.teams.includes(team.id);
-          return (
-            <button
-              key={team.id}
-              onClick={() => pick(team.id)}
-              className={cn(
-                "flex flex-col items-center gap-1.5 rounded-2xl border p-3 transition-colors",
-                selected
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-secondary/30 hover:bg-secondary/60",
-              )}
-            >
-              <span className="grid h-11 w-11 place-items-center rounded-full bg-secondary/60 text-2xl">
-                {team.clubBadge}
-              </span>
-              <span className="w-full truncate text-center text-xs font-semibold">{team.name}</span>
-              <span className="w-full truncate text-center text-[10px] text-muted-foreground">
-                {team.league}
-              </span>
-            </button>
-          );
-        })}
+      <div ref={boxRef} className="relative mt-4">
+        <div className="flex items-center gap-2 rounded-2xl border border-border bg-secondary/30 px-3 py-2.5">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setResults([]);
+            }}
+            onFocus={() => debounced.length >= 3 && setOpen(true)}
+            placeholder={t("home.teamSearchPlaceholder", {
+              defaultValue: "Search a club… e.g. Galatasaray",
+            })}
+            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+          {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />}
+        </div>
+
+        {open && debounced.length >= 3 && (
+          <div className="absolute z-10 mt-1 max-h-72 w-full overflow-auto rounded-2xl border border-border bg-background/95 p-1 shadow-xl backdrop-blur">
+            {loading && results.length === 0 && (
+              <p className="px-3 py-3 text-sm text-muted-foreground">
+                {t("home.loading", { defaultValue: "Loading…" })}
+              </p>
+            )}
+            {!loading && searched && results.length === 0 && (
+              <p className="px-3 py-3 text-sm text-muted-foreground">
+                {t("home.noTeamResults", { defaultValue: "No clubs found. Try another name." })}
+              </p>
+            )}
+            {results.length > 0 &&
+              results.map((hit) => (
+                <button
+                  key={hit.id}
+                  onClick={() => pick(hit)}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-secondary/60"
+                >
+                  {hit.logo ? (
+                    <img
+                      src={hit.logo}
+                      alt=""
+                      loading="lazy"
+                      className="h-8 w-8 shrink-0 rounded-full bg-white/10 object-contain"
+                    />
+                  ) : (
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-secondary/60 text-base">
+                      ⚽
+                    </span>
+                  )}
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">{hit.name}</span>
+                    <span className="block truncate text-[10px] text-muted-foreground">
+                      {hit.country || hit.name}
+                    </span>
+                  </span>
+                </button>
+              ))}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -152,7 +262,11 @@ function FavoriteTeamMatches() {
   const { favorites, ready } = useFavorites();
   const { data, isLoading } = useLiveFeed();
 
-  const teamName = useMemo(() => favoriteTeamName(favorites.teams), [favorites.teams]);
+  const favoriteId = favorites.teams[0];
+  // Resolve the favorite's display identity (persisted when it was picked).
+  const teamMeta = favoriteId ? favoriteTeamMetaFor(favoriteId) : undefined;
+  const teamName = teamMeta?.name ?? favoriteId;
+
   const { next, prev } = useMemo(() => {
     const fixtures = data?.fixtures ?? [];
     return teamNextPrev(fixtures, teamName);
@@ -200,14 +314,20 @@ function FavoriteTeamMatches() {
   );
 }
 
-/* ---------------- Rule 3: weekly best players (one per league) ---------------- */
+/* ---------------- Rule 3: weekly best players (one per league, real data) ---------------- */
 
 function WeeklyBestPlayers() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const sections = useMemo(() => weeklyBestByLeague(), []);
+  const fetchBest = useServerFn(getHomeWeeklyBest);
 
-  if (!sections.length) return null;
+  const { data: sections = [], isLoading } = useQuery<HomeLeagueBest[]>({
+    queryKey: ["home-weekly-best"],
+    queryFn: () => fetchBest(),
+    staleTime: 30 * 60 * 1000,
+  });
+
+  if (!isLoading && sections.length === 0) return null;
 
   return (
     <section className="mt-7">
@@ -220,28 +340,44 @@ function WeeklyBestPlayers() {
         {sections.map(({ league, player }) => (
           <button
             key={league}
-            onClick={() => void navigate({ to: "/player/$id", params: { id: player.id } })}
+            onClick={() =>
+              void navigate({ to: "/player/$id", params: { id: `api-${player.id}` } })
+            }
             className="card-surface flex items-center gap-3 rounded-2xl p-3 text-left transition-colors hover:bg-secondary/40"
           >
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-secondary/50 text-xl">
-              {player.clubBadge || "⚽"}
-            </span>
+            {player.photo ? (
+              <img
+                src={player.photo}
+                alt=""
+                loading="lazy"
+                className="h-12 w-12 shrink-0 rounded-full bg-white/10 object-cover"
+              />
+            ) : (
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-secondary/50 text-xl">
+                ⚽
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <Star className="h-3.5 w-3.5 shrink-0 text-accent" />
                 <h3 className="truncate text-sm font-bold">{player.name}</h3>
               </div>
               <p className="truncate text-xs text-muted-foreground">
-                {player.nation} {player.club} · {player.position} · {league}
+                {[player.club, player.nation, player.position].filter(Boolean).join(" · ")} · {league}
               </p>
               <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-primary">
                 <Flame className="h-3 w-3" />
-                {t("home.form", { defaultValue: "Form" })} {player.form}
+                {t("home.topScorer", { defaultValue: "Top scorer" })}
               </p>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
         ))}
+        {isLoading && (
+          <p className="text-sm text-muted-foreground">
+            {t("home.loading", { defaultValue: "Loading…" })}
+          </p>
+        )}
       </div>
     </section>
   );
@@ -325,7 +461,7 @@ export function HomePage() {
   return (
     <div>
       <HomeHero />
-      <FavoriteTeamPicker />
+      <TeamSearchPicker />
       <FavoriteTeamMatches />
       <WeeklyBestPlayers />
       <KeyMatches />

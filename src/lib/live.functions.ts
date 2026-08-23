@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
-  buildMockFeed,
   mapFixtureRow,
   mockTransfers,
   type ApiFootballFixture,
@@ -11,8 +10,18 @@ import {
 import { cached } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
 import { apiFootball, apiFootballKey } from "@/lib/api-football.server";
+import { utcDateKey } from "@/services/dailyEngine";
 
 const LIVE_SNAPSHOT_TTL = 30;
+
+/**
+ * A feed with no fixtures — used as the honest "no live data" state instead of
+ * a fabricated local mock. Consumers (e.g. the home page) treat an empty
+ * fixtures list as "no real live data to show" and never invent scores.
+ */
+function emptyFeed(): LiveFeed {
+  return { date: utcDateKey(new Date()), source: "api-football", fixtures: [] };
+}
 
 /**
  * Secure server-side proxy for API-Football.
@@ -23,25 +32,26 @@ const LIVE_SNAPSHOT_TTL = 30;
  *  - In-play snapshot (`/fixtures?live=all`, 30 s cache) — covers matches in
  *    leagues outside the daily window and refreshes live scores fast.
  *
- * Any missing key, rate limit or upstream failure falls back to the rich
- * deterministic local mock feed so the UI keeps working.
+ * No mock fallback: a missing key, rate limit or upstream failure yields an
+ * empty feed (`source: "api-football"`, zero fixtures) so the UI can clearly
+ * communicate that no real live data is available rather than faking it.
  */
 export const getLiveFeed = createServerFn({ method: "GET" }).handler(async (): Promise<LiveFeed> => {
-  const fallback = buildMockFeed();
   const apiKey = apiFootballKey();
-  if (!apiKey) return fallback;
+  if (!apiKey) return emptyFeed();
 
+  const date = utcDateKey(new Date());
   const daily = await cached<LiveFixture[] | null>(
-    `fixtures-day:${fallback.date}`,
+    `fixtures-day:${date}`,
     TTL.FIXTURES,
     async () => {
       const json = await apiFootball<{ response?: ApiFootballFixture[] }>(
-        `/fixtures?date=${fallback.date}`,
+        `/fixtures?date=${date}`,
         apiKey,
       );
       const rows = json?.response ?? [];
       if (!rows.length) return null;
-      return rows.map((r, i) => mapFixtureRow(r, `${fallback.date}-${i}`));
+      return rows.map((r, i) => mapFixtureRow(r, `${date}-${i}`));
     },
     null,
   );
@@ -60,13 +70,13 @@ export const getLiveFeed = createServerFn({ method: "GET" }).handler(async (): P
     [],
   );
 
-  if (!daily?.length && !liveNow.length) return fallback;
+  if (!daily?.length && !liveNow.length) return emptyFeed();
 
   // Live snapshot wins over the (older) daily schedule row for the same match.
   const byId = new Map((daily ?? []).map((f) => [f.id, f]));
   for (const live of liveNow) byId.set(live.id, live);
 
-  return { date: fallback.date, source: "api-football", fixtures: [...byId.values()] };
+  return { date, source: "api-football", fixtures: [...byId.values()] };
 });
 
 /**

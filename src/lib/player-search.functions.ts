@@ -412,3 +412,58 @@ export const getWorldPlayerCard = createServerFn({ method: "GET" })
       null,
     );
   });
+
+/* ---------------- Home page: weekly best, one player per league ---------------- */
+
+export type HomeLeagueBest = {
+  league: string;
+  player: {
+    id: number;
+    name: string;
+    club?: string | undefined;
+    nation?: string | undefined;
+    position?: string | undefined;
+    photo?: string | undefined;
+  };
+};
+
+/**
+ * The "weekly best of each league" strip for the home page (Rule 3). Pulls the
+ * top scorer of a curated set of major leagues — one player per league — from
+ * the live API via the shared `getLeagueTopPlayers` proxy (itself server-cached).
+ *
+ * Honest-by-construction: entries whose source falls back to the local mock are
+ * skipped, so the page never fabricates a best-player.
+ */
+const HOME_LEAGUES: { league: string; leagueId: number }[] = [
+  { league: "Premier League", leagueId: 39 },
+  { league: "La Liga", leagueId: 140 },
+  { league: "Serie A", leagueId: 135 },
+  { league: "Bundesliga", leagueId: 78 },
+  { league: "Ligue 1", leagueId: 61 },
+  { league: "Süper Lig", leagueId: 203 },
+];
+
+export const getHomeWeeklyBest = createServerFn({ method: "GET" }).handler(
+  async (): Promise<HomeLeagueBest[]> => {
+    const out: HomeLeagueBest[] = [];
+    for (const { league, leagueId } of HOME_LEAGUES) {
+      const res = await getLeagueTopPlayers({ data: { leagueId } });
+      const p = res?.players?.[0];
+      // Skip empty results and any mock fallback — only real API data counts.
+      if (!p || res.source === "mock") continue;
+      out.push({
+        league,
+        player: {
+          id: p.id,
+          name: p.name,
+          club: p.club,
+          nation: p.nationality,
+          position: p.position,
+          photo: p.photo,
+        },
+      });
+    }
+    return out;
+  },
+);
