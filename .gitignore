@@ -19,6 +19,11 @@ dist-ssr
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
+# Env files (secrets) - keep safe templates like .env.example/.env.template
+.env
+.env.*
+!.env.example
+!.env.template
 
 # Editor directories and files
 .vscode/*
