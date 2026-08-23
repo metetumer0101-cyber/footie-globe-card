@@ -81,12 +81,16 @@ function Page() {
   const [idA, idB] = ids[kind];
   const a = findEntity(kind, idA, pools[kind]);
   const b = findEntity(kind, idB, pools[kind]);
+  // Pools can be empty while CMS/seed data isn't loaded yet (e.g. Supabase empty or
+  // unavailable during SSR). Guard every derived computation so we render a safe
+  // empty state instead of throwing (radarOf/metricsOf crash on undefined entities).
+  const ready = !!(a && b);
 
-  const radarA = useMemo(() => radarOf(a), [a]);
-  const radarB = useMemo(() => radarOf(b), [b]);
+  const radarA = useMemo(() => (a ? radarOf(a) : []), [a]);
+  const radarB = useMemo(() => (b ? radarOf(b) : []), [b]);
   const rows = useMemo(
-    () => buildRows(radarA, radarB, metricsOf(a, b), t),
-    [radarA, radarB, a, b, t],
+    () => (ready ? buildRows(radarA, radarB, metricsOf(a, b), t) : []),
+    [ready, radarA, radarB, a, b, t],
   );
 
   useEffect(() => {
@@ -133,6 +137,24 @@ function Page() {
     }
   };
 
+  // No cards of this kind are available yet (empty CMS/seed data during SSR).
+  // Render a safe empty state instead of crashing on undefined entities.
+  if (!ready) {
+    return (
+      <AppShell>
+        <section className="space-y-5">
+          <header>
+            <h1 className="text-2xl font-bold">{t("cmp.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("cmp.subtitle")}</p>
+          </header>
+          <div className="card-surface rounded-2xl p-8 text-center">
+            <p className="text-sm text-muted-foreground">{t("cmp.noData")}</p>
+          </div>
+        </section>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
       <section className="space-y-5">
@@ -164,6 +186,7 @@ function Page() {
             {trendingMatchups.map((m) => {
               const ea = findEntity(m.kind, m.a, pools[m.kind]);
               const eb = findEntity(m.kind, m.b, pools[m.kind]);
+              if (!ea || !eb) return null;
               return (
                 <button
                   key={`${m.kind}-${m.a}-${m.b}`}
