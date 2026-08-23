@@ -62,3 +62,35 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## API quota empty state & UTC-midnight auto refresh
+
+API-Football free keys have a **daily request quota**. When it is exhausted the
+provider returns an error body / `X-RateLimit-Remaining: 0` and every upstream
+call is silently useless.
+
+- **Detection** — `src/lib/api-football.server.ts` parses the
+  `X-RateLimit-Remaining` header and the `errors.requests` / `errors.rateLimit`
+  body fields and reports the state via `src/lib/system-status.server.ts`
+  (`reportQuotaExhausted` / `reportUpstreamOk`).
+- **UI** — `getSystemStatus` (server function, `system-status.functions.ts`) is
+  read by Home and Live through the `useSystemStatus` hook. When the quota is
+  exhausted these pages render `QuotaStateCard` — an honest, elegant
+  "System updating / quota reached" empty state. **No mock/fabricated data is
+  ever shown**; empty feeds stay empty and a clear card explains why.
+- **UTC-midnight auto refresh** — `src/lib/midnight-refresh.server.ts` arms an
+  in-process, self-rescheduling timer aligned to the next UTC 00:00 (when the
+  quota resets). On firing it `bustCache`s the live/player prefixes so the next
+  read re-fetches fresh data (rewritten to Supabase via the existing
+  `api_cache` writer), then warms `getLiveFeed` + `getHomeWeeklyBest`. The
+  timer is re-armed on every live-feed/status request.
+
+**Honest limits**: this environment is Nitro SSR under a single long-running
+Bun process, with **no guaranteed platform CRON daemon**. The mechanism is an
+in-process timer, not a managed scheduler. It stays live for as long as the
+process is running and receives traffic (every Home/Live request re-arms it),
+but if the process is restarted and gets no requests before midnight, no timer
+is armed until the next visit. On the deployed environment the Supabase
+`SUPABASE_SERVICE_ROLE_KEY` may be absent, which makes `api_cache` writes /
+`bustCache` no-ops there (already-documented infra constraint) — the code path
+is correct wherever that key is present.

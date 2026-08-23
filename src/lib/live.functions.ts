@@ -10,6 +10,7 @@ import {
 import { cached } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
 import { apiFootball, apiFootballKey } from "@/lib/api-football.server";
+import { ensureMidnightRefresh } from "@/lib/midnight-refresh.server";
 import { utcDateKey } from "@/services/dailyEngine";
 
 const LIVE_SNAPSHOT_TTL = 30;
@@ -37,6 +38,9 @@ function emptyFeed(): LiveFeed {
  * communicate that no real live data is available rather than faking it.
  */
 export const getLiveFeed = createServerFn({ method: "GET" }).handler(async (): Promise<LiveFeed> => {
+  // Any live-feed request keeps the UTC-midnight cache invalidation + warm
+  // refresh timer armed, so the daily quota reset is handled automatically.
+  ensureMidnightRefresh();
   const apiKey = apiFootballKey();
   if (!apiKey) return emptyFeed();
 

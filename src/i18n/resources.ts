@@ -284,7 +284,13 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "prevMatch": "Prev · {{teamName}}",
         "weeklyBestTitle": "Weekly best of each league",
         "topScorer": "Top scorer",
-        "keyMatchesTitle": "Matches & derbies of the week"
+        "keyMatchesTitle": "Matches & derbies of the week",
+        "status": {
+          "quotaAria": "Live data is temporarily unavailable",
+          "updatingTitle": "System updating",
+          "quotaSubtitle": "Today's live data quota is used up. Fresh scores will return automatically after midnight (UTC).",
+          "autoResume": "Auto-resumes after midnight UTC"
+        }
       },
       "games": {
         "title": "Games Hub",
@@ -738,7 +744,13 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "prevMatch": "Önceki · {{teamName}}",
         "weeklyBestTitle": "Her ligin haftanın en iyisi",
         "topScorer": "Gol kralı",
-        "keyMatchesTitle": "Haftanın maçları ve derbileri"
+        "keyMatchesTitle": "Haftanın maçları ve derbileri",
+        "status": {
+          "quotaAria": "Canlı veriler geçici olarak kullanılamıyor",
+          "updatingTitle": "Sistem güncelleniyor",
+          "quotaSubtitle": "Günlük canlı veri kotası doldu. Yeni skorlar gece yarısından (UTC) sonra otomatik olarak geri gelecek.",
+          "autoResume": "Gece yarısı UTC'de otomatik devam"
+        }
       },
       "games": {
         "title": "Oyun Merkezi",
