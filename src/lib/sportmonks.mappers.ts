@@ -33,6 +33,7 @@ import type {
 import type { WorldPlayer } from "@/lib/player-search.functions";
 import type { TeamPageData, TeamSearchHit } from "@/lib/entity.server";
 import type { PlayerCardData, Tier } from "@/data/football";
+import type { Fixture } from "@/lib/football-data.functions";
 
 /* ------------------------------------------------------------------ */
 /* Raw SportMonks shapes (subset used by the app)                      */
@@ -70,6 +71,9 @@ export type SMFixture = {
   localteam_id?: number;
   visitorteam_id?: number;
   starting_at?: string;
+  /** Display string of the form "HomeTeam vs AwayTeam" — the only reliable team
+   * name source on plans where the `localTeam`/`visitorTeam` includes are gated. */
+  name?: string;
   time?: { minute?: number | null; added_time?: number | null; status?: string | null };
   scores?: {
     localteam_score?: number | null;
@@ -100,6 +104,10 @@ export type SMEvent = {
   type?: string;
   detail?: string;
   reason?: string;
+  /** SportMonks event descriptor, e.g. "1st Goal" / "Yellow Card". */
+  addition?: string;
+  /** E.g. "Header" / "Hand-ball" — used as a secondary detail. */
+  info?: string;
 };
 
 export type SMStatistic = {
@@ -125,6 +133,10 @@ export type SMLineup = {
   position_id?: number;
   formation_field?: string;
   number?: number;
+  /** 11 = starting XI, 12 = substitute (confirmed on live plan data). */
+  type_id?: number;
+  /** Shirt number (SportMonks field). */
+  jersey_number?: number;
   type?: string;
   player?: SMPlayer | null;
   lineup?: {
@@ -197,23 +209,41 @@ export function mapSmFixtureStatus(f: {
   return "scheduled";
 }
 
+/**
+ * Split SportMonks' `name` display string ("HomeTeam vs AwayTeam") into home and
+ * away team names. Used when the `localTeam`/`visitorTeam` includes are not
+ * granted on a plan (they 404 on the current one), so the live feed still has
+ * real team names rather than "Home"/"Away".
+ */
+export function smFixtureTeamNames(name?: string): [string, string] {
+  if (!name) return ["Home", "Away"];
+  const marker = name.toLowerCase().indexOf(" vs ");
+  if (marker > 0) {
+    const home = name.slice(0, marker).trim();
+    const away = name.slice(marker + 4).trim();
+    if (home && away) return [home, away];
+  }
+  return ["Home", "Away"];
+}
+
 /** Normalize one raw SportMonks fixture row into the app `LiveFixture` shape. */
 export function mapSmFixture(row: SMFixture, fallbackId: string): LiveFixture {
   const home = row.localTeam ?? {};
   const away = row.visitorTeam ?? {};
+  const [homeName, awayName] = smFixtureTeamNames(row.name);
   const status = mapSmFixtureStatus(row);
   const minute = (row.time?.minute ?? 0) ?? 0;
   return {
     id: String(row.id ?? fallbackId),
     league: row.league?.name ?? "—",
     home: {
-      name: home.name ?? "Home",
+      name: home.name ?? homeName,
       badge: "⚽",
       score: row.scores?.localteam_score ?? 0,
       logo: home.image_path,
     },
     away: {
-      name: away.name ?? "Away",
+      name: away.name ?? awayName,
       badge: "⚽",
       score: row.scores?.visitorteam_score ?? 0,
       logo: away.image_path,
@@ -222,6 +252,27 @@ export function mapSmFixture(row: SMFixture, fallbackId: string): LiveFixture {
     minute: status === "scheduled" ? 0 : minute,
     kickoff: (row.starting_at ?? "").slice(11, 16),
     performers: [],
+  };
+}
+
+/** Map a raw SportMonks fixture row into the app `Fixture` shape used by league
+ * fixture lists and the fixture modal. */
+export function mapSmFixtureBrief(row: SMFixture, leagueId: number, date: string): Fixture {
+  const status = mapSmFixtureStatus(row);
+  const [homeName, awayName] = smFixtureTeamNames(row.name);
+  return {
+    id: row.id ?? 0,
+    date: (row.starting_at ?? date).slice(0, 10),
+    league: {
+      id: row.league_id ?? leagueId,
+      name: row.league?.name ?? "—",
+      logo: row.league?.image_path ?? "",
+    },
+    home: { id: row.localteam_id ?? 0, name: homeName, logo: row.localTeam?.image_path ?? "", score: row.scores?.localteam_score ?? undefined },
+    away: { id: row.visitorteam_id ?? 0, name: awayName, logo: row.visitorTeam?.image_path ?? "", score: row.scores?.visitorteam_score ?? undefined },
+    status,
+    minute: row.time?.minute ?? undefined,
+    source: "api-football",
   };
 }
 
@@ -276,13 +327,17 @@ export function mapSmStandings(
 
 /** Map a raw SportMonks event into the app `MatchEvent`. */
 export function mapSmEvent(e: SMEvent): MatchEvent {
-  const type = e.type ?? "";
+  // SportMonks v3 events carry `type_id` rather than a free-text `type`; the
+  // human-readable `addition`/`info` fields describe the action reliably, so we
+  // derive the coarse event type from them (case-insensitive).
+  const label = [e.addition, e.type, e.info, e.reason, e.detail].filter(Boolean).join(" ");
+  const l = label.toLowerCase();
   const eventType =
-    /goal/i.test(type) ? "Goal"
-      : /yellow|red|card/i.test(type) ? "Card"
-        : /sub/i.test(type) ? "Subst"
-          : /var/i.test(type) ? "Var"
-            : type || "Goal";
+    /subst|substitution|in play|on for/i.test(l) ? "Subst"
+      : /red card|yellow card|(^| )card/i.test(l) ? "Card"
+        : /var|video assistant/i.test(l) ? "Var"
+          : /goal|penalty scored|own goal|header|shot/i.test(l) ? "Goal"
+            : e.type || "Event";
   return {
     elapsed: e.minute ?? 0,
     extraTime: e.extra_minute,
@@ -290,7 +345,7 @@ export function mapSmEvent(e: SMEvent): MatchEvent {
     player: { id: e.player_id ?? 0, name: e.player_name ?? "—" },
     assist: e.related_player_id ? { id: e.related_player_id, name: e.related_player_name ?? "—" } : undefined,
     type: eventType,
-    detail: e.detail ?? e.reason ?? "",
+    detail: e.addition ?? e.info ?? e.detail ?? e.reason ?? "",
   };
 }
 
@@ -325,27 +380,29 @@ function mapLineupPlayer(p: SMLineup): LineupPlayer {
   return {
     id: p.player_id ?? 0,
     name: p.player_name ?? p.player?.name ?? "—",
-    number: p.number ?? 0,
+    number: p.jersey_number ?? p.number ?? 0,
     pos: p.position_id != null ? String(p.position_id) : "—",
     grid: p.formation_field,
   };
 }
 
 /** Map raw SportMonks lineups into paired `MatchLineup` rows. */
-export function mapSmLineups(rows: SMLineup[], startXI: number[]): MatchLineup[] {
-  // SportMonks `include=lineups` returns a flat per-player list; players whose id
-  // is in `startXI` form the XI, the rest are substitutes. STMAP: grouping/shape
-  // is finalised against a live response in Step 2.
+export function mapSmLineups(rows: SMLineup[], startXI: number[] = []): MatchLineup[] {
+  // SportMonks `include=lineups` returns a flat per-player list with `team_id`
+  // and a `type_id` that marks starters (11) vs substitutes (12). We group by
+  // team and prefer `type_id`; the caller may also pass `startXI` ids as a
+  // fallback discriminator.
   const grouped = new Map<number, { starters: SMLineup[]; subs: SMLineup[] }>();
   for (const row of rows) {
     const tid = row.participant_id ?? row.team_id ?? 0;
     const g = grouped.get(tid) ?? { starters: [], subs: [] };
-    if (row.player_id != null && startXI.includes(row.player_id)) g.starters.push(row);
+    const isStarter = row.type_id != null ? row.type_id === 11 : row.player_id != null && startXI.includes(row.player_id);
+    if (isStarter) g.starters.push(row);
     else g.subs.push(row);
     grouped.set(tid, g);
   }
   return [...grouped.values()].map((g) => ({
-    team: { id: 0, name: "—", logo: "" }, // STMAP: team info is embedded via `lineups.team` include; set in Step 2
+    team: { id: 0, name: "—", logo: "" }, // team names arrive via `lineups.team` include (plan-gated); left empty defensively
     formation: "—",
     coach: "—",
     startXI: g.starters.map(mapLineupPlayer),
@@ -363,7 +420,7 @@ export function mapSmMatchDetails(
     source: "api-football", // STMAP: product type only knows api-football|mock today
     events: (f.events ?? []).map(mapSmEvent),
     stats: mapSmStatistics(f.statistics ?? []),
-    lineups: mapSmLineups(f.lineups ?? [], []),
+    lineups: mapSmLineups(f.lineups ?? []),
     finished: f.state_id === 6 || f.state_id === 7,
   };
 }

@@ -3,6 +3,15 @@ import { cached, cachedMeta, type CachedResult } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
 import { players as mockPlayers, type PlayerCardData, type Tier } from "@/data/football";
 import { apiFootball, apiFootballKey, currentSeason, seasonCandidates } from "@/lib/api-football.server";
+import {
+  isSportMonksEnabled,
+  sportMonks,
+  sportMonksCached,
+  sportMonksCachedMeta,
+  type SportMonksEnvelope,
+  type SportMonksList,
+} from "@/lib/api-sportmonks.server";
+import { mapSmPlayerCard, mapSmWorldPlayer, type SMPlayer } from "@/lib/sportmonks.mappers";
 import { leagueTopPlayersDb, searchWorldPlayersDb } from "@/lib/player-db.server";
 
 export type WorldPlayer = {
@@ -105,6 +114,28 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
     const leagueId = data.leagueId && data.leagueId > 0 ? data.leagueId : null;
     if (query.length < 3) return { players: [], source: "mock", paging: { current: 1, total: 1 } };
 
+    if (isSportMonksEnabled()) {
+      // Search SportMonks directly (returns provider-native player ids so the
+      // player card route resolves). Local mirror is skipped because it stores
+      // API-Football ids that would break the SportMonks card lookup.
+      return sportMonksCached<WorldSearchResult>(
+        `player-search:${query.toLowerCase()}:${leagueId ?? "all"}:${page}`,
+        TTL.SEARCH,
+        async () => {
+          const json = await sportMonks<SportMonksList<SMPlayer>>({ path: `/players/search/${encodeURIComponent(query)}`, page });
+          const players = (json?.data ?? []).map((p) => mapSmWorldPlayer(p)).filter((p) => p.id);
+          if (!players.length && page === 1) return null;
+          const total = json?.meta?.pagination?.total ?? page;
+          return {
+            players,
+            paging: { current: page, total: Math.max(total, 1) },
+            source: "api-football" as const,
+          };
+        },
+        mockSearch(query),
+      );
+    }
+
     // Local mirror first: instant, quota-free, covers every synced league.
     const mirrored = await searchWorldPlayersDb({ query, page, leagueId });
     if (mirrored) return mirrored;
@@ -191,6 +222,14 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
 export const getLeagueTopPlayers = createServerFn({ method: "GET" })
   .inputValidator((input: { leagueId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<WorldSearchResult> => {
+    if (isSportMonksEnabled()) {
+      // SportMonks v3 has no top-scorers route granted on the current plan
+      // (`/top-scorers/*` 404) and standings filtering returns HTTP 400, so
+      // there is no honest SportMonks source for "league top players". Return an
+      // empty result (callers skip it) rather than mixing API-Football ids in.
+      return { players: [], paging: { current: 1, total: 1 }, source: "api-football" as const };
+    }
+
     // Local mirror first (nightly sync keeps it fresh); API only as fallback.
     const mirrored = await leagueTopPlayersDb(data.leagueId);
     if (mirrored) return mirrored;
@@ -281,6 +320,24 @@ export type WorldPlayerCard = { card: PlayerCardData; source: "api-football" | "
 export const getWorldPlayerCard = createServerFn({ method: "GET" })
   .inputValidator((input: { playerId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<CachedResult<WorldPlayerCard | null>> => {
+    if (isSportMonksEnabled()) {
+      // `/players/{id}` — stats/team includes are plan-gated (404), so the card
+      // is built from the player's base bio + derived attributes (mapSmPlayerCard).
+      // The `playerId` must be a SportMonks player id (as returned by the SM
+      // search), which is how the /player/{id} route reaches here under the flag.
+      return sportMonksCachedMeta<WorldPlayerCard | null>(
+        `player-card:${data.playerId}:sm`,
+        TTL.PLAYER,
+        async () => {
+          const json = await sportMonks<SportMonksEnvelope<SMPlayer>>({ path: `/players/${data.playerId}` });
+          const p = json?.data;
+          if (!p?.id) return null;
+          return { card: mapSmPlayerCard(p), source: "api-football" as const };
+        },
+        null,
+      );
+    }
+
     const apiKey = apiFootballKey();
     if (!apiKey) return { data: null, fetchedAt: null };
     const season = data.season ?? currentSeason();
