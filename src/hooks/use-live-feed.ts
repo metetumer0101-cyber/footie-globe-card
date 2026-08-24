@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getLiveFeed } from "@/lib/live.functions";
+import { getLiveFeed, getInplayFeed } from "@/lib/live.functions";
 
 export const LIVE_POLL_MS = 60_000;
 
@@ -9,6 +9,21 @@ export function useLiveFeed() {
   const fetchFeed = useServerFn(getLiveFeed);
   return useQuery({
     queryKey: ["live-feed"],
+    queryFn: () => fetchFeed(),
+    refetchInterval: LIVE_POLL_MS,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: LIVE_POLL_MS / 2,
+  });
+}
+
+/** In-play feed query for the live page (data layer — consumed by the part-2 UI).
+ * Auto-polls every 60s and refreshes on tab focus/reconnect. */
+export function useInplayFeed() {
+  const fetchFeed = useServerFn(getInplayFeed);
+  return useQuery({
+    queryKey: ["inplay-feed"],
     queryFn: () => fetchFeed(),
     refetchInterval: LIVE_POLL_MS,
     refetchIntervalInBackground: false,

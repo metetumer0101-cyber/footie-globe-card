@@ -11,11 +11,29 @@ export type LivePlayerLine = {
   assists: number;
 };
 
+/** A single highlight (goal / card) surfaced on the in-play live page. */
+export type LiveHighlight = {
+  minute: number;
+  kind: "goal" | "penalty" | "red-card" | "yellow-card";
+  side: "home" | "away";
+  player: string;
+  detail?: string | undefined;
+};
+
+export type LiveTeamSide = {
+  name: string;
+  badge: string;
+  score: number;
+  logo?: string | undefined;
+  /** Provider team id — used for favorites matching (in-play feed only). */
+  id?: number | undefined;
+};
+
 export type LiveFixture = {
   id: string;
   league: string;
-  home: { name: string; badge: string; score: number; logo?: string | undefined };
-  away: { name: string; badge: string; score: number; logo?: string | undefined };
+  home: LiveTeamSide;
+  away: LiveTeamSide;
   status: "scheduled" | "live" | "halftime" | "finished";
   /** Match minute for live games, kickoff HH:mm (UTC) for scheduled ones. */
   minute: number;
@@ -25,7 +43,17 @@ export type LiveFixture = {
    * multi-day feeds can show which day an upcoming match is on; undefined for
    * the offline mock feed.
    */
-  date?: string;
+  date?: string | undefined;
+  /** Provider league id (in-play feed only). */
+  leagueId?: number | undefined;
+  /** Provider league crest (in-play feed only). */
+  leagueLogo?: string | undefined;
+  /** Fine-grained in-play phase derived from the current period (in-play feed). */
+  phase?: "first-half" | "halftime" | "second-half" | "extra-time" | "penalties" | undefined;
+  /** Stoppage/added time of the current period, when provided (in-play feed). */
+  addedTime?: number | undefined;
+  /** In-play highlights (goals / cards) derived from the events include (in-play feed). */
+  highlights?: LiveHighlight[] | undefined;
   performers: LivePlayerLine[];
 };
 

@@ -19,7 +19,7 @@
  * with a fallback and flagged with `STMAP:` so it can be tightened during wiring.
  */
 
-import type { LiveFixture } from "@/lib/live";
+import type { LiveFixture, LiveHighlight } from "@/lib/live";
 import type {
   Injury,
   LineupPlayer,
@@ -130,6 +130,58 @@ export type SMEvent = {
   addition?: string;
   /** E.g. "Header" / "Hand-ball" — used as a secondary detail. */
   info?: string;
+};
+
+/* ------------------------------------------------------------------ */
+/* In-play (livescores/inplay) raw shapes                              */
+/* ------------------------------------------------------------------ */
+
+/** A participant (team) embedded via `include=participants` on the in-play
+ * endpoint. `meta.location` is "home"|"away"; `image_path` is the team crest. */
+export type SMInplayParticipant = {
+  id?: number;
+  name?: string;
+  short_code?: string;
+  image_path?: string;
+  meta?: {
+    location?: string;
+    winner?: string | null;
+    position?: number | null;
+  } | null;
+};
+
+/** A score row embedded via `include=scores` on the in-play endpoint. In-play
+ * score rows carry `score.participant` ("home"/"away") and a `description`
+ * ("CURRENT" | "1ST_HALF" | "2ND_HALF"), unlike `SMFixture.scores` (an object). */
+export type SMInplayScore = {
+  participant_id?: number;
+  score?: { goals?: number | null; participant?: string };
+  description?: string;
+};
+
+/** A period row embedded via `include=periods` on the in-play endpoint. The
+ * ticking / last-open period determines the current minute + phase. */
+export type SMInplayPeriod = {
+  description?: string;
+  ticking?: boolean;
+  minutes?: number;
+  seconds?: number;
+  time_added?: number | null;
+  ended?: number | null;
+  started?: number | null;
+};
+
+/**
+ * A raw SportMonks fixture row as returned by `GET /livescores/inplay`. The
+ * endpoint's top-level envelope is `{ data: [...] }` (NOT `{data, meta}`), and
+ * its `scores` is an ARRAY (unlike `SMFixture.scores`, an object), so it is typed
+ * separately rather than reusing `SportMonksList`/`SMFixture`.
+ */
+export type SMInplayFixture = Omit<SMFixture, "scores"> & {
+  participants?: SMInplayParticipant[];
+  /** Array of score rows on the in-play endpoint. */
+  scores?: SMInplayScore[];
+  periods?: SMInplayPeriod[];
 };
 
 export type SMStatistic = {
@@ -274,6 +326,143 @@ export function mapSmFixture(row: SMFixture, fallbackId: string): LiveFixture {
     minute: status === "scheduled" ? 0 : minute,
     kickoff: (row.starting_at ?? "").slice(11, 16),
     date: (row.starting_at ?? "").slice(0, 10) || undefined,
+    performers: [],
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* In-play fixture mapping (livescores/inplay)                         */
+/* ------------------------------------------------------------------ */
+
+/** Derive the fine-grained in-play phase from a SportMonks period description
+ * (e.g. "1st-half", "2nd-half", "half-time", "extra-time", "penalties"). */
+function inplayPhase(desc?: string): LiveFixture["phase"] | undefined {
+  const d = (desc ?? "").toLowerCase().trim();
+  if (!d) return undefined;
+  if (d.includes("1st-half") || d === "1st half" || d.startsWith("1st")) return "first-half";
+  if (d.includes("2nd-half") || d === "2nd half" || d.startsWith("2nd")) return "second-half";
+  if (d.includes("half-time") || d.includes("halftime") || d === "half time") return "halftime";
+  if (d.includes("extra-time") || d.includes("extra time")) return "extra-time";
+  if (d.includes("penalt")) return "penalties";
+  return undefined;
+}
+
+/** Map in-play events into highlights, resolving side by participant id and
+ * classifying kind from the event's combined text. Unknown events are skipped
+ * (never fabricated). */
+function mapInplayHighlights(
+  events: SMEvent[],
+  homeId?: number,
+  awayId?: number,
+): LiveHighlight[] {
+  const out: LiveHighlight[] = [];
+  for (const e of events) {
+    if (e.participant_id == null) continue;
+    const side =
+      e.participant_id === homeId ? "home"
+        : e.participant_id === awayId ? "away"
+          : undefined;
+    if (!side) continue;
+    const label = [e.addition, e.type, e.info, e.reason, e.detail]
+      .filter((v): v is string => typeof v === "string" && v.length > 0)
+      .join(" ")
+      .toLowerCase();
+    // Order matters: a penalty goal contains both "penalty" and "goal" — call it a penalty.
+    let kind: LiveHighlight["kind"] | null = null;
+    if (/penalt|\ppen\b/.test(label)) kind = "penalty";
+    else if (/red card/.test(label)) kind = "red-card";
+    else if (/yellow card|yellowcard/.test(label)) kind = "yellow-card";
+    else if (/goal|own goal|header|shot/.test(label)) kind = "goal";
+    if (!kind) continue;
+    out.push({
+      minute: e.minute ?? 0,
+      kind,
+      side,
+      player: e.player_name ?? "—",
+      detail: e.addition ?? e.info ?? e.detail ?? e.reason ?? undefined,
+    });
+  }
+  return out;
+}
+
+/**
+ * Map a raw SportMonks in-play fixture row (from `GET /livescores/inplay`) into
+ * the app `LiveFixture` shape. Resolves home/away from `participants` by
+ * `meta.location`, scores from CURRENT `scores` entries, and status/minute/phase
+ * from `periods`. The endpoint only returns in-play fixtures, but the mapping is
+ * defensive for finished/scheduled fallbacks.
+ */
+export function mapSmInplayFixture(row: SMInplayFixture, fallbackId: string): LiveFixture {
+  const participants = row.participants ?? [];
+  const homeP = participants.find((p) => p.meta?.location === "home");
+  const awayP = participants.find((p) => p.meta?.location === "away");
+  const [nameHome, nameAway] = smFixtureTeamNames(row.name);
+
+  const home = {
+    name: homeP?.name ?? nameHome,
+    badge: "⚽",
+    score: 0,
+    logo: homeP?.image_path,
+    id: homeP?.id,
+  };
+  const away = {
+    name: awayP?.name ?? nameAway,
+    badge: "⚽",
+    score: 0,
+    logo: awayP?.image_path,
+    id: awayP?.id,
+  };
+
+  // Current score from CURRENT score rows, keyed by score.participant.
+  for (const s of row.scores ?? []) {
+    if (s.description !== "CURRENT") continue;
+    const side = s.score?.participant;
+    const goals = s.score?.goals ?? 0;
+    if (side === "home") home.score = goals;
+    else if (side === "away") away.score = goals;
+  }
+
+  // Current period = the ticking one, else the last open (ended === null), else
+  // the last period. Phase + minute + addedTime derive from it.
+  const periods = row.periods ?? [];
+  const open = periods.filter((p) => p.ticking === true || p.ended == null);
+  const period =
+    periods.find((p) => p.ticking === true) ??
+    (open.length ? open[open.length - 1] : undefined) ??
+    periods[periods.length - 1];
+
+  const phase = period ? inplayPhase(period.description) : undefined;
+  let status: LiveFixture["status"] = "scheduled";
+  let minute = 0;
+  let addedTime: number | undefined;
+
+  if (period) {
+    const anyOpen = period.ticking === true || period.ended == null;
+    if (anyOpen) {
+      status = phase === "halftime" ? "halftime" : "live";
+      minute = period.minutes ?? 0;
+      if (period.time_added != null) addedTime = period.time_added;
+    } else {
+      status = "finished";
+    }
+  }
+
+  const highlights = mapInplayHighlights(row.events ?? [], homeP?.id, awayP?.id);
+
+  return {
+    id: String(row.id ?? fallbackId),
+    league: row.league?.name ?? "—",
+    leagueId: row.league_id ?? row.league?.id,
+    leagueLogo: row.league?.image_path,
+    home,
+    away,
+    status,
+    minute,
+    kickoff: (row.starting_at ?? "").slice(11, 16),
+    date: (row.starting_at ?? "").slice(0, 10) || undefined,
+    phase,
+    addedTime,
+    highlights: highlights.length ? highlights : undefined,
     performers: [],
   };
 }

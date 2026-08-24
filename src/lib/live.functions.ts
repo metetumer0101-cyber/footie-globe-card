@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { mockTransfers, type LiveFeed, type LiveFixture, type TransferHistory } from "@/lib/live";
 import { TTL } from "@/lib/freshness-config";
 import { sportMonks, sportMonksCached, type SportMonksList } from "@/lib/api-sportmonks.server";
-import { mapSmFixture, type SMFixture } from "@/lib/sportmonks.mappers";
+import { mapSmFixture, mapSmInplayFixture, type SMFixture, type SMInplayFixture } from "@/lib/sportmonks.mappers";
 import { isQuotaExhausted } from "@/lib/system-status.server";
 import { ensureMidnightRefresh } from "@/lib/midnight-refresh.server";
 import { utcDateKey } from "@/services/dailyEngine";
@@ -69,6 +69,41 @@ async function getLiveFeedSportMonks(from: string, to: string): Promise<LiveFeed
   if (!window?.length) return emptyFeed();
   return { date: from, source: "api-football", fixtures: window, quotaExhausted: isQuotaExhausted() };
 }
+
+/**
+ * SportMonks-backed in-play feed for the live page (part 1 of the live-page
+ * redesign — data layer only; the UI redesign consumes this in a follow-up).
+ * Backed by `GET /livescores/inplay` with a SHORT ttl (~30s) so scores/periods
+ * stay fresh while in play.
+ */
+const INPLAY_TTL_S = 30;
+
+export const getInplayFeed = createServerFn({ method: "GET" }).handler(async (): Promise<LiveFeed> => {
+  ensureMidnightRefresh();
+  const fixtures = await sportMonksCached<LiveFixture[] | null>(
+    "inplay:feed",
+    INPLAY_TTL_S,
+    async () => {
+      // The in-play endpoint's envelope is `{ data: [...] }` (NOT `{data, meta}`),
+      // so it's typed as `{ data: T[] }` rather than `SportMonksList`.
+      const json = await sportMonks<{ data: SMInplayFixture[] }>({
+        path: "/livescores/inplay",
+        include: ["league", "participants", "scores", "periods", "events"],
+      });
+      const rows = json?.data ?? [];
+      if (!rows.length) return null;
+      return rows.map((r, i) => mapSmInplayFixture(r, `inplay-${i}`));
+    },
+    null,
+  );
+  if (!fixtures?.length) return emptyFeed();
+  return {
+    date: utcDateKey(new Date()),
+    source: "api-football",
+    fixtures,
+    quotaExhausted: isQuotaExhausted(),
+  };
+});
 
 /**
  * Historical transfer data for a player, cached for 6h so fresh moves show up
