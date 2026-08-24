@@ -298,6 +298,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
       "games": {
         "title": "Games Hub",
         "subtitle": "Play, earn XP and climb the scout ranks.",
+        "comingSoon": "Coming soon",
+        "comingSoonDesc": "A brand new games experience is on its way. Stay tuned!",
         "leaderboard": "Leaderboard",
         "global": "Global",
         "weekly": "Weekly",
@@ -773,6 +775,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
       "games": {
         "title": "Oyun Merkezi",
         "subtitle": "Oyna, XP kazan ve scout rütbelerinde yüksel.",
+        "comingSoon": "Yakında",
+        "comingSoonDesc": "Yepyeni bir oyun deneyimi yolda. Bizi izlemeye devam et!",
         "leaderboard": "Liderlik tablosu",
         "global": "Genel",
         "weekly": "Haftalık",
