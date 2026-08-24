@@ -12,7 +12,7 @@ import { useSystemStatus } from "@/hooks/use-system-status";
 import { players } from "@/data/football";
 import { bumpBadgeStat } from "@/lib/badges";
 import type { LiveFixture } from "@/lib/live";
-import { groupFixturesByLeague, sortFixtures } from "@/lib/live";
+import { CURATED_LEAGUES, groupFixturesByLeague, matchCuratedLeague, sortFixtures } from "@/lib/live";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -44,6 +44,8 @@ function LiveListPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [openFixture, setOpenFixture] = useState<LiveFixture | null>(null);
   const [filter, setFilter] = useState<"all" | "live" | "finished" | "scheduled">("all");
+  // "all" = every league visible; otherwise a CURATED_LEAGUES id.
+  const [leagueFilter, setLeagueFilter] = useState<string>("all");
 
   const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useLiveFeed();
   const { data: systemStatus } = useSystemStatus();
@@ -64,16 +66,41 @@ function LiveListPage() {
   const allFixtures = useMemo(() => sortFixtures(data?.fixtures ?? []), [data]);
   const liveCount = allFixtures.filter((f) => f.status === "live" || f.status === "halftime").length;
   const finishedCount = allFixtures.filter((f) => f.status === "finished").length;
+
+  // The curated 29-league filter options, showing only leagues that actually
+  // have a match in today's feed (so no dead chips), in curated order.
+  const leagueOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const f of allFixtures) {
+      const cl = matchCuratedLeague(f.league);
+      if (cl) counts.set(cl.id, (counts.get(cl.id) ?? 0) + 1);
+    }
+    return CURATED_LEAGUES.filter((cl) => (counts.get(cl.id) ?? 0) > 0).map((cl) => ({
+      id: cl.id,
+      name: cl.name,
+      count: counts.get(cl.id)!,
+    }));
+  }, [allFixtures]);
+
+  // All matches visible by default; a league selection narrows to that league.
+  const eligibleFixtures = useMemo(
+    () =>
+      leagueFilter === "all"
+        ? allFixtures
+        : allFixtures.filter((f) => matchCuratedLeague(f.league)?.id === leagueFilter),
+    [allFixtures, leagueFilter],
+  );
+
   const fixtures = useMemo(
     () =>
       filter === "all"
-        ? allFixtures
-        : allFixtures.filter((f) =>
+        ? eligibleFixtures
+        : eligibleFixtures.filter((f) =>
             filter === "live"
               ? f.status === "live" || f.status === "halftime"
               : f.status === filter,
           ),
-    [allFixtures, filter],
+    [eligibleFixtures, filter],
   );
 
   // Group under league headings, ordered by worldwide popularity (client-side,
@@ -146,6 +173,35 @@ function LiveListPage() {
               {label} <span className="tabular-nums opacity-70">{count}</span>
             </button>
           ))}
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            {t("liveCenter.leagueFilterHint", { defaultValue: "League" })}
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+            <button
+              key="all"
+              onClick={() => setLeagueFilter("all")}
+              className={`shrink-0 rounded-full px-3 py-1.5 transition-colors ${
+                leagueFilter === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+              }`}
+            >
+              {t("liveCenter.filterAllLeagues", { defaultValue: "All leagues" })}{" "}
+              <span className="tabular-nums opacity-70">{allFixtures.length}</span>
+            </button>
+            {leagueOptions.map(({ id, name, count }) => (
+              <button
+                key={id}
+                onClick={() => setLeagueFilter(id)}
+                className={`shrink-0 rounded-full px-3 py-1.5 transition-colors ${
+                  leagueFilter === id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                {name} <span className="tabular-nums opacity-70">{count}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {isLoading && (
