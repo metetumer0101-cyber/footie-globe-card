@@ -91,6 +91,10 @@ const SM_LEAGUE_IDS: Record<number, number> = {
   39: 8, // Premier League
   203: 600, // Süper Lig
   179: 501, // Scottish Premiership
+  140: 564, // La Liga
+  135: 384, // Serie A (Italy — the other "Serie A" is country 5)
+  78: 82, // Bundesliga
+  61: 301, // Ligue 1
 };
 
 type SMLgRef = { id?: number; name?: string };
@@ -163,6 +167,53 @@ async function upsertSmPage(
   return payload.length;
 }
 
+/** A current-season record from `/leagues/{id}?include=seasons`. */
+type SMSeason = { id?: number; name?: string; is_current?: boolean };
+
+/**
+ * A membership row from `/teams/{id}?include=players.player...`. The `players`
+ * include is a flat array of squad/transfer memberships, each carrying its own
+ * `position_id` and a nested `player` object with the actual bio fields.
+ * `nationality`/`country` arrive as nested `{ name }` objects (not strings).
+ */
+type SMPlayerMember = {
+  position_id?: number;
+  player?: {
+    id?: number;
+    name?: string;
+    firstname?: string;
+    lastname?: string;
+    image_path?: string;
+    date_of_birth?: string;
+    height?: number | string | null;
+    weight?: number | string | null;
+    position_id?: number;
+    nationality?: string | { name?: string } | null;
+    country?: { id?: number; name?: string } | null;
+  } | null;
+};
+
+function memberToSmPlayer(m: SMPlayerMember): SMPlayer | null {
+  const p = m.player;
+  if (!p?.id) return null;
+  const nationality =
+    typeof p.nationality === "string" ? p.nationality : (p.nationality as { name?: string } | null)?.name;
+  const countryName = (p.country as { name?: string } | null)?.name ?? null;
+  return {
+    id: p.id,
+    name: p.name,
+    firstname: p.firstname,
+    lastname: p.lastname,
+    image_path: p.image_path,
+    date_of_birth: p.date_of_birth,
+    height: p.height,
+    weight: p.weight,
+    position_id: m.position_id ?? p.position_id,
+    nationality: nationality ?? countryName ?? undefined,
+    country: countryName ? { id: (p.country as { id?: number } | null)?.id, name: countryName } : null,
+  };
+}
+
 /** Mirror one league from SportMonks: league -> seasons -> teams -> players. */
 async function syncLeaguePlayersSm(
   afLeagueId: number,
@@ -172,27 +223,33 @@ async function syncLeaguePlayersSm(
   const smLeagueId = await resolveSmLeagueId(afLeagueId, leagueName);
   if (!smLeagueId) return null;
 
-  const seasons = await sportMonks<{
-    data?: { seasons?: { data?: { id?: number; name?: string; is_current?: boolean }[] } };
-  }>({ path: `/leagues/${smLeagueId}?include=seasons` });
-  const seasonList = seasons?.data?.seasons?.data ?? [];
+  // SportMonks v3 puts a resource's related entities in a FLAT array on the
+  // parent (`data.seasons`), not wrapped in a `{ data: [...] }` envelope.
+  const seasons = await sportMonks<{ data?: { seasons?: SMSeason[] } }>({
+    path: `/leagues/${smLeagueId}?include=seasons`,
+  });
+  const seasonList = seasons?.data?.seasons ?? [];
   const chosen = seasonList.find((s) => s.is_current) ?? seasonList[0];
   if (!chosen?.id) return null;
   const seasonYear = smSeasonYear(chosen.name) || afLeagueId;
 
-  const teamsRes = await sportMonks<{
-    data?: { teams?: { data?: SMTeamRef[] } };
-  }>({ path: `/seasons/${chosen.id}?include=teams` });
-  const teams = teamsRes?.data?.teams?.data ?? [];
+  const teamsRes = await sportMonks<{ data?: { teams?: SMTeamRef[] } }>({
+    path: `/seasons/${chosen.id}?include=teams`,
+  });
+  const teams = teamsRes?.data?.teams ?? [];
   if (!teams.length) return null;
 
   let upserted = 0;
   for (const team of teams) {
-    const sq = await sportMonks<{ data?: { players?: { data?: SMPlayer[] } } }>({
-      path: `/teams/${team.id}?include=players`,
+    // `players` returns memberships, so we need the nested `player` (+ its
+    // nationality/country names) to get real bio data for the upsert.
+    const sq = await sportMonks<{ data?: { players?: SMPlayerMember[] } }>({
+      path: `/teams/${team.id}?include=players.player.nationality;players.player.country`,
     });
-    const players = sq?.data?.players?.data;
-    if (players?.length)
+    const players = (sq?.data?.players ?? [])
+      .map(memberToSmPlayer)
+      .filter((p): p is SMPlayer => Boolean(p));
+    if (players.length)
       upserted += await upsertSmPage(
         supabaseAdmin,
         players,
