@@ -13,6 +13,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."   # repo root
 
+# Load secrets (.env, gitignored) into the environment so the server process can
+# read them via process.env at runtime. .env is intentionally never committed.
+set -a
+[ -f .env ] && . ./.env
+set +a
+
 export BUN_INSTALL_CACHE_DIR="${BUN_INSTALL_CACHE_DIR:-/var/fc-buncache}"
 LIVE_PORT=3000
 
