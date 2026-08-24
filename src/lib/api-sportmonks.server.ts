@@ -194,19 +194,22 @@ export async function sportMonksCachedMeta<T>(
 
 /**
  * Resolve the current `season_id` for a league. SportMonks identifies seasons by
- * opaque numeric ids (not the calendar year API-Football used). This uses the
- * documented `/leagues/{id}?include=season` (or `/seasons` filter) pattern; the
- * exact include name is finalised against the real token during Step 2, and this
- * helper stays deliberately tolerant to that.
+ * opaque numeric ids (not the calendar year API-Football used). The League
+ * resource exposes its active season via the `currentSeason` relationship
+ * (validated against the live API: `GET /leagues/{id}?include=currentSeason`
+ * returns `data.currentseason.id`). This replaces the previously wrong
+ * `include=season` (which the API rejected with 404 "include does not exist").
  */
 export async function resolveSeasonId(leagueId: number): Promise<number | null> {
   const json = await sportMonks<{
     data?: {
       current_season_id?: number;
+      /** Returned by `include=currentSeason` (lowercased by SportMonks). */
+      currentseason?: { id?: number } | null;
       seasons?: { data?: { id?: number }[] };
     } | null;
-  }>({ path: `/leagues/${leagueId}?include=season` });
-  const current = json?.data?.current_season_id;
+  }>({ path: `/leagues/${leagueId}?include=currentSeason` });
+  const current = json?.data?.current_season_id ?? json?.data?.currentseason?.id;
   if (current) return current;
   const firstSeason = json?.data?.seasons?.data?.[0]?.id;
   return firstSeason ?? null;

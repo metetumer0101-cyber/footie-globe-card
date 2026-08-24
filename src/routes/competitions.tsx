@@ -110,7 +110,7 @@ function CompetitionsPage() {
                   <div key={i} className="h-10 animate-pulse rounded-xl bg-secondary/50" />
                 ))}
               </div>
-            ) : (
+            ) : standings?.rows.length ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
@@ -149,6 +149,18 @@ function CompetitionsPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border bg-secondary/20 p-6 text-center">
+                <Trophy className="mx-auto h-8 w-8 text-muted-foreground" />
+                <p className="mt-2 text-sm font-semibold">
+                  {t("competitions.noStandings", { defaultValue: "No standings available" })}
+                </p>
+                <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
+                  {t("competitions.noStandingsHint", {
+                    defaultValue: "Real standings aren't available for this competition right now. No data is shown rather than making it up.",
+                  })}
+                </p>
               </div>
             )}
           </section>
