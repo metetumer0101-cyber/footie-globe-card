@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Radio, RefreshCw, ChevronRight } from "lucide-react";
+import { Radio, RefreshCw, ChevronRight, Search, X } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
 import { MatchDetailModal } from "@/components/live/MatchDetailModal";
@@ -12,7 +12,13 @@ import { useSystemStatus } from "@/hooks/use-system-status";
 import { players } from "@/data/football";
 import { bumpBadgeStat } from "@/lib/badges";
 import type { LiveFixture } from "@/lib/live";
-import { CURATED_LEAGUES, groupFixturesByLeague, matchCuratedLeague, sortFixtures } from "@/lib/live";
+import {
+  CURATED_LEAGUES,
+  groupFixturesByLeague,
+  matchCuratedLeague,
+  normalizeLeague,
+  sortFixtures,
+} from "@/lib/live";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -38,17 +44,40 @@ function statusLabel(fixture: LiveFixture, t: (k: string, o: { defaultValue: str
   if (fixture.status === "finished") return t("liveCenter.finished", { defaultValue: "FT" });
   return fixture.kickoff;
 }
+/** Short day label for fixtures that kick off after the feed's first day, or
+ * null when the fixture is today (or in play). Keeps multi-day windows legible. */
+function fixtureDayLabel(
+  fixture: LiveFixture,
+  todayISO: string | undefined,
+  lang: string,
+  t: (k: string, o: { defaultValue: string }) => string,
+): string | null {
+  const d = fixture.date;
+  if (!d || !todayISO || d === todayISO) return null;
+  if (fixture.status === "live" || fixture.status === "halftime") return null;
+  const diff = Math.round((Date.parse(d + "T00:00:00Z") - Date.parse(todayISO + "T00:00:00Z")) / 86400000);
+  if (diff === 1) return t("liveCenter.tomorrow", { defaultValue: "Tomorrow" });
+  if (diff < 0 || diff > 7) return null;
+  const dt = new Date(d + "T00:00:00Z");
+  const locale = lang === "tr" ? "tr" : "en";
+  const weekday = dt.toLocaleDateString(locale, { weekday: "short" });
+  return `${weekday} ${dt.getUTCDate()}`;
+}
 
 function LiveListPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [openId, setOpenId] = useState<string | null>(null);
   const [openFixture, setOpenFixture] = useState<LiveFixture | null>(null);
   const [filter, setFilter] = useState<"all" | "live" | "finished" | "scheduled">("all");
   // "all" = every league visible; otherwise a CURATED_LEAGUES id.
   const [leagueFilter, setLeagueFilter] = useState<string>("all");
+  // Free-text search over team + league names (case/accent-insensitive).
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useLiveFeed();
   const { data: systemStatus } = useSystemStatus();
+  // First day of the multi-day window (today, UTC) — used to label upcoming days.
+  const todayISO = data?.date;
   // Quota flag comes from the live feed itself (synchronous) so the empty-state
   // card shows immediately when quota is exhausted; system status is a backup.
   const quotaExhausted = data?.quotaExhausted === true || systemStatus?.status === "quota";
@@ -82,14 +111,22 @@ function LiveListPage() {
     }));
   }, [allFixtures]);
 
-  // All matches visible by default; a league selection narrows to that league.
-  const eligibleFixtures = useMemo(
-    () =>
+  // All matches visible by default; a league selection narrows to that league,
+  // and the free-text search narrows further by team/league name.
+  const eligibleFixtures = useMemo(() => {
+    const byLeague =
       leagueFilter === "all"
         ? allFixtures
-        : allFixtures.filter((f) => matchCuratedLeague(f.league)?.id === leagueFilter),
-    [allFixtures, leagueFilter],
-  );
+        : allFixtures.filter((f) => matchCuratedLeague(f.league)?.id === leagueFilter);
+    const q = normalizeLeague(searchQuery.trim());
+    if (!q) return byLeague;
+    return byLeague.filter(
+      (f) =>
+        normalizeLeague(f.league).includes(q) ||
+        normalizeLeague(f.home.name).includes(q) ||
+        normalizeLeague(f.away.name).includes(q),
+    );
+  }, [allFixtures, leagueFilter, searchQuery]);
 
   const fixtures = useMemo(
     () =>
@@ -151,6 +188,27 @@ function LiveListPage() {
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           </button>
         </section>
+        <label className="flex items-center gap-2 rounded-full bg-secondary px-3.5 py-2.5 text-sm">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t("liveCenter.searchPlaceholder", { defaultValue: "Search teams & leagues" })}
+            className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
+            aria-label={t("liveCenter.searchPlaceholder", { defaultValue: "Search teams & leagues" })}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="shrink-0 rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={t("liveCenter.searchClear", { defaultValue: "Clear search" })}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </label>
 
         <div className="flex gap-2 overflow-x-auto pb-1 text-xs font-semibold">
           {([
@@ -240,7 +298,14 @@ function LiveListPage() {
             className="card-surface cursor-pointer rounded-3xl p-4 transition-colors hover:bg-secondary/40"
           >
             <header className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{fixture.league}</span>
+              <span className="flex items-center gap-2">
+                <span className="truncate">{fixture.league}</span>
+                {fixtureDayLabel(fixture, todayISO, i18n.language, t) && (
+                  <span className="rounded-full bg-secondary px-1.5 py-0.5 font-bold uppercase tracking-wide text-muted-foreground">
+                    {fixtureDayLabel(fixture, todayISO, i18n.language, t)}
+                  </span>
+                )}
+              </span>
               <div className="flex items-center gap-2">
                 <span
                   className={`rounded-full px-2 py-0.5 font-bold ${

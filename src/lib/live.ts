@@ -20,6 +20,12 @@ export type LiveFixture = {
   /** Match minute for live games, kickoff HH:mm (UTC) for scheduled ones. */
   minute: number;
   kickoff: string;
+  /**
+   * ISO kickoff date (YYYY-MM-DD, UTC). Set for real (SportMonks) fixtures so
+   * multi-day feeds can show which day an upcoming match is on; undefined for
+   * the offline mock feed.
+   */
+  date?: string;
   performers: LivePlayerLine[];
 };
 
