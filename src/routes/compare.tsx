@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Download, Loader2, Flame } from "lucide-react";
+import {
+  ArrowRight,
+  Download,
+  Flame,
+  GitCompareArrows,
+  Loader2,
+  Search,
+  Shirt,
+  UserCog,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { EntityPicker } from "@/components/compare/EntityPicker";
@@ -60,6 +71,35 @@ const KIND_LABEL: Record<EntityKind, string> = {
   manager: "cmp.managers",
   team: "cmp.teams",
 };
+const EMPTY_STEPS: {
+  icon: LucideIcon;
+  titleKey: string;
+  descKey: string;
+  accent: string;
+  ring: string;
+}[] = [
+  {
+    icon: UserRound,
+    titleKey: "cmp.stepPvpTitle",
+    descKey: "cmp.stepPvpDesc",
+    accent: "text-sky-400",
+    ring: "bg-sky-400/10 ring-sky-400/20",
+  },
+  {
+    icon: UserCog,
+    titleKey: "cmp.stepMvmTitle",
+    descKey: "cmp.stepMvmDesc",
+    accent: "text-amber-400",
+    ring: "bg-amber-400/10 ring-amber-400/20",
+  },
+  {
+    icon: Shirt,
+    titleKey: "cmp.stepTvtTitle",
+    descKey: "cmp.stepTvtDesc",
+    accent: "text-emerald-400",
+    ring: "bg-emerald-400/10 ring-emerald-400/20",
+  },
+];
 
 function Page() {
   const { t } = useTranslation();
@@ -153,8 +193,70 @@ function Page() {
             <h1 className="text-2xl font-bold">{t("cmp.title")}</h1>
             <p className="text-sm text-muted-foreground">{t("cmp.subtitle")}</p>
           </header>
-          <div className="card-surface rounded-2xl p-8 text-center">
-            <p className="text-sm text-muted-foreground">{t("cmp.noData")}</p>
+
+          <div className="card-surface relative overflow-hidden rounded-2xl p-6 sm:p-10">
+            {/* soft brand glow in the background */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-32 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -bottom-24 -right-16 h-48 w-48 rounded-full bg-accent/10 blur-3xl"
+            />
+
+            <div className="relative flex flex-col items-center text-center">
+              {/* VS motif */}
+              <div className="mb-5 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-inner">
+                <UserRound className="h-7 w-7 text-muted-foreground" />
+                <GitCompareArrows className="h-9 w-9 text-primary" />
+                <UserRound className="h-7 w-7 text-muted-foreground" />
+              </div>
+
+              <h2 className="text-xl font-bold sm:text-2xl">{t("cmp.emptyTitle")}</h2>
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                {t("cmp.emptyDesc")}
+              </p>
+
+              {/* what you can compare */}
+              <div className="mt-7 grid w-full gap-3 sm:grid-cols-3">
+                {EMPTY_STEPS.map((step) => {
+                  const Icon = step.icon;
+                  return (
+                    <div
+                      key={step.titleKey}
+                      className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left"
+                    >
+                      <div
+                        className={cn(
+                          "mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1",
+                          step.ring,
+                        )}
+                      >
+                        <Icon className={cn("h-5 w-5", step.accent)} />
+                      </div>
+                      <p className="text-sm font-semibold">{t(step.titleKey)}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        {t(step.descKey)}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* CTA */}
+              <div className="mt-8 flex flex-col items-center gap-2.5">
+                <Link
+                  to="/scout"
+                  className="group inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:scale-[1.02] active:scale-[0.99]"
+                >
+                  <Search className="h-4 w-4" />
+                  {t("cmp.ctaScout")}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <p className="text-xs text-muted-foreground">{t("cmp.ctaHint")}</p>
+              </div>
+            </div>
           </div>
         </section>
       </AppShell>
