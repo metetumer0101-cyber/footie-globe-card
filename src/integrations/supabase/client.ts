@@ -93,18 +93,20 @@ function createDegradedClient() {
   };
 
   // Chainable query builder that always resolves to an empty result set.
+  // `q` is a callable thenable (so `await` works) that also carries the
+  // chainable query-builder methods (`select`, `eq`, …) onto the same object.
   const chain = (): Record<string, unknown> => {
-    const q = () => Promise.resolve({ data: [], error: null });
+    const q = (() => Promise.resolve({ data: [], error: null })) as unknown as Record<string, unknown>;
     for (const m of [
       'select', 'eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'like', 'ilike', 'in',
       'is', 'contains', 'order', 'limit', 'range', 'single', 'maybeSingle',
       'insert', 'update', 'upsert', 'delete', 'match', 'or', 'not', 'filter',
     ]) {
-      (q as Record<string, unknown>)[m] = chain;
+      q[m] = chain;
     }
-    (q as Record<string, unknown>).then = (resolve: (v: unknown) => unknown) =>
+    q['then'] = (resolve: (v: unknown) => unknown) =>
       Promise.resolve({ data: [], error: null }).then(resolve);
-    return q as unknown as Record<string, unknown>;
+    return q;
   };
 
   return {

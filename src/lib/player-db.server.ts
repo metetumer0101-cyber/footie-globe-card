@@ -112,7 +112,8 @@ async function resolveSmLeagueId(afLeagueId: number, name: string): Promise<numb
 /** Extract a calendar start-year from a SportMonks season name like "2026/2027". */
 function smSeasonYear(name?: string): number {
   const m = /(20\d{2})/.exec(name ?? "");
-  return m ? parseInt(m[1], 10) : 0;
+  const year = m?.[1];
+  return year ? parseInt(year, 10) : 0;
 }
 
 type SMTeamRef = { id?: number; name?: string };
@@ -200,6 +201,7 @@ function memberToSmPlayer(m: SMPlayerMember): SMPlayer | null {
   const nationality =
     typeof p.nationality === "string" ? p.nationality : (p.nationality as { name?: string } | null)?.name;
   const countryName = (p.country as { name?: string } | null)?.name ?? null;
+  const countryId = (p.country as { id?: number } | null)?.id;
   return {
     id: p.id,
     name: p.name,
@@ -212,7 +214,7 @@ function memberToSmPlayer(m: SMPlayerMember): SMPlayer | null {
     position_id: m.position_id ?? p.position_id,
     position: p.position ?? null,
     nationality: nationality ?? countryName ?? undefined,
-    country: countryName ? { id: (p.country as { id?: number } | null)?.id, name: countryName } : null,
+    country: countryName ? { name: countryName, ...(countryId != null ? { id: countryId } : {}) } : null,
   };
 }
 

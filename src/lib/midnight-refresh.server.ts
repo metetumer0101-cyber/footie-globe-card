@@ -84,7 +84,8 @@ async function runRefresh(): Promise<void> {
   // Supabase now, not on the next user visit. Dynamic imports keep this
   // module free of static circular dependencies.
   try {
-    const { getLiveFeed, getHomeWeeklyBest } = await import("./live.functions");
+    const { getLiveFeed } = await import("./live.functions");
+    const { getHomeWeeklyBest } = await import("./player-search.functions");
     await Promise.allSettled([getLiveFeed(), getHomeWeeklyBest()]);
   } catch (error) {
     console.error("[midnight-refresh] warm refresh failed", error);

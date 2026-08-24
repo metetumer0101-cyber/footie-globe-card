@@ -56,16 +56,16 @@ export type SMTeam = {
 export type SMLeague = { id?: number; name?: string; image_path?: string };
 
 export type SMPlayer = {
-  id?: number;
-  name?: string;
-  firstname?: string;
-  lastname?: string;
-  image_path?: string;
-  date_of_birth?: string;
-  height?: number | string | null;
-  weight?: number | string | null;
-  position_id?: number;
-  nationality?: string;
+  id?: number | undefined;
+  name?: string | undefined;
+  firstname?: string | undefined;
+  lastname?: string | undefined;
+  image_path?: string | undefined;
+  date_of_birth?: string | undefined;
+  height?: number | string | null | undefined;
+  weight?: number | string | null | undefined;
+  position_id?: number | undefined;
+  nationality?: string | undefined;
   country?: { id?: number; name?: string; image_path?: string } | null;
   /** Position resource — real name via `?include=position` (e.g. "Attacker"). */
   position?: { id?: number; name?: string } | null;
@@ -83,8 +83,8 @@ export const SM_POSITION_NAMES: Record<number, string> = {
 
 /** Resolve a display position name, preferring the included position resource. */
 export function smPositionName(p: {
-  position?: { id?: number; name?: string } | null;
-  position_id?: number;
+  position?: { id?: number; name?: string } | null | undefined;
+  position_id?: number | undefined;
 }): string | undefined {
   if (p.position?.name) return p.position.name;
   if (p.position_id != null) return SM_POSITION_NAMES[p.position_id] ?? String(p.position_id);
@@ -1210,7 +1210,13 @@ export function mapSmPlayerCard(p: SMPlayer, season?: SMPlayerSeason): PlayerCar
 export function mapSmTeamPage(
   team: SMTeam,
   squad?: SMPlayer[],
-  extra?: { country?: string; founded?: number; venue_name?: string; venue_city?: string; venue_capacity?: number },
+  extra?: {
+    country?: string | undefined;
+    founded?: number | undefined;
+    venue_name?: string | undefined;
+    venue_city?: string | undefined;
+    venue_capacity?: number | undefined;
+  },
 ): TeamPageData {
   return {
     id: team.id ?? 0,

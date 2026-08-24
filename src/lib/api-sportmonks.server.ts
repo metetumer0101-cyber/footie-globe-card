@@ -156,7 +156,13 @@ export async function sportMonks<T>(query: SportMonksQuery): Promise<T | null> {
 export type SportMonksList<T> = {
   data: T[];
   meta?: {
-    pagination?: { current_page?: number; last_page?: number; per_page?: number; total?: number };
+    pagination?: {
+      current_page?: number;
+      last_page?: number;
+      per_page?: number;
+      total?: number;
+      has_more?: boolean;
+    };
   };
 };
 

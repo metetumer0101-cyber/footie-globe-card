@@ -26,6 +26,11 @@ async function handle(request: Request): Promise<Response> {
   if (!authorized) {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      // TODO(typecheck): regenerate Supabase types (needs SUPABASE_ACCESS_TOKEN) —
+      // the `cron_config` table (see supabase/migrations/20260824001000_cron_config.sql)
+      // is missing from the stale generated types at src/integrations/supabase/types.ts,
+      // so the `.from("cron_config")` query below fails the strict typecheck until
+      // `supabase gen types typescript --project-id <ref>` is run with that token.
       const { data } = await supabaseAdmin
         .from("cron_config")
         .select("value")
