@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
@@ -28,9 +28,14 @@ interface PageBlock {
 
 export const Route = createFileRoute("/privacy")({
   loader: async () => {
-    const page = await getPageBySlug({ data: { slug: "privacy" } });
-    if (!page) throw notFound();
-    return page;
+    try {
+      const page = await getPageBySlug({ data: { slug: "privacy" } });
+      return page;
+    } catch {
+      // CMS unavailable during SSR — fall back to the default Privacy content below so the
+      // page renders (200) instead of throwing a 500.
+      return null;
+    }
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -55,11 +60,39 @@ export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
 });
 
+const DEFAULT_SECTIONS: PageBlock[] = [
+  {
+    icon: "Database",
+    title: "Data We Collect",
+    text: "FootCard stores only the information needed to run the service: your account profile, saved player cards, and preferences. We do not sell your personal data.",
+  },
+  {
+    icon: "ShieldCheck",
+    title: "How We Use It",
+    text: "Your data is used to personalise your scouting experience, keep your saved cards in sync, and improve the product. We never share it with third parties for marketing.",
+  },
+  {
+    icon: "Lock",
+    title: "Data Protection",
+    text: "We apply industry-standard security practices to protect your information, including encrypted transmission and least-privilege access to stored data.",
+  },
+  {
+    icon: "Cookie",
+    title: "Cookies",
+    text: "We use essential cookies to keep you signed in and to remember your preferences. No advertising trackers are used.",
+  },
+  {
+    icon: "Globe",
+    title: "Your Rights",
+    text: "You can request access to, correction of, or deletion of your personal data at any time through your account settings or by contacting us.",
+  },
+];
+
 function PrivacyPage() {
   const { t } = useTranslation();
   const page = Route.useLoaderData();
-  const body = (page.body ?? {}) as { blocks?: PageBlock[] };
-  const sections = body.blocks ?? [];
+  const body = (page?.body ?? {}) as { blocks?: PageBlock[] };
+  const sections = (body.blocks ?? []).length > 0 ? body.blocks! : DEFAULT_SECTIONS;
 
   return (
     <AppShell>
@@ -72,7 +105,7 @@ function PrivacyPage() {
         </Link>
 
         <header className="space-y-1">
-          <h1 className="text-2xl font-bold">{page.title}</h1>
+          <h1 className="text-2xl font-bold">{page?.title ?? "Privacy Policy"}</h1>
           <p className="text-sm text-muted-foreground">Last updated: January 2026</p>
         </header>
 
