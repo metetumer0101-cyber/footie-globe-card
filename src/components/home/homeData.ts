@@ -51,11 +51,9 @@ export function isDerbyMatth(home: string, away: string): boolean {
 export function isFeaturedMatch(home: string, away: string): boolean {
   const a = norm(home);
   const b = norm(away);
-  return (
-    (BIG_CLUBS.includes(a) && BIG_CLUBS.includes(b)) ||
-    BIG_CLUBS.includes(a) ||
-    BIG_CLUBS.includes(b)
-  );
+  // A fixture is "featured" only when BOTH sides are big clubs — a lone
+  // popular team vs an unknown opponent is a normal match and stays out.
+  return BIG_CLUBS.includes(a) && BIG_CLUBS.includes(b);
 }
 
 /* ---------------- Rule 2: favorite team next + previous ---------------- */

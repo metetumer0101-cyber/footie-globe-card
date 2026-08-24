@@ -286,7 +286,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "weeklyBestTitle": "Weekly best of each league",
         "topScorer": "Top scorer",
         "weeklyBestLoadingAria": "Loading this week's best players",
-        "keyMatchesTitle": "Matches & derbies of the week",
+        "keyMatchesTitle": "Big matches & derbies",
         "keyMatchesLoadingAria": "Loading this week's key matches and derbies",
         "status": {
           "quotaAria": "Live data is temporarily unavailable",
@@ -779,7 +779,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "weeklyBestTitle": "Her ligin haftanın en iyisi",
         "topScorer": "Gol kralı",
         "weeklyBestLoadingAria": "Haftanın en iyi oyuncuları yükleniyor",
-        "keyMatchesTitle": "Haftanın maçları ve derbileri",
+        "keyMatchesTitle": "Büyük maçlar ve derbiler",
         "keyMatchesLoadingAria": "Haftanın önemli maçları ve derbileri yükleniyor",
         "status": {
           "quotaAria": "Canlı veriler geçici olarak kullanılamıyor",
