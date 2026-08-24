@@ -43,21 +43,21 @@ type LeagueChip = { id: string; name: string; patterns: string[] };
  * live match right now) — the list is static, never derived from the feed.
  */
 const POPULAR_LEAGUES: LeagueChip[] = [
-  { id: "uefa-champions-league", name: "Champions League", patterns: ["champions league"] },
+  { id: "super-lig", name: "Süper Lig", patterns: ["super lig", "superlig", "turkish super", "trendyol super"] },
+  { id: "sampiyonlar-ligi", name: "Şampiyonlar Ligi", patterns: ["champions league"] },
   { id: "premier-league", name: "Premier League", patterns: ["premier league"] },
   { id: "la-liga", name: "La Liga", patterns: ["la liga", "laliga"] },
-  { id: "serie-a", name: "Serie A", patterns: ["serie a"] },
+  { id: "serie-a", name: "Serie A", patterns: ["serie a", "serie a tim"] },
   { id: "bundesliga", name: "Bundesliga", patterns: ["bundesliga"] },
   { id: "ligue-1", name: "Ligue 1", patterns: ["ligue 1"] },
-  { id: "super-lig", name: "Süper Lig", patterns: ["super lig", "superlig", "turkish super"] },
-  { id: "europa-league", name: "Europa League", patterns: ["europa league"] },
+  { id: "uefa-avrupa-ligi", name: "UEFA Avrupa Ligi", patterns: ["europa league"] },
   { id: "eredivisie", name: "Eredivisie", patterns: ["eredivisie"] },
-  { id: "primeira-liga", name: "Primeira Liga", patterns: ["primeira liga", "liga portugal"] },
+  { id: "liga-portugal", name: "Liga Portugal", patterns: ["primeira liga", "liga portugal", "liga betclic"] },
+  { id: "trendyol-1-lig", name: "Trendyol 1. Lig", patterns: ["1. lig", "1 lig", "trendyol 1", "tff 1"] },
+  { id: "saudi-pro-league", name: "Saudi Pro League", patterns: ["saudi", "roshn", "saudi pro"] },
   { id: "mls", name: "MLS", patterns: ["mls", "major league soccer"] },
-  { id: "liga-mx", name: "Liga MX", patterns: ["liga mx"] },
-  { id: "brazil-serie-a", name: "Brazilian Série A", patterns: ["brasileirao", "brazil serie", "serie a brazil"] },
-  { id: "championship", name: "EFL Championship", patterns: ["championship"] },
-  { id: "saudi-pro-league", name: "Saudi Pro League", patterns: ["saudi pro", "roshn"] },
+  { id: "belgisch-pro-league", name: "Belgisch Pro League", patterns: ["jupiler", "belgian", "first division a", "belgium", "proximus"] },
+  { id: "copa-libertadores", name: "Copa Libertadores", patterns: ["copa libertadores", "libertadores"] },
 ];
 
 function matchesLeague(fixture: LiveFixture, chip: LeagueChip): boolean {
@@ -281,13 +281,14 @@ function LiveListPage() {
   const leagueChips = useMemo(() => {
     const byId = new Map<string, { count: number; logo?: string }>();
     for (const f of allFixtures) {
-      for (const chip of POPULAR_LEAGUES) {
-        if (matchesLeague(f, chip)) {
-          const entry = byId.get(chip.id) ?? { count: 0 };
-          entry.count += 1;
-          if (!entry.logo && f.leagueLogo) entry.logo = f.leagueLogo;
-          byId.set(chip.id, entry);
-        }
+      // First-match-wins: each fixture counts under at most ONE chip (in list
+      // order) so overlapping patterns never double-count a match.
+      const chip = POPULAR_LEAGUES.find((c) => matchesLeague(f, c));
+      if (chip) {
+        const entry = byId.get(chip.id) ?? { count: 0 };
+        entry.count += 1;
+        if (!entry.logo && f.leagueLogo) entry.logo = f.leagueLogo;
+        byId.set(chip.id, entry);
       }
     }
     return POPULAR_LEAGUES.map((chip) => {
@@ -314,8 +315,10 @@ function LiveListPage() {
     return allFixtures.filter((f) => {
       if (!matchesTab(f, tab, favTeams)) return false;
       if (selectedLeague !== "all") {
-        const chip = POPULAR_LEAGUES.find((c) => c.id === selectedLeague);
-        if (!chip || !matchesLeague(f, chip)) return false;
+        // Consistent with the count loop's first-match-wins assignment: only
+        // show fixtures whose assigned (first-match) chip is the selected one.
+        const assigned = POPULAR_LEAGUES.find((c) => matchesLeague(f, c));
+        if (!assigned || assigned.id !== selectedLeague) return false;
       }
       if (
         q &&
