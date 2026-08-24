@@ -2,23 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Radio, RefreshCw, ChevronRight, Search, X } from "lucide-react";
+import { Radio, RefreshCw, Search, Shield, X } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { CardDetailModal } from "@/components/analytics/CardDetailModal";
 import { MatchDetailModal } from "@/components/live/MatchDetailModal";
 import { QuotaStateCard } from "@/components/home/QuotaStateCard";
-import { useLiveFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
+import { useInplayFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
 import { useSystemStatus } from "@/hooks/use-system-status";
-import { players } from "@/data/football";
+import { useFavorites } from "@/hooks/use-favorites";
 import { bumpBadgeStat } from "@/lib/badges";
+import { normalizeLeague } from "@/lib/live";
 import type { LiveFixture } from "@/lib/live";
-import {
-  CURATED_LEAGUES,
-  groupFixturesByLeague,
-  matchCuratedLeague,
-  normalizeLeague,
-  sortFixtures,
-} from "@/lib/live";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -27,10 +20,10 @@ export const Route = createFileRoute("/live/")({
       {
         name: "description",
         content:
-          "Today's football fixtures with live scores, match minute timers and live player performance ratings on FootCard.",
+          "Live in-play football scores: first half, half-time, second half and match minute trackers on FootCard.",
       },
       { property: "og:title", content: "Live Matches — FootCard" },
-      { property: "og:description", content: "Live scores, match minutes and player ratings, updated in real time." },
+      { property: "og:description", content: "Live scores, match minutes and in-play events, updated in real time." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -38,48 +31,232 @@ export const Route = createFileRoute("/live/")({
   component: LiveListPage,
 });
 
-function statusLabel(fixture: LiveFixture, t: (k: string, o: { defaultValue: string }) => string) {
-  if (fixture.status === "live") return `${fixture.minute}'`;
-  if (fixture.status === "halftime") return t("liveCenter.halftime", { defaultValue: "HT" });
-  if (fixture.status === "finished") return t("liveCenter.finished", { defaultValue: "FT" });
-  return fixture.kickoff;
+/** Status tabs — client-side window over the in-play feed. */
+type StatusTab = "all" | "first-half" | "halftime" | "second-half" | "favorites";
+
+/** One selectable league in the fixed 15-league horizontal bar. */
+type LeagueChip = { id: string; name: string; patterns: string[] };
+
+/**
+ * The fixed 15 popular-league bar. Each chip is matched against a fixture's
+ * normalized league name; chips are always rendered (muted when a league has no
+ * live match right now) — the list is static, never derived from the feed.
+ */
+const POPULAR_LEAGUES: LeagueChip[] = [
+  { id: "super-lig", name: "Süper Lig", patterns: ["super lig", "superlig", "turkish super", "trendyol super"] },
+  { id: "sampiyonlar-ligi", name: "Şampiyonlar Ligi", patterns: ["champions league"] },
+  { id: "premier-league", name: "Premier League", patterns: ["premier league"] },
+  { id: "la-liga", name: "La Liga", patterns: ["la liga", "laliga"] },
+  { id: "serie-a", name: "Serie A", patterns: ["serie a", "serie a tim"] },
+  { id: "bundesliga", name: "Bundesliga", patterns: ["bundesliga"] },
+  { id: "ligue-1", name: "Ligue 1", patterns: ["ligue 1"] },
+  { id: "uefa-avrupa-ligi", name: "UEFA Avrupa Ligi", patterns: ["europa league"] },
+  { id: "eredivisie", name: "Eredivisie", patterns: ["eredivisie"] },
+  { id: "liga-portugal", name: "Liga Portugal", patterns: ["primeira liga", "liga portugal", "liga betclic"] },
+  { id: "trendyol-1-lig", name: "Trendyol 1. Lig", patterns: ["1. lig", "1 lig", "trendyol 1", "tff 1"] },
+  { id: "saudi-pro-league", name: "Saudi Pro League", patterns: ["saudi", "roshn", "saudi pro"] },
+  { id: "mls", name: "MLS", patterns: ["mls", "major league soccer"] },
+  { id: "belgisch-pro-league", name: "Belgisch Pro League", patterns: ["jupiler", "belgian", "first division a", "belgium", "proximus"] },
+  { id: "copa-libertadores", name: "Copa Libertadores", patterns: ["copa libertadores", "libertadores"] },
+];
+
+function matchesLeague(fixture: LiveFixture, chip: LeagueChip): boolean {
+  const name = normalizeLeague(fixture.league);
+  if (!name) return false;
+  return chip.patterns.some((p) => name.includes(normalizeLeague(p)));
 }
-/** Short day label for fixtures that kick off after the feed's first day, or
- * null when the fixture is today (or in play). Keeps multi-day windows legible. */
-function fixtureDayLabel(
-  fixture: LiveFixture,
-  todayISO: string | undefined,
-  lang: string,
-  t: (k: string, o: { defaultValue: string }) => string,
-): string | null {
-  const d = fixture.date;
-  if (!d || !todayISO || d === todayISO) return null;
-  if (fixture.status === "live" || fixture.status === "halftime") return null;
-  const diff = Math.round((Date.parse(d + "T00:00:00Z") - Date.parse(todayISO + "T00:00:00Z")) / 86400000);
-  if (diff === 1) return t("liveCenter.tomorrow", { defaultValue: "Tomorrow" });
-  if (diff < 0 || diff > 7) return null;
-  const dt = new Date(d + "T00:00:00Z");
-  const locale = lang === "tr" ? "tr" : "en";
-  const weekday = dt.toLocaleDateString(locale, { weekday: "short" });
-  return `${weekday} ${dt.getUTCDate()}`;
+
+function isFavoriteFixture(fixture: LiveFixture, favTeams: string[]): boolean {
+  return (
+    (fixture.home.id != null && favTeams.includes(String(fixture.home.id))) ||
+    (fixture.away.id != null && favTeams.includes(String(fixture.away.id)))
+  );
+}
+
+function matchesTab(fixture: LiveFixture, tab: StatusTab, favTeams: string[]): boolean {
+  switch (tab) {
+    case "all":
+      return true;
+    case "first-half":
+      return fixture.phase === "first-half";
+    case "halftime":
+      return fixture.phase === "halftime" || fixture.status === "halftime";
+    case "second-half":
+      return (
+        fixture.phase === "second-half" ||
+        fixture.phase === "extra-time" ||
+        fixture.phase === "penalties"
+      );
+    case "favorites":
+      return isFavoriteFixture(fixture, favTeams);
+  }
+}
+
+/** Live minute, e.g. `43'` or `45+2'` when stoppage time is available. */
+function minuteLabel(fixture: LiveFixture): string {
+  if (fixture.addedTime != null && fixture.addedTime > 0) return `${fixture.minute}+${fixture.addedTime}'`;
+  return `${fixture.minute}'`;
+}
+
+/** Minimal derived view of a fixture's highlights for the inline icons strip. */
+function highlightsStrip(fixture: LiveFixture) {
+  const hl = fixture.highlights ?? [];
+  const reds = hl.filter((h) => h.kind === "red-card").slice(0, 2);
+  const hasPenalty = hl.some((h) => h.kind === "penalty");
+  const goals = hl.filter((h) => h.kind === "goal");
+  const lastGoal = goals.length
+    ? goals.reduce((a, b) => (a.minute >= b.minute ? a : b))
+    : undefined;
+  return { reds, hasPenalty, lastGoal };
+}
+
+function TeamLogo({ logo, badge, name }: { logo?: string | undefined; badge: string; name: string }) {
+  if (logo) return <img src={logo} alt={`${name} logo`} loading="lazy" className="h-7 w-7 shrink-0 object-contain" />;
+  return <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-secondary text-sm">{badge}</span>;
+}
+
+function LivePulseBadge({ minute }: { minute: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1">
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+      </span>
+      <span className="text-[11px] font-extrabold tabular-nums text-primary">{minute}</span>
+    </span>
+  );
+}
+
+function StatusBadge({
+  fixture,
+  t,
+}: {
+  fixture: LiveFixture;
+  t: (k: string, o: { defaultValue: string }) => string;
+}) {
+  if (fixture.status === "halftime") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-accent/20 px-2.5 py-1 text-[11px] font-extrabold text-accent">
+        {t("liveCenter.halftime", { defaultValue: "HT" })}
+      </span>
+    );
+  }
+  if (fixture.status === "finished") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-muted-foreground">
+        {t("liveCenter.finished", { defaultValue: "FT" })}
+      </span>
+    );
+  }
+  return <LivePulseBadge minute={minuteLabel(fixture)} />;
+}
+
+function MatchCard({
+  fixture,
+  onOpen,
+  t,
+}: {
+  fixture: LiveFixture;
+  onOpen: (f: LiveFixture) => void;
+  t: (k: string, o: { defaultValue: string }) => string;
+}) {
+  const { reds, hasPenalty, lastGoal } = highlightsStrip(fixture);
+  const showStrip = reds.length > 0 || hasPenalty || lastGoal;
+
+  return (
+    <article
+      onClick={() => onOpen(fixture)}
+      className="card-surface cursor-pointer rounded-3xl p-4 transition-colors hover:bg-secondary/40"
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="truncate text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          {fixture.league}
+        </span>
+        <StatusBadge fixture={fixture} t={t} />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <TeamLogo logo={fixture.home.logo} badge={fixture.home.badge} name={fixture.home.name} />
+          <span className="truncate text-sm font-bold">{fixture.home.name}</span>
+        </div>
+
+        <div className="flex shrink-0 items-baseline gap-1">
+          <span className="text-2xl font-extrabold tabular-nums leading-none">{fixture.home.score}</span>
+          <span className="text-lg font-bold text-muted-foreground">-</span>
+          <span className="text-2xl font-extrabold tabular-nums leading-none">{fixture.away.score}</span>
+        </div>
+
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+          <span className="truncate text-sm font-bold">{fixture.away.name}</span>
+          <TeamLogo logo={fixture.away.logo} badge={fixture.away.badge} name={fixture.away.name} />
+        </div>
+      </div>
+
+      {showStrip && (
+        <div className="mt-2.5 flex items-center gap-2 border-t border-border pt-2 text-[11px] text-muted-foreground">
+          {reds.map((r, i) => (
+            <span
+              key={i}
+              title={`${t("liveCenter.redCard", { defaultValue: "Red card" })} — ${r.player}`}
+              className="inline-block h-3 w-2 rounded-[2px] bg-destructive"
+              aria-hidden
+            />
+          ))}
+          {hasPenalty && (
+            <span
+              title={t("liveCenter.penalty", { defaultValue: "Penalty" })}
+              className="inline-block h-2 w-2 rounded-full bg-accent"
+              aria-hidden
+            />
+          )}
+          {lastGoal && (
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span aria-hidden>⚽</span>
+              <span className="truncate font-semibold text-foreground">{lastGoal.player}</span>
+              <span className="tabular-nums">{minuteLabel({ ...fixture, minute: lastGoal.minute } as LiveFixture)}</span>
+            </span>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="card-surface relative overflow-hidden rounded-3xl p-4">
+      <div className="animate-pulse space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="h-3 w-24 rounded-full bg-secondary" />
+          <div className="h-5 w-12 rounded-full bg-secondary" />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="h-7 w-7 rounded-full bg-secondary" />
+          <div className="h-4 w-24 rounded-full bg-secondary" />
+          <div className="mx-auto h-6 w-16 rounded-lg bg-secondary" />
+          <div className="h-4 w-24 rounded-full bg-secondary" />
+          <div className="h-7 w-7 rounded-full bg-secondary" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function LiveListPage() {
-  const { t, i18n } = useTranslation();
-  const [openId, setOpenId] = useState<string | null>(null);
+  const { t } = useTranslation();
   const [openFixture, setOpenFixture] = useState<LiveFixture | null>(null);
-  const [filter, setFilter] = useState<"all" | "live" | "finished" | "scheduled">("all");
-  // "all" = every league visible; otherwise a CURATED_LEAGUES id.
-  const [leagueFilter, setLeagueFilter] = useState<string>("all");
-  // Free-text search over team + league names (case/accent-insensitive).
+  const [tab, setTab] = useState<StatusTab>("all");
+  // "all" = every league; otherwise a POPULAR_LEAGUES id.
+  const [selectedLeague, setSelectedLeague] = useState<string>("all");
+  // Free-text search over team names (case/accent-insensitive).
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useLiveFeed();
+  const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useInplayFeed();
   const { data: systemStatus } = useSystemStatus();
-  // First day of the multi-day window (today, UTC) — used to label upcoming days.
-  const todayISO = data?.date;
-  // Quota flag comes from the live feed itself (synchronous) so the empty-state
-  // card shows immediately when quota is exhausted; system status is a backup.
+  const { favorites } = useFavorites();
+  const favTeams = favorites.teams;
+
   const quotaExhausted = data?.quotaExhausted === true || systemStatus?.status === "quota";
 
   // Countdown to the next automatic 60s poll.
@@ -92,80 +269,88 @@ function LiveListPage() {
     ? Math.max(0, Math.ceil((dataUpdatedAt + LIVE_POLL_MS - now) / 1000))
     : Math.ceil(LIVE_POLL_MS / 1000);
 
-  const allFixtures = useMemo(() => sortFixtures(data?.fixtures ?? []), [data]);
-  const liveCount = allFixtures.filter((f) => f.status === "live" || f.status === "halftime").length;
-  const finishedCount = allFixtures.filter((f) => f.status === "finished").length;
+  const allFixtures = useMemo(() => data?.fixtures ?? [], [data]);
 
-  // The curated 29-league filter options, showing only leagues that actually
-  // have a match in today's feed (so no dead chips), in curated order.
-  const leagueOptions = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const f of allFixtures) {
-      const cl = matchCuratedLeague(f.league);
-      if (cl) counts.set(cl.id, (counts.get(cl.id) ?? 0) + 1);
-    }
-    return CURATED_LEAGUES.filter((cl) => (counts.get(cl.id) ?? 0) > 0).map((cl) => ({
-      id: cl.id,
-      name: cl.name,
-      count: counts.get(cl.id)!,
-    }));
-  }, [allFixtures]);
-
-  // All matches visible by default; a league selection narrows to that league,
-  // and the free-text search narrows further by team/league name.
-  const eligibleFixtures = useMemo(() => {
-    const byLeague =
-      leagueFilter === "all"
-        ? allFixtures
-        : allFixtures.filter((f) => matchCuratedLeague(f.league)?.id === leagueFilter);
-    const q = normalizeLeague(searchQuery.trim());
-    if (!q) return byLeague;
-    return byLeague.filter(
-      (f) =>
-        normalizeLeague(f.league).includes(q) ||
-        normalizeLeague(f.home.name).includes(q) ||
-        normalizeLeague(f.away.name).includes(q),
-    );
-  }, [allFixtures, leagueFilter, searchQuery]);
-
-  const fixtures = useMemo(
-    () =>
-      filter === "all"
-        ? eligibleFixtures
-        : eligibleFixtures.filter((f) =>
-            filter === "live"
-              ? f.status === "live" || f.status === "halftime"
-              : f.status === filter,
-          ),
-    [eligibleFixtures, filter],
+  // Live-count on the header + used for the badge side effect.
+  const liveCount = useMemo(
+    () => allFixtures.filter((f) => f.status === "live" || f.status === "halftime").length,
+    [allFixtures],
   );
 
-  // Group under league headings, ordered by worldwide popularity (client-side,
-  // over the already-cached serverFn payload — no extra API calls).
-  const groups = useMemo(() => groupFixturesByLeague(fixtures), [fixtures]);
+  // The fixed 15-league bar with per-league live counts + real logos.
+  const leagueChips = useMemo(() => {
+    const byId = new Map<string, { count: number; logo?: string }>();
+    for (const f of allFixtures) {
+      // First-match-wins: each fixture counts under at most ONE chip (in list
+      // order) so overlapping patterns never double-count a match.
+      const chip = POPULAR_LEAGUES.find((c) => matchesLeague(f, c));
+      if (chip) {
+        const entry = byId.get(chip.id) ?? { count: 0 };
+        entry.count += 1;
+        if (!entry.logo && f.leagueLogo) entry.logo = f.leagueLogo;
+        byId.set(chip.id, entry);
+      }
+    }
+    return POPULAR_LEAGUES.map((chip) => {
+      const e = byId.get(chip.id) ?? { count: 0 };
+      return { id: chip.id, name: chip.name, count: e.count, logo: e.logo };
+    });
+  }, [allFixtures]);
+
+  // Per-tab live counts (over the whole feed, unaffected by league/search).
+  const tabCounts = useMemo(() => {
+    const count = (tb: StatusTab) => allFixtures.filter((f) => matchesTab(f, tb, favTeams)).length;
+    return {
+      all: allFixtures.length,
+      "first-half": count("first-half"),
+      halftime: count("halftime"),
+      "second-half": count("second-half"),
+      favorites: count("favorites"),
+    };
+  }, [allFixtures, favTeams]);
+
+  // Single client-side filter pass: status tab AND league AND team search.
+  const filtered = useMemo(() => {
+    const q = normalizeLeague(searchQuery.trim());
+    return allFixtures.filter((f) => {
+      if (!matchesTab(f, tab, favTeams)) return false;
+      if (selectedLeague !== "all") {
+        // Consistent with the count loop's first-match-wins assignment: only
+        // show fixtures whose assigned (first-match) chip is the selected one.
+        const assigned = POPULAR_LEAGUES.find((c) => matchesLeague(f, c));
+        if (!assigned || assigned.id !== selectedLeague) return false;
+      }
+      if (
+        q &&
+        !(
+          normalizeLeague(f.home.name).includes(q) ||
+          normalizeLeague(f.away.name).includes(q)
+        )
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [allFixtures, tab, selectedLeague, searchQuery, favTeams]);
 
   useEffect(() => {
     if (liveCount > 0) bumpBadgeStat("liveMatchesViewed", liveCount);
   }, [liveCount]);
 
-  const openCard = players.find((p) => p.id === openId) ?? null;
+  const showEmpty = !isLoading && filtered.length === 0;
+  const emptyIsQuota = quotaExhausted && allFixtures.length === 0;
 
   return (
     <AppShell>
-      <div className="space-y-4">
-        <section className="card-surface flex items-center justify-between rounded-3xl p-4">
+      <div className="space-y-3">
+        {/* Slim header: title + live count + manual refresh */}
+        <section className="flex items-center justify-between">
           <div>
             <h1 className="flex items-center gap-2 text-lg font-extrabold">
               <Radio className="h-5 w-5 text-primary" />
               {t("liveCenter.title", { defaultValue: "Live Matches" })}
             </h1>
-            <p className="text-xs text-muted-foreground">
-              {t("liveCenter.subtitle", {
-                defaultValue: "{{count}} match(es) in play · today's fixtures",
-                count: liveCount,
-              })}
-            </p>
-            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <span
                 className={`h-1.5 w-1.5 rounded-full ${isFetching ? "animate-ping bg-primary" : "bg-primary/60"}`}
               />
@@ -177,26 +362,33 @@ function LiveListPage() {
                   })}
             </p>
           </div>
-          <button
-            onClick={() => {
-              void refetch();
-              toast.success(t("liveCenter.refreshed", { defaultValue: "Scores refreshed" }));
-            }}
-            className="grid h-10 w-10 place-items-center rounded-full bg-secondary text-foreground"
-            aria-label={t("liveCenter.refresh", { defaultValue: "Refresh" })}
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-extrabold tabular-nums text-primary">
+              {t("liveCenter.liveCount", { defaultValue: "{{count}} LIVE", count: liveCount })}
+            </span>
+            <button
+              onClick={() => {
+                void refetch();
+                toast.success(t("liveCenter.refreshed", { defaultValue: "Scores refreshed" }));
+              }}
+              className="grid h-10 w-10 place-items-center rounded-full bg-secondary text-foreground"
+              aria-label={t("liveCenter.refresh", { defaultValue: "Refresh" })}
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </section>
+
+        {/* 1. Search bar (top, minimalist) */}
         <label className="flex items-center gap-2 rounded-full bg-secondary px-3.5 py-2.5 text-sm">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t("liveCenter.searchPlaceholder", { defaultValue: "Search teams & leagues" })}
+            placeholder={t("liveCenter.searchTeams", { defaultValue: "Search teams…" })}
             className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
-            aria-label={t("liveCenter.searchPlaceholder", { defaultValue: "Search teams & leagues" })}
+            aria-label={t("liveCenter.searchTeams", { defaultValue: "Search teams…" })}
           />
           {searchQuery && (
             <button
@@ -210,208 +402,120 @@ function LiveListPage() {
           )}
         </label>
 
-        <div className="flex gap-2 overflow-x-auto pb-1 text-xs font-semibold">
-          {([
-            ["all", t("liveCenter.filterAll", { defaultValue: "All" }), allFixtures.length],
-            ["live", t("liveCenter.filterLive", { defaultValue: "Live" }), liveCount],
-            ["finished", t("liveCenter.filterFinished", { defaultValue: "Finished" }), finishedCount],
+        {/* 2. League horizontal bar — "All live" + fixed 15 leagues */}
+        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-semibold">
+          <button
+            onClick={() => setSelectedLeague("all")}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+              selectedLeague === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+            }`}
+          >
+            {t("liveCenter.allLive", { defaultValue: "Tüm Canlılar" })}
+            <span className="grid h-4 min-w-4 place-items-center rounded-full bg-black/20 px-1 tabular-nums">
+              {tabCounts.all}
+            </span>
+          </button>
+          {leagueChips.map((chip) => {
+            const active = selectedLeague === chip.id;
+            const muted = chip.count === 0;
+            return (
+              <button
+                key={chip.id}
+                onClick={() => setSelectedLeague(active ? "all" : chip.id)}
+                className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : muted
+                      ? "bg-secondary/40 text-muted-foreground/70"
+                      : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                {chip.logo ? (
+                  <img src={chip.logo} alt="" loading="lazy" className="h-4 w-4 shrink-0 rounded-full object-contain" />
+                ) : (
+                  <Shield className={`h-4 w-4 shrink-0 ${muted ? "opacity-40" : ""}`} aria-hidden />
+                )}
+                <span className={muted ? "line-through decoration-muted-foreground/40" : ""}>{chip.name}</span>
+                <span
+                  className={`grid h-4 min-w-4 place-items-center rounded-full px-1 tabular-nums ${
+                    active ? "bg-black/20" : muted ? "bg-secondary" : "bg-primary/20 text-primary"
+                  }`}
+                >
+                  {chip.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 3. Status tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-semibold">
+          {(
             [
-              "scheduled",
-              t("liveCenter.filterUpcoming", { defaultValue: "Upcoming" }),
-              allFixtures.length - liveCount - finishedCount,
-            ],
-          ] as const).map(([key, label, count]) => (
+              ["all", t("liveCenter.tabAll", { defaultValue: "Tümü" }), tabCounts.all],
+              ["first-half", t("liveCenter.tabFirstHalf", { defaultValue: "İlk Yarı" }), tabCounts["first-half"]],
+              ["halftime", t("liveCenter.tabHalftime", { defaultValue: "Devre Arası" }), tabCounts.halftime],
+              ["second-half", t("liveCenter.tabSecondHalf", { defaultValue: "İkinci Yarı" }), tabCounts["second-half"]],
+              ["favorites", t("liveCenter.tabFavorites", { defaultValue: "Favoriler" }), tabCounts.favorites],
+            ] as [StatusTab, string, number][]
+          ).map(([key, label, count]) => (
             <button
               key={key}
-              onClick={() => setFilter(key)}
-              className={`shrink-0 rounded-full px-3 py-1.5 transition-colors ${
-                filter === key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+              onClick={() => setTab(key)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+                tab === key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
               }`}
             >
-              {label} <span className="tabular-nums opacity-70">{count}</span>
+              {label}
+              <span className="grid h-4 min-w-4 place-items-center rounded-full bg-black/20 px-1 tabular-nums">
+                {count}
+              </span>
             </button>
           ))}
         </div>
 
-        <div className="space-y-1.5">
-          <p className="px-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-            {t("liveCenter.leagueFilterHint", { defaultValue: "League" })}
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1 text-xs font-semibold">
-            <button
-              key="all"
-              onClick={() => setLeagueFilter("all")}
-              className={`shrink-0 rounded-full px-3 py-1.5 transition-colors ${
-                leagueFilter === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-              }`}
-            >
-              {t("liveCenter.filterAllLeagues", { defaultValue: "All leagues" })}{" "}
-              <span className="tabular-nums opacity-70">{allFixtures.length}</span>
-            </button>
-            {leagueOptions.map(({ id, name, count }) => (
-              <button
-                key={id}
-                onClick={() => setLeagueFilter(id)}
-                className={`shrink-0 rounded-full px-3 py-1.5 transition-colors ${
-                  leagueFilter === id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                }`}
-              >
-                {name} <span className="tabular-nums opacity-70">{count}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
+        {/* Loading skeletons */}
         {isLoading && (
-          <div className="space-y-3">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="h-32 animate-pulse rounded-3xl bg-secondary/50" />
+          <div className="space-y-3" aria-busy="true" aria-label={t("liveCenter.loading", { defaultValue: "Loading" })}>
+            {[0, 1, 2, 3].map((i) => (
+              <SkeletonCard key={i} />
             ))}
           </div>
         )}
 
-        {groups.length === 0 && !isLoading && (
-          <div className="rounded-3xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            {quotaExhausted ? (
-              <QuotaStateCard />
+        {/* Empty state */}
+        {showEmpty && (
+          <div className="rounded-3xl border border-dashed border-border p-8 text-center">
+            {emptyIsQuota ? (
+              <QuotaStateCard className="border-0 shadow-none" />
             ) : (
-              t("liveCenter.empty", {
-                defaultValue: "No matches in this view right now — try another filter.",
-              })
+              <div className="space-y-2">
+                <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-secondary/60">
+                  <Radio className="h-6 w-6 text-muted-foreground" aria-hidden />
+                </div>
+                <h3 className="text-base font-extrabold">
+                  {t("liveCenter.emptyTitle", { defaultValue: "No live matches right now" })}
+                </h3>
+                <p className="mx-auto max-w-sm text-sm text-muted-foreground">
+                  {t("liveCenter.emptyBody", {
+                    defaultValue: "There are no in-play matches in this view right now — try another filter or check back soon.",
+                  })}
+                </p>
+              </div>
             )}
           </div>
         )}
 
-        {groups.map((group) => (
-          <div key={group.key} className="space-y-3">
-            <h2 className="flex items-center gap-2 px-1 pt-1 text-sm font-extrabold uppercase tracking-wide text-muted-foreground">
-              <span className="h-3 w-1 rounded-full bg-primary" />
-              {group.league}
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold normal-case text-muted-foreground">
-                {group.fixtures.length}
-              </span>
-            </h2>
-            {group.fixtures.map((fixture) => (
-          <article
-            key={fixture.id}
-            onClick={() => setOpenFixture(fixture)}
-            className="card-surface cursor-pointer rounded-3xl p-4 transition-colors hover:bg-secondary/40"
-          >
-            <header className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="flex items-center gap-2">
-                <span className="truncate">{fixture.league}</span>
-                {fixtureDayLabel(fixture, todayISO, i18n.language, t) && (
-                  <span className="rounded-full bg-secondary px-1.5 py-0.5 font-bold uppercase tracking-wide text-muted-foreground">
-                    {fixtureDayLabel(fixture, todayISO, i18n.language, t)}
-                  </span>
-                )}
-              </span>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`rounded-full px-2 py-0.5 font-bold ${
-                    fixture.status === "live"
-                      ? "bg-primary/20 text-primary"
-                      : fixture.status === "halftime"
-                        ? "bg-accent/20 text-accent"
-                        : "bg-secondary text-muted-foreground"
-                  }`}
-                >
-                  {statusLabel(fixture, t)}
-                </span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenFixture(fixture);
-                  }}
-                  className="rounded-full bg-secondary p-1 text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label={t("liveCenter.details", { defaultValue: "Match details" })}
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </header>
-
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                {fixture.home.logo ? (
-                  <img
-                    src={fixture.home.logo}
-                    alt={`${fixture.home.name} logo`}
-                    loading="lazy"
-                    className="h-6 w-6 shrink-0 object-contain"
-                  />
-                ) : (
-                  <span className="text-xl">{fixture.home.badge}</span>
-                )}
-                <span className="truncate text-sm font-bold">{fixture.home.name}</span>
-              </div>
-              <span className="text-xl font-extrabold tabular-nums">
-                {fixture.home.score} - {fixture.away.score}
-              </span>
-              <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-                <span className="truncate text-sm font-bold">{fixture.away.name}</span>
-                {fixture.away.logo ? (
-                  <img
-                    src={fixture.away.logo}
-                    alt={`${fixture.away.name} logo`}
-                    loading="lazy"
-                    className="h-6 w-6 shrink-0 object-contain"
-                  />
-                ) : (
-                  <span className="text-xl">{fixture.away.badge}</span>
-                )}
-              </div>
-            </div>
-
-            {fixture.performers.length > 0 && (
-              <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
-                {fixture.performers.map((p, i) => (
-                  <li key={`${fixture.id}-${p.playerId ?? i}`}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (p.playerId) setOpenId(p.playerId);
-                      }}
-                      className="flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left text-xs transition-colors hover:bg-secondary/60"
-                    >
-                      <span className="min-w-0 truncate">
-                        <span className="font-semibold">{p.name}</span>{" "}
-                        <span className="text-muted-foreground">· {p.team}</span>
-                      </span>
-                      <span className="ml-2 flex shrink-0 items-center gap-2">
-                        {p.goals > 0 && <span className="text-accent">⚽ {p.goals}</span>}
-                        {p.assists > 0 && <span className="text-muted-foreground">🅰 {p.assists}</span>}
-                        <span
-                          className={`rounded-md px-1.5 py-0.5 font-bold ${
-                            p.rating >= 8
-                              ? "bg-primary/20 text-primary"
-                              : p.rating >= 7
-                                ? "bg-accent/20 text-accent"
-                                : "bg-secondary text-muted-foreground"
-                          }`}
-                        >
-                          {p.rating.toFixed(1)}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </article>
+        {/* Match cards */}
+        {!isLoading && (
+          <div className="space-y-3">
+            {filtered.map((fixture) => (
+              <MatchCard key={fixture.id} fixture={fixture} onOpen={setOpenFixture} t={t} />
             ))}
           </div>
-        ))}
-
-        {data?.source === "mock" && (
-          <p className="pb-2 text-center text-[11px] text-muted-foreground">
-            {t("liveCenter.mockNote", { defaultValue: "Demo feed — connect a live data key for real fixtures." })}
-          </p>
         )}
       </div>
 
-      <CardDetailModal card={openCard} onOpenChange={(open) => !open && setOpenId(null)} />
       <MatchDetailModal fixture={openFixture} onOpenChange={(open) => !open && setOpenFixture(null)} />
     </AppShell>
   );
