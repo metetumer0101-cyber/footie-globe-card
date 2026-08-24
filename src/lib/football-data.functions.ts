@@ -11,9 +11,13 @@ import {
 } from "@/lib/api-sportmonks.server";
 import {
   mapSmFixtureBrief,
+  mapSmH2H,
+  mapSmMatchDetailPage,
   mapSmMatchDetails,
   mapSmStandings,
+  type SMDetailFixture,
   type SMFixture,
+  type SMH2HFixture,
   type SMStanding,
 } from "@/lib/sportmonks.mappers";
 import { persistStandings, readStandingsDb } from "@/lib/football-data.server";
@@ -82,6 +86,69 @@ export type MatchDetails = {
   lineups: MatchLineup[];
   /** Finished matches never change — cached/persisted permanently. */
   finished?: boolean;
+};
+
+/* ------------------------------------------------------------------ */
+/* Match detail page (Step 2) product shapes                           */
+/* ------------------------------------------------------------------ */
+
+export type MatchDetailTeam = { id: number; name: string; logo?: string | undefined };
+
+export type MatchDetailHeader = {
+  league: { name: string; logo?: string | undefined };
+  home: MatchDetailTeam & { score: number };
+  away: MatchDetailTeam & { score: number };
+  status: "scheduled" | "live" | "halftime" | "finished";
+  minute: number;
+  phase?: "first-half" | "halftime" | "second-half" | "extra-time" | "penalties" | undefined;
+  addedTime?: number | undefined;
+};
+
+export type MatchDetailEvent = {
+  minute: number;
+  extraTime?: number | undefined;
+  side: "home" | "away";
+  type: "Goal" | "Card" | "Subst" | "Var" | string;
+  player: string;
+  detail?: string | undefined;
+};
+
+export type MatchDetailStat = { key: string; label: string; home: number; away: number };
+
+export type MatchDetailLineupRow = {
+  id: number;
+  name: string;
+  number: number;
+  pos: string;
+  grid?: string | undefined;
+  photo?: string | undefined;
+};
+
+export type MatchDetailLineup = {
+  teamId: number;
+  teamName: string;
+  formation: string;
+  startXI: MatchDetailLineupRow[];
+  substitutes: MatchDetailLineupRow[];
+};
+
+export type MatchDetailPage = {
+  fixtureId: number;
+  source: "api-football" | "mock";
+  header: MatchDetailHeader;
+  events: MatchDetailEvent[];
+  stats: MatchDetailStat[];
+  lineups: MatchDetailLineup[];
+};
+
+export type H2HRecord = {
+  fixtureId: number;
+  date: string;
+  home: string;
+  away: string;
+  homeScore?: number | undefined;
+  awayScore?: number | undefined;
+  result: string;
 };
 
 export type Injury = {
@@ -195,6 +262,76 @@ export const getMatchDetails = createServerFn({ method: "GET" })
         return mapSmMatchDetails(data.fixtureId, { ...f, state_id: f.state_id });
       },
       fallback,
+    );
+  });
+
+/** Honest empty match-detail-page payload — shown instead of fabricated data when
+ * the upstream provider returns no usable fixture. Never invents scores/stats. */
+function emptyMatchDetailPage(fixtureId: number): MatchDetailPage {
+  return {
+    fixtureId,
+    source: "api-football",
+    header: {
+      league: { name: "—" },
+      home: { id: 0, name: "—", score: 0 },
+      away: { id: 0, name: "—", score: 0 },
+      status: "scheduled",
+      minute: 0,
+    },
+    events: [],
+    stats: [],
+    lineups: [],
+  };
+}
+
+/**
+ * Match-detail data for the Step-2 page: header (teams/scores/status/minute),
+ * events, statistics and lineups — all from the single detailed fixture call
+ * `GET /fixtures/{id}?include=participants;scores;periods;events;lineups;lineups.player;statistics.type`.
+ * (`league` is also included so the header shows the real competition; logo
+ * stays undefined when the include is unavailable.) Empty/error returns an
+ * honest empty page — never fabricated.
+ */
+export const getMatchDetailPage = createServerFn({ method: "GET" })
+  .inputValidator((input: { fixtureId: number }) => input)
+  .handler(async ({ data }): Promise<MatchDetailPage> => {
+    return sportMonksCached<MatchDetailPage>(
+      `match-detail-page:${data.fixtureId}`,
+      TTL.LIVE,
+      async () => {
+        const json = await sportMonks<SportMonksEnvelope<SMDetailFixture>>({
+          path: `/fixtures/${data.fixtureId}`,
+          include: ["participants", "scores", "periods", "events", "lineups", "lineups.player", "statistics.type", "league"],
+        });
+        const f = json?.data;
+        if (!f) return null;
+        return mapSmMatchDetailPage(data.fixtureId, f);
+      },
+      emptyMatchDetailPage(data.fixtureId),
+    );
+  });
+
+/**
+ * Head-to-head history between two teams, from
+ * `GET /fixtures/head-to-head/{home}/{away}?include=scores;participants`.
+ * Returns an honest empty list when none — never fabricated.
+ */
+export const getH2H = createServerFn({ method: "GET" })
+  .inputValidator((input: { homeTeamId: number; awayTeamId: number }) => input)
+  .handler(async ({ data }): Promise<H2HRecord[]> => {
+    return sportMonksCached<H2HRecord[]>(
+      `h2h:${data.homeTeamId}:${data.awayTeamId}`,
+      TTL.LIVE,
+      async () => {
+        const json = await sportMonks<{ data: SMH2HFixture[] }>({
+          path: `/fixtures/head-to-head/${data.homeTeamId}/${data.awayTeamId}`,
+          include: ["scores", "participants"],
+        });
+        const rows = json?.data ?? [];
+        if (!rows.length) return null;
+        return rows.map(mapSmH2H);
+      },
+      [],
     );
   });
 

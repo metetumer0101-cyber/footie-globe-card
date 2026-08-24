@@ -21,8 +21,14 @@
 
 import type { LiveFixture, LiveHighlight } from "@/lib/live";
 import type {
+  H2HRecord,
   Injury,
   LineupPlayer,
+  MatchDetailEvent,
+  MatchDetailLineup,
+  MatchDetailLineupRow,
+  MatchDetailPage,
+  MatchDetailStat,
   MatchDetails,
   MatchEvent,
   MatchLineup,
@@ -206,6 +212,8 @@ export type SMLineup = {
   participant_id?: number;
   position_id?: number;
   formation_field?: string;
+  /** Index within the formation (1..11 for the starting XI). */
+  formation_position?: number;
   number?: number;
   /** 11 = starting XI, 12 = substitute (confirmed on live plan data). */
   type_id?: number;
@@ -218,6 +226,55 @@ export type SMLineup = {
     formation_position?: string;
     [k: string]: unknown;
   } | null;
+};
+
+/* ------------------------------------------------------------------ */
+/* Match detail (fixtures/{id}) raw shapes                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A single flat statistics row as returned by `GET /fixtures/{id}?include=statistics.type`.
+ * Unlike the legacy (wrong) nested `SMStatistic` shape, each row is a flat object:
+ * `{ type_id, participant_id, location: "home"|"away", data: { value }, type: { name, code, ... } }`.
+ */
+export type SMStatRow = {
+  type_id?: number;
+  participant_id?: number;
+  location?: string;
+  data?: { value?: string | number | null };
+  type?: { id?: number; name?: string; code?: string; developer_name?: string };
+};
+
+/**
+ * A full raw fixture-detail payload from `GET /fixtures/{id}` with the Step-2
+ * includes (`participants;scores;periods;events;lineups;lineups.player;statistics.type`).
+ * `scores` is an ARRAY here (like the in-play endpoint), so it overrides
+ * `SMFixture.scores` (an object).
+ */
+export type SMDetailFixture = Omit<SMFixture, "scores" | "events" | "statistics"> & {
+  participants?: SMInplayParticipant[];
+  scores?: SMInplayScore[];
+  periods?: SMInplayPeriod[];
+  events?: SMEvent[];
+  lineups?: SMLineup[];
+  statistics?: SMStatRow[];
+  league?: SMLeague | null;
+};
+
+/**
+ * A raw H2H fixture row from `GET /fixtures/head-to-head/{home}/{away}`. When
+ * `include=scores;participants` is passed, `scores` (array, CURRENT rows) and
+ * `participants` (`meta.location`) are embedded for logos + scores.
+ */
+export type SMH2HFixture = {
+  id?: number;
+  name?: string;
+  starting_at?: string;
+  result_info?: string | null;
+  league_id?: number;
+  state_id?: number;
+  participants?: SMInplayParticipant[];
+  scores?: SMInplayScore[];
 };
 
 export type SMStanding = {
@@ -347,6 +404,40 @@ function inplayPhase(desc?: string): LiveFixture["phase"] | undefined {
   return undefined;
 }
 
+/**
+ * Shared helper that derives { status, minute, phase, addedTime } from a
+ * fixture's `periods` array (the current/ticking → last-open → last period).
+ * Used by both the in-play fixture mapper and the match-detail page mapper so
+ * their status/minute/phase semantics stay identical.
+ */
+export function deriveInplayPeriod(
+  periods: SMInplayPeriod[] | undefined,
+): {
+  status: "scheduled" | "live" | "halftime" | "finished";
+  minute: number;
+  phase: LiveFixture["phase"] | undefined;
+  addedTime: number | undefined;
+} {
+  const list = periods ?? [];
+  const open = list.filter((p) => p.ticking === true || p.ended == null);
+  const period =
+    list.find((p) => p.ticking === true) ??
+    (open.length ? open[open.length - 1] : undefined) ??
+    list[list.length - 1];
+  if (!period) return { status: "scheduled", minute: 0, phase: undefined, addedTime: undefined };
+  const phase = inplayPhase(period.description);
+  const anyOpen = period.ticking === true || period.ended == null;
+  if (anyOpen) {
+    return {
+      status: phase === "halftime" ? "halftime" : "live",
+      minute: period.minutes ?? 0,
+      phase,
+      addedTime: period.time_added != null ? period.time_added : undefined,
+    };
+  }
+  return { status: "finished", minute: period.minutes ?? 0, phase, addedTime: undefined };
+}
+
 /** Map in-play events into highlights, resolving side by participant id and
  * classifying kind from the event's combined text. Unknown events are skipped
  * (never fabricated). */
@@ -423,29 +514,9 @@ export function mapSmInplayFixture(row: SMInplayFixture, fallbackId: string): Li
   }
 
   // Current period = the ticking one, else the last open (ended === null), else
-  // the last period. Phase + minute + addedTime derive from it.
-  const periods = row.periods ?? [];
-  const open = periods.filter((p) => p.ticking === true || p.ended == null);
-  const period =
-    periods.find((p) => p.ticking === true) ??
-    (open.length ? open[open.length - 1] : undefined) ??
-    periods[periods.length - 1];
-
-  const phase = period ? inplayPhase(period.description) : undefined;
-  let status: LiveFixture["status"] = "scheduled";
-  let minute = 0;
-  let addedTime: number | undefined;
-
-  if (period) {
-    const anyOpen = period.ticking === true || period.ended == null;
-    if (anyOpen) {
-      status = phase === "halftime" ? "halftime" : "live";
-      minute = period.minutes ?? 0;
-      if (period.time_added != null) addedTime = period.time_added;
-    } else {
-      status = "finished";
-    }
-  }
+  // the last period. Phase + minute + addedTime derive from it (shared with the
+  // match-detail page mapper so in-play and detail semantics stay identical).
+  const { status, minute, phase, addedTime } = deriveInplayPeriod(row.periods);
 
   const highlights = mapInplayHighlights(row.events ?? [], homeP?.id, awayP?.id);
 
@@ -634,6 +705,287 @@ export function mapSmMatchDetails(
     stats: mapSmStatistics(f.statistics ?? []),
     lineups: mapSmLineups(f.lineups ?? []),
     finished: f.state_id === 6 || f.state_id === 7,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Match detail page (fixtures/{id}) — Step 2                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Map a raw SportMonks fixture-detail event into a `MatchDetailEvent`, resolving
+ * `side` by comparing `participant_id` to the home/away team ids and classifying
+ * Goal/Card/Subst/Var defensively from the event's combined text. Events whose
+ * participant resolves to neither side, or that can't be classified into a
+ * meaningful type, are skipped (never fabricated).
+ */
+export function mapMatchDetailEvent(
+  e: SMEvent,
+  homeId?: number,
+  awayId?: number,
+): MatchDetailEvent | null {
+  if (e.participant_id == null) return null;
+  const side = e.participant_id === homeId ? "home" : e.participant_id === awayId ? "away" : null;
+  if (!side) return null;
+  const label = [e.addition, e.type, e.info, e.reason, e.detail]
+    .filter((v): v is string => typeof v === "string" && v.length > 0)
+    .join(" ")
+    .toLowerCase();
+  let type: MatchDetailEvent["type"] | null = null;
+  if (/subst|substitution|in play|on for/i.test(label)) type = "Subst";
+  else if (/red card|yellow card|(^| )card/i.test(label)) type = "Card";
+  else if (/var|video assistant/i.test(label)) type = "Var";
+  else if (/goal|penalty scored|own goal|header|shot/i.test(label)) type = "Goal";
+  if (!type) return null;
+  return {
+    minute: e.minute ?? 0,
+    extraTime: e.extra_minute,
+    side,
+    type,
+    player: e.player_name ?? "—",
+    detail: e.addition ?? e.info ?? e.detail ?? e.reason ?? undefined,
+  };
+}
+
+/** Coerce a raw stat value into a finite number (default 0). "55%" → 55, null → 0. */
+function statNum(v: string | number | null | undefined): number {
+  if (v == null) return 0;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  const n = parseFloat(v.replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Normalize a SportMonks stat code for map lookup (case/punct-insensitive). */
+function normStatCode(c?: string): string {
+  return (c ?? "").toLowerCase().replace(/[\s_-]/g, "");
+}
+
+/** Human display labels for the key stats the owner wants, keyed by normalized
+ * `type.code`. Unknown codes fall back to `type.name`, never fabricated. */
+const STAT_LABELS: Record<string, string> = {
+  shotstotal: "Shots",
+  shotsongoal: "Shots on target",
+  shotsoffgoal: "Shots off target",
+  shotsinsidebox: "Shots inside box",
+  shotsoutsidebox: "Shots outside box",
+  corners: "Corners",
+  fouls: "Fouls",
+  ballpossession: "Ball possession",
+  possession: "Ball possession",
+  possessionpercentage: "Ball possession",
+  expectedgoals: "Expected goals (xG)",
+  xg: "Expected goals (xG)",
+  yellowcards: "Yellow cards",
+  redcards: "Red cards",
+  offsides: "Offsides",
+  substitutions: "Substitutions",
+  freekicks: "Free kicks",
+  saves: "Saves",
+  throwins: "Throw-ins",
+  blockedshots: "Blocked shots",
+  bigchances: "Big chances",
+};
+
+/** Preferred display order for the curated stats; unknown keys sort after these. */
+const STAT_ORDER = [
+  "ballpossession",
+  "shotstotal",
+  "shotsongoal",
+  "shotsoffgoal",
+  "shotsinsidebox",
+  "shotsoutsidebox",
+  "blockedshots",
+  "corners",
+  "fouls",
+  "yellowcards",
+  "redcards",
+  "offsides",
+  "substitutions",
+  "saves",
+  "throwins",
+  "freekicks",
+  "bigchances",
+  "expectedgoals",
+];
+
+/**
+ * Pair flat SportMonks statistics rows into home/away `MatchDetailStat`s. Rows
+ * are paired by `type.code` (falling back to `type.name` / `type_id`) and
+ * assigned to a side via `location` ("home"|"away").
+ */
+export function mapSmDetailStatistics(rows: SMStatRow[]): MatchDetailStat[] {
+  interface Acc {
+    code: string;
+    label: string;
+    home: number;
+    away: number;
+    order: number;
+  }
+  const acc = new Map<string, Acc>();
+  for (const row of rows) {
+    const code = normStatCode(row.type?.code || row.type?.name);
+    const key = code || (row.type_id != null ? `t:${row.type_id}` : "");
+    if (!key) continue;
+    const label = (code && STAT_LABELS[code]) ?? row.type?.name ?? row.type?.code ?? key;
+    let a = acc.get(key);
+    if (!a) {
+      const order = STAT_ORDER.indexOf(code);
+      a = { code, label, home: 0, away: 0, order: order === -1 ? STAT_ORDER.length : order };
+      acc.set(key, a);
+    }
+    const value = statNum(row.data?.value);
+    if (row.location === "home") a.home = value;
+    else if (row.location === "away") a.away = value;
+  }
+  return [...acc.values()]
+    .sort((x, y) => x.order - y.order)
+    .map((a) => ({ key: a.code || a.label, label: a.label, home: a.home, away: a.away }));
+}
+
+/** Map one flat lineup row into a `MatchDetailLineupRow`. */
+function mapMatchDetailLineupRow(p: SMLineup): MatchDetailLineupRow {
+  const pid = p.player?.position_id ?? p.position_id;
+  return {
+    id: p.player_id ?? p.player?.id ?? 0,
+    name: p.player?.name ?? p.player_name ?? "—",
+    number: p.jersey_number ?? p.number ?? 0,
+    pos: pid != null ? String(pid) : "—",
+    grid: p.formation_field,
+    photo: p.player?.image_path,
+  };
+}
+
+/**
+ * Derive a formation string (e.g. "4-3-3") from a team's starters. SportMonks'
+ * `formation_field` is "line:slot" — line 1 is the goalkeeper, lines 2..N are
+ * the field lines from defence to attack, so counting per line (excluding the
+ * GK) and joining ascending gives the standard "defenders-midfielders-forwards"
+ * shape. Returns "—" when the data can't form a 10-outfield line-up.
+ */
+function deriveFormation(starters: SMLineup[]): string {
+  const byLine = new Map<number, number>();
+  for (const s of starters) {
+    const n = parseInt((s.formation_field ?? "").split(":")[0]!, 10);
+    if (!Number.isFinite(n) || n <= 1) continue; // skip GK line 1 + garbage
+    byLine.set(n, (byLine.get(n) ?? 0) + 1);
+  }
+  const lines = [...byLine.keys()].sort((a, b) => a - b);
+  if (!lines.length) return "—";
+  const counts = lines.map((l) => byLine.get(l)!);
+  const total = counts.reduce((sum, c) => sum + c, 0);
+  const contiguous = lines[lines.length - 1]! - lines[0]! + 1 === lines.length;
+  if (total !== 10 || !contiguous || counts.some((c) => c <= 0)) return "—";
+  return counts.join("-");
+}
+
+/** Group flat lineup rows by team into `MatchDetailLineup`s (starters vs subs). */
+export function mapSmDetailLineups(
+  rows: SMLineup[],
+  participants: SMInplayParticipant[],
+): MatchDetailLineup[] {
+  const teamNames = new Map<number, string>();
+  for (const p of participants) if (p.id != null && p.name) teamNames.set(p.id, p.name);
+  const byTeam = new Map<number, { starters: SMLineup[]; subs: SMLineup[] }>();
+  for (const row of rows) {
+    const tid = row.team_id ?? row.participant_id ?? 0;
+    if (tid === 0) continue;
+    const g = byTeam.get(tid) ?? { starters: [], subs: [] };
+    // Prefer type_id (11 = starter, 12 = sub); fall back to formation_position.
+    const isStarter =
+      row.type_id != null ? row.type_id === 11 : (row.formation_position ?? 0) >= 1 && (row.formation_position ?? 0) <= 11;
+    if (isStarter) g.starters.push(row);
+    else g.subs.push(row);
+    byTeam.set(tid, g);
+  }
+  return [...byTeam.entries()].map(([tid, g]) => ({
+    teamId: tid,
+    teamName: teamNames.get(tid) ?? "—",
+    formation: deriveFormation(g.starters),
+    startXI: g.starters.map(mapMatchDetailLineupRow),
+    substitutes: g.subs.map(mapMatchDetailLineupRow),
+  }));
+}
+
+/**
+ * Map a full raw fixture-detail row into the app `MatchDetailPage` consumed by
+ * the Step-2 match-detail page (part B). Resolves home/away teams from
+ * `participants` by `meta.location`, the current score from CURRENT rows, and
+ * status/minute/phase/addedTime from `periods` (shared `deriveInplayPeriod`).
+ */
+export function mapSmMatchDetailPage(
+  fixtureId: number,
+  row: SMDetailFixture,
+  fallbackNames: [string, string] = smFixtureTeamNames(row.name),
+): MatchDetailPage {
+  const participants = row.participants ?? [];
+  const homeP = participants.find((p) => p.meta?.location === "home");
+  const awayP = participants.find((p) => p.meta?.location === "away");
+  const [fallbackHome, fallbackAway] = fallbackNames;
+  const homeId = homeP?.id;
+  const awayId = awayP?.id;
+
+  const homeName = homeP?.name ?? fallbackHome;
+  const awayName = awayP?.name ?? fallbackAway;
+
+  // Current score from CURRENT score rows, keyed by score.participant.
+  let homeScore = 0;
+  let awayScore = 0;
+  for (const s of row.scores ?? []) {
+    if (s.description !== "CURRENT") continue;
+    const side = s.score?.participant;
+    const goals = s.score?.goals ?? 0;
+    if (side === "home") homeScore = goals;
+    else if (side === "away") awayScore = goals;
+  }
+
+  const { status, minute, phase, addedTime } = deriveInplayPeriod(row.periods);
+
+  const events = (row.events ?? [])
+    .map((e) => mapMatchDetailEvent(e, homeId, awayId))
+    .filter((e): e is MatchDetailEvent => e !== null);
+
+  return {
+    fixtureId,
+    source: "api-football",
+    header: {
+      league: { name: row.league?.name ?? "—", logo: row.league?.image_path },
+      home: { id: homeId ?? 0, name: homeName, logo: homeP?.image_path, score: homeScore },
+      away: { id: awayId ?? 0, name: awayName, logo: awayP?.image_path, score: awayScore },
+      status,
+      minute,
+      phase,
+      addedTime,
+    },
+    events,
+    stats: mapSmDetailStatistics(row.statistics ?? []),
+    lineups: mapSmDetailLineups(row.lineups ?? [], participants),
+  };
+}
+
+/** Map a raw H2H fixture row into the app `H2HRecord`. Team names come from
+ * `participants` (by `meta.location`) when embedded, else `name`; scores from
+ * CURRENT score rows when `include=scores`; result from `result_info`. */
+export function mapSmH2H(row: SMH2HFixture): H2HRecord {
+  const participants = row.participants ?? [];
+  const homeP = participants.find((p) => p.meta?.location === "home");
+  const awayP = participants.find((p) => p.meta?.location === "away");
+  const [nameHome, nameAway] = smFixtureTeamNames(row.name);
+  let homeScore: number | undefined;
+  let awayScore: number | undefined;
+  for (const s of row.scores ?? []) {
+    if (s.description !== "CURRENT") continue;
+    const side = s.score?.participant;
+    if (side === "home") homeScore = s.score?.goals ?? 0;
+    else if (side === "away") awayScore = s.score?.goals ?? 0;
+  }
+  return {
+    fixtureId: row.id ?? 0,
+    date: (row.starting_at ?? "").slice(0, 10),
+    home: homeP?.name ?? nameHome,
+    away: awayP?.name ?? nameAway,
+    homeScore,
+    awayScore,
+    result: row.result_info ?? "—",
   };
 }
 
