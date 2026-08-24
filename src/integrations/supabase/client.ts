@@ -56,14 +56,83 @@ function createSupabaseClient() {
   });
 }
 
+export function isSupabaseConfigured(): boolean {
+  const url = import.meta.env['VITE_SUPABASE_URL'] || process.env['SUPABASE_URL'];
+  const key = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env['SUPABASE_PUBLISHABLE_KEY'];
+  return Boolean(url && key);
+}
+
+const NOT_CONFIGURED = 'Supabase is not configured on this environment.';
+
+/**
+ * A safe, inert client used when Supabase is not configured (missing env vars).
+ *
+ * The app must never hard-crash because the database isn't wired up (e.g. a
+ * preview build that lacked the Vite `VITE_SUPABASE_*` build-time vars, or a
+ * fresh environment before Connect DB). Every consumer degrades to the
+ * guest/no-data state instead of throwing into the router error boundary:
+ * `auth.getSession()` resolves to `{ session: null }`, and query builders
+ * resolve to an empty `{ data: [], error: null }`.
+ */
+function createDegradedClient() {
+  const authErr = () => ({ message: NOT_CONFIGURED });
+  const auth = {
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+    getSessions: () => Promise.resolve({ data: [], error: null }),
+    signOut: () => Promise.resolve({ error: null }),
+    setSession: () => Promise.resolve({ error: authErr() }),
+    refreshSession: () => Promise.resolve({ data: { session: null }, error: authErr() }),
+    signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: authErr() }),
+    signInWithOtp: () => Promise.resolve({ data: { user: null, session: null }, error: authErr() }),
+    signInWithOAuth: () => Promise.resolve({ data: { provider: 'google', url: null }, error: authErr() }),
+    signUp: () => Promise.resolve({ data: { user: null, session: null }, error: authErr() }),
+    updateUser: () => Promise.resolve({ data: { user: null }, error: authErr() }),
+    onAuthStateChangeSync: () => ({ data: { session: null } }),
+    initialize: () => Promise.resolve(),
+  };
+
+  // Chainable query builder that always resolves to an empty result set.
+  const chain = (): Record<string, unknown> => {
+    const q = () => Promise.resolve({ data: [], error: null });
+    for (const m of [
+      'select', 'eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'like', 'ilike', 'in',
+      'is', 'contains', 'order', 'limit', 'range', 'single', 'maybeSingle',
+      'insert', 'update', 'upsert', 'delete', 'match', 'or', 'not', 'filter',
+    ]) {
+      (q as Record<string, unknown>)[m] = chain;
+    }
+    (q as Record<string, unknown>).then = (resolve: (v: unknown) => unknown) =>
+      Promise.resolve({ data: [], error: null }).then(resolve);
+    return q as unknown as Record<string, unknown>;
+  };
+
+  return {
+    auth,
+    from: () => chain(),
+    rpc: () => Promise.resolve({ data: null, error: authErr() }),
+    storage: {},
+    functions: { invoke: () => Promise.resolve({ data: null, error: authErr() }) },
+  };
+}
+
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(_, prop, receiver) {
-    if (!_supabase) _supabase = createSupabaseClient();
-    return Reflect.get(_supabase, prop, receiver);
+    if (!_supabase) {
+      try {
+        _supabase = createSupabaseClient();
+      } catch (err) {
+        // Never crash the page when Supabase env is missing — degrade to guest.
+        console.error('[Supabase]', err);
+        console.warn('[Supabase] Running without a backend — using a degraded (guest/no-data) client.');
+        _supabase = createDegradedClient() as unknown as ReturnType<typeof createSupabaseClient>;
+      }
+    }
+    return Reflect.get(_supabase!, prop, receiver);
   },
 });
 
