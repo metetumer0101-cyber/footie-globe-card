@@ -259,7 +259,7 @@ export const getMatchDetails = createServerFn({ method: "GET" })
         });
         const f = json?.data;
         if (!f) return null;
-        return mapSmMatchDetails(data.fixtureId, { ...f, state_id: f.state_id });
+        return mapSmMatchDetails(data.fixtureId, f);
       },
       fallback,
     );

@@ -80,5 +80,5 @@ export function teamNextPrev(
       if (!prev || f.kickoff > prev.kickoff) prev = f;
     }
   }
-  return { next, prev };
+  return { ...(next ? { next } : {}), ...(prev ? { prev } : {}) };
 }

@@ -147,6 +147,7 @@ export const getFavoriteTeamMatches = createServerFn({ method: "GET" })
         let next: { fixture: LiveFixture; at: number } | null = null;
         for (let i = 0; i < upcoming.length; i++) {
           const f = upcoming[i];
+          if (!f) continue;
           const at = f.starting_at ? new Date(f.starting_at).getTime() : NaN;
           if (!Number.isFinite(at)) continue;
           if (next === null || at < next.at) {
@@ -160,6 +161,7 @@ export const getFavoriteTeamMatches = createServerFn({ method: "GET" })
         let prev: { fixture: LiveFixture; at: number } | null = null;
         for (let i = 0; i < finished.length; i++) {
           const f = finished[i];
+          if (!f) continue;
           const at = f.starting_at ? new Date(f.starting_at).getTime() : NaN;
           if (!Number.isFinite(at)) continue;
           if (prev === null || at > prev.at) {
@@ -172,8 +174,8 @@ export const getFavoriteTeamMatches = createServerFn({ method: "GET" })
           teamId,
           season: currentSeason(),
           source: "api-football",
-          next: next?.fixture,
-          prev: prev?.fixture,
+          ...(next ? { next: next.fixture } : {}),
+          ...(prev ? { prev: prev.fixture } : {}),
         };
       },
       null,

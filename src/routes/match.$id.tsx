@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Activity, ArrowLeft, ArrowLeftRight, CalendarX, Radio, Tv } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { getH2H, getMatchDetailPage, type H2HRecord } from "@/lib/football-data.functions";
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/match/$id")({
 
 type DetailTab = "stats" | "lineups" | "events" | "h2h";
 
-type T = (k: string, o?: { defaultValue?: string }) => string;
+type T = TFunction;
 
 /** Live minute, e.g. `43'` or `45+2'` when stoppage time is available (mirrors the live page). */
 function minuteLabel(minute: number, addedTime?: number | undefined): string {

@@ -29,7 +29,7 @@ import { isDerbyMatth, isFeaturedMatch } from "./homeData";
 
 const PICKER_KEY = "footcard:fav-team-intro";
 
-type TeamSearchHitItem = { id: number; name: string; logo?: string; country?: string };
+type TeamSearchHitItem = { id: number; name: string; logo?: string | undefined; country?: string | undefined };
 
 /* ---------------- Rule 1: favorite team search box ---------------- */
 
