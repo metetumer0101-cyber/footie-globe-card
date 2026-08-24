@@ -92,6 +92,62 @@ export function leagueRank(league: string): number {
   return idx === -1 ? MAJOR_LEAGUES.length : idx;
 }
 
+/** A curated, globally popular competition. `patterns` are normalized
+ * (lowercase, accent-free) substrings matched against a fixture's league name;
+ * first match wins, so order the list by specificity. */
+export type CuratedLeague = {
+  /** Stable, URL/i18n safe key. */
+  id: string;
+  /** Canonical display name (a proper noun — shown as-is across locales). */
+  name: string;
+  patterns: string[];
+};
+
+/**
+ * The curated "29 lig" set surfaced on the Live page. Contains the well-known
+ * worldwide leagues (the former `MAJOR_LEAGUES` ranking cores plus more) so the
+ * filter exposes them explicitly while the full daily feed stays available.
+ */
+export const CURATED_LEAGUES: CuratedLeague[] = [
+  { id: "uefa-champions-league", name: "UEFA Champions League", patterns: ["champions league"] },
+  { id: "uefa-europa-league", name: "UEFA Europa League", patterns: ["europa league"] },
+  { id: "uefa-conference-league", name: "UEFA Conference League", patterns: ["conference league"] },
+  { id: "uefa-super-cup", name: "UEFA Super Cup", patterns: ["super cup"] },
+  { id: "premier-league", name: "Premier League", patterns: ["premier league"] },
+  { id: "efl-championship", name: "EFL Championship", patterns: ["championship"] },
+  { id: "fa-cup", name: "FA Cup", patterns: ["fa cup"] },
+  { id: "efl-cup", name: "EFL Cup", patterns: ["efl cup", "carabao", "league cup"] },
+  { id: "la-liga", name: "La Liga", patterns: ["la liga", "laliga"] },
+  { id: "copa-del-rey", name: "Copa del Rey", patterns: ["copa del rey"] },
+  { id: "serie-a", name: "Serie A", patterns: ["serie a", "serie a tim"] },
+  { id: "coppa-italia", name: "Coppa Italia", patterns: ["coppa italia"] },
+  { id: "bundesliga", name: "Bundesliga", patterns: ["bundesliga"] },
+  { id: "dfb-pokal", name: "DFB-Pokal", patterns: ["dfb pokal", "dfb-pokal"] },
+  { id: "ligue-1", name: "Ligue 1", patterns: ["ligue 1"] },
+  { id: "coupe-de-france", name: "Coupe de France", patterns: ["coupe de france"] },
+  { id: "super-lig", name: "Süper Lig", patterns: ["super lig", "superlig", "turkish super"] },
+  { id: "eredivisie", name: "Eredivisie", patterns: ["eredivisie"] },
+  { id: "primeira-liga", name: "Primeira Liga", patterns: ["primeira liga", "liga portugal", "liga betclic"] },
+  { id: "mls", name: "MLS", patterns: ["mls", "major league soccer"] },
+  { id: "liga-mx", name: "Liga MX", patterns: ["liga mx"] },
+  { id: "argentine-primera", name: "Argentine Primera División", patterns: ["liga profesional", "argentine primera", "primera division"] },
+  { id: "brazil-serie-a", name: "Brazilian Série A", patterns: ["campeonato brasileiro", "brasileirao", "serie a brazil", "brazil serie", "brasil serie"] },
+  { id: "scottish-premiership", name: "Scottish Premiership", patterns: ["scottish premiership", "scottish premier", "premiership"] },
+  { id: "belgian-pro-league", name: "Belgian Pro League", patterns: ["pro league", "jupiler", "belgian first"] },
+  { id: "austrian-bundesliga", name: "Austrian Bundesliga", patterns: ["austrian", "adelholzerner"] },
+  { id: "swiss-super-league", name: "Swiss Super League", patterns: ["swiss", "suisse", "super league"] },
+  { id: "greek-super-league", name: "Greek Super League", patterns: ["greek super", "greece super", "hellenic"] },
+  { id: "saudi-pro-league", name: "Saudi Pro League", patterns: ["saudi", "roshn", "saudi pro"] },
+];
+
+/** Find the curated competition a fixture's league name belongs to, if any.
+ * First matching pattern wins; `undefined` means "not in the curated 29". */
+export function matchCuratedLeague(league: string): CuratedLeague | undefined {
+  const l = normalizeLeague(league);
+  if (!l) return undefined;
+  return CURATED_LEAGUES.find((cl) => cl.patterns.some((p) => l.includes(p)));
+}
+
 const STATUS_ORDER: Record<LiveFixture["status"], number> = {
   live: 0,
   halftime: 0,
