@@ -253,6 +253,7 @@ export function mapSmFixture(row: SMFixture, fallbackId: string): LiveFixture {
     status,
     minute: status === "scheduled" ? 0 : minute,
     kickoff: (row.starting_at ?? "").slice(11, 16),
+    date: (row.starting_at ?? "").slice(0, 10) || undefined,
     performers: [],
   };
 }

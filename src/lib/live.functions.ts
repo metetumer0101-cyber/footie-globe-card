@@ -8,6 +8,8 @@ import { ensureMidnightRefresh } from "@/lib/midnight-refresh.server";
 import { utcDateKey } from "@/services/dailyEngine";
 
 const LIVE_SNAPSHOT_TTL = 30;
+/** How many days ahead (beyond today) the live feed window covers. */
+const FEED_WINDOW_DAYS = 4;
 
 /**
  * A feed with no fixtures — used as the honest "no live data" state instead of
@@ -37,28 +39,31 @@ export const getLiveFeed = createServerFn({ method: "GET" }).handler(async (): P
   // Any live-feed request keeps the UTC-midnight cache invalidation + warm
   // refresh timer armed, so the daily quota reset is handled automatically.
   ensureMidnightRefresh();
-  const date = utcDateKey(new Date());
-  return getLiveFeedSportMonks(date);
+  const now = new Date();
+  const from = utcDateKey(now);
+  const to = utcDateKey(new Date(now.getTime() + FEED_WINDOW_DAYS * 86400000));
+  return getLiveFeedSportMonks(from, to);
 });
-
-async function getLiveFeedSportMonks(date: string): Promise<LiveFeed> {
+async function getLiveFeedSportMonks(from: string, to: string): Promise<LiveFeed> {
   const map = (rows: SMFixture[], prefix: string) => rows.map((r, i) => mapSmFixture(r, `${prefix}-${i}`));
-
-  const daily = await sportMonksCached<LiveFixture[] | null>(
-    `fixtures-day:${date}`,
+  // One `/fixtures/between/{from}/{to}` call covers the whole rolling window
+  // (today..today+4) and includes those days' in-play matches too, so it doubles
+  // as the live view. Reuses the daily route's `include=league` approach so
+  // league names stay populated and team names come from the `name` field.
+  const window = await sportMonksCached<LiveFixture[] | null>(
+    `fixtures-window:${from}:${to}`,
     TTL.FIXTURES,
     async () => {
       const json = await sportMonks<SportMonksList<SMFixture>>({
-        path: `/fixtures/date/${date}`,
+        path: `/fixtures/between/${from}/${to}`,
         include: ["league"],
       });
       const rows = json?.data ?? [];
       if (!rows.length) return null;
-      return map(rows, date);
+      return map(rows, `${from}-${to}`);
     },
     null,
   );
-
   const liveNow = await sportMonksCached<LiveFixture[]>(
     "live-all",
     LIVE_SNAPSHOT_TTL,
@@ -69,11 +74,11 @@ async function getLiveFeedSportMonks(date: string): Promise<LiveFeed> {
     },
     [],
   );
-
-  if (!daily?.length && !liveNow.length) return emptyFeed();
-  const byId = new Map((daily ?? []).map((f) => [f.id, f]));
+  if (!window?.length && !liveNow.length) return emptyFeed();
+  // Dedupe by fixture id across the combined sources.
+  const byId = new Map((window ?? []).map((f) => [f.id, f]));
   for (const live of liveNow) byId.set(live.id, live);
-  return { date, source: "api-football", fixtures: [...byId.values()], quotaExhausted: isQuotaExhausted() };
+  return { date: from, source: "api-football", fixtures: [...byId.values()], quotaExhausted: isQuotaExhausted() };
 }
 
 /**
