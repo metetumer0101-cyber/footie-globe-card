@@ -9,8 +9,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { sportMonks } from "@/lib/api-sportmonks.server";
-import type { SMPlayer } from "@/lib/sportmonks.mappers";
+import { sportMonks, type SportMonksList } from "@/lib/api-sportmonks.server";
+import { smPositionName, type SMPlayer } from "@/lib/sportmonks.mappers";
 import { publicDb } from "@/lib/public-db.server";
 import type { WorldPlayer, WorldSearchResult } from "@/lib/player-search.functions";
 
@@ -142,7 +142,7 @@ async function upsertSmPage(
         lastname: p.lastname ?? null,
         age: pAge,
         nationality: p.nationality ?? p.country?.name ?? null,
-        position: p.position_id != null ? String(p.position_id) : null,
+        position: smPositionName(p) ?? null,
         photo: p.image_path ?? null,
         club: team.name ?? null,
         club_id: team.id ?? null,
@@ -188,6 +188,7 @@ type SMPlayerMember = {
     height?: number | string | null;
     weight?: number | string | null;
     position_id?: number;
+    position?: { id?: number; name?: string } | null;
     nationality?: string | { name?: string } | null;
     country?: { id?: number; name?: string } | null;
   } | null;
@@ -209,6 +210,7 @@ function memberToSmPlayer(m: SMPlayerMember): SMPlayer | null {
     height: p.height,
     weight: p.weight,
     position_id: m.position_id ?? p.position_id,
+    position: p.position ?? null,
     nationality: nationality ?? countryName ?? undefined,
     country: countryName ? { id: (p.country as { id?: number } | null)?.id, name: countryName } : null,
   };
@@ -244,7 +246,7 @@ async function syncLeaguePlayersSm(
     // `players` returns memberships, so we need the nested `player` (+ its
     // nationality/country names) to get real bio data for the upsert.
     const sq = await sportMonks<{ data?: { players?: SMPlayerMember[] } }>({
-      path: `/teams/${team.id}?include=players.player.nationality;players.player.country`,
+      path: `/teams/${team.id}?include=players.player.nationality;players.player.country;players.player.position`,
     });
     const players = (sq?.data?.players ?? [])
       .map(memberToSmPlayer)

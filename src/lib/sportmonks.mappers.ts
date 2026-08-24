@@ -65,6 +65,26 @@ export type SMPlayer = {
   position?: { id?: number; name?: string } | null;
 };
 
+/** SportMonks generic position ids -> display names (fallback when the
+ * `position` include is unavailable). Detailed position ids exist too; they
+ * fall through to their raw id string rather than a wrong label. */
+export const SM_POSITION_NAMES: Record<number, string> = {
+  24: "Goalkeeper",
+  25: "Defender",
+  26: "Midfielder",
+  27: "Attacker",
+};
+
+/** Resolve a display position name, preferring the included position resource. */
+export function smPositionName(p: {
+  position?: { id?: number; name?: string } | null;
+  position_id?: number;
+}): string | undefined {
+  if (p.position?.name) return p.position.name;
+  if (p.position_id != null) return SM_POSITION_NAMES[p.position_id] ?? String(p.position_id);
+  return undefined;
+}
+
 export type SMFixture = {
   id?: number;
   league_id?: number;
@@ -478,7 +498,7 @@ export function mapSmWorldPlayer(p: SMPlayer, stats?: { team?: SMTeam; league?: 
     lastname: p.lastname,
     age,
     nationality: p.nationality ?? p.country?.name,
-    position: s?.position_id != null ? String(s.position_id) : p.position_id != null ? String(p.position_id) : undefined,
+    position: smPositionName({ position: p.position, position_id: s?.position_id ?? p.position_id }),
     photo: p.image_path,
     heightCm: toNum(p.height),
     weightKg: toNum(p.weight),
