@@ -1,21 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, Radio } from "lucide-react";
-import { buildMockFeed, sortFixtures } from "@/lib/live";
+import { sortFixtures } from "@/lib/live";
 import { useLiveFeed } from "@/hooks/use-live-feed";
 import { readSettings } from "@/lib/settings";
 import { FixtureRowSkeleton } from "@/components/ui/card-skeleton";
 
-/** Compact home-page snapshot of today's fixtures; full center lives at /live. */
+/** Compact home-page snapshot of today's real fixtures; full center lives at /live.
+ * Honest by construction: only live SportMonks fixtures are shown. When the real
+ * feed is empty the widget hides itself — it NEVER fabricates scores. */
 export function LiveWidget() {
   const { t } = useTranslation();
   const { data, isLoading } = useLiveFeed();
-  const fallback = useMemo(() => buildMockFeed(), []);
   const [favLeague, setFavLeague] = useState<string | undefined>(undefined);
   useEffect(() => setFavLeague(readSettings().league), []);
-  const all = data?.fixtures ?? (isLoading ? [] : fallback.fixtures);
-  const fixtures = sortFixtures(all, favLeague).slice(0, 3);
+  const fixtures = sortFixtures(data?.fixtures ?? [], favLeague).slice(0, 3);
   if (!fixtures.length && !isLoading) return null;
 
   return (

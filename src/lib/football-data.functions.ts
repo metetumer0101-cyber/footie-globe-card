@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { cached } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
-import { players, teams } from "@/data/football";
 import {
   currentSeason,
   resolveSeasonId,
@@ -110,43 +109,6 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function mockStandings(leagueId: number, season: number): Standings {
-  const leagueName = leagueIdToName(leagueId);
-  const known = teams.filter((t) => t.league.toLowerCase().includes(leagueName.toLowerCase()));
-  const placeholders = [
-    "United", "City", "Rovers", "Wanderers", "Athletic", "Olympic", "Sporting", "Nacional",
-    "Dynamo", "Spartak", "Rangers", "Celtic", "Basel", "Roma", "Milan", "Lyon",
-  ];
-  const needed = Math.max(0, 10 - known.length);
-  const padded = Array.from({ length: needed }, (_, i) => ({
-    name: `${leagueName.split(" ")[0]} ${placeholders[i % placeholders.length]}`,
-  }));
-  const pool = [...known.map((t) => ({ name: t.name })), ...padded];
-  const rows: StandingRow[] = pool
-    .map((t, i) => ({
-      rank: i + 1,
-      team: { id: 1000 + i, name: t.name, logo: "" },
-      points: Math.max(0, 60 - i * 8 + (i % 3) * 4),
-      played: 20 + i,
-      wins: Math.max(0, 12 - i),
-      draws: 4 + (i % 3),
-      losses: i + 2,
-      goalsFor: Math.max(0, 50 - i * 4),
-      goalsAgainst: 20 + i * 3,
-      goalDiff: Math.max(0, 50 - i * 4) - (20 + i * 3),
-      form: ["W", "W", "D", "L", "W"].slice(i % 2, 5 - (i % 2)).join("") || "WDWLW",
-    }))
-    .sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff);
-  return {
-    leagueId,
-    season,
-    leagueName,
-    logo: "",
-    rows,
-    source: "mock",
-  };
-}
-
 function leagueIdToName(id: number): string {
   const map: Record<number, string> = {
     39: "Premier League",
@@ -161,18 +123,25 @@ function leagueIdToName(id: number): string {
   return map[id] ?? "Competition";
 }
 
+/** Honest empty table — shown instead of fabricated standings when the upstream
+ * provider returns no data. Never invents teams or scores. */
+function emptyStandings(leagueId: number, season: number, leagueName: string): Standings {
+  return { leagueId, season, leagueName, logo: "", rows: [], source: "api-football" };
+}
+
 export const getStandings = createServerFn({ method: "GET" })
   .inputValidator((input: { leagueId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<Standings> => {
     const season = data.season ?? currentSeason();
-    const fallback = mockStandings(data.leagueId, season);
+    const leagueName = leagueIdToName(data.leagueId);
 
-    // `/standings?filter[league_id]&filter[season_id]&include=participant;form`
-    // is the documented SportMonks v3 call. NOTE: the current plan returns HTTP
-    // 400 "Filters should be passed as a string" (plan-gating) so this loader
-    // returns null and the existing DB/mock fallback below serves the table —
-    // kept wired for when standings filtering is granted.
-    const fallbackName = fallback.leagueName;
+    // Documented SportMonks v3 call:
+    //   `/standings?filter[league_id]=x&filter[season_id]=y&include=participant;form;league`
+    // (filter/format validated against the live API). The current trial plan
+    // rejects the filter param with HTTP 400 "Filters should be passed as a
+    // string" / 5010 (plan-gating, not a format bug) so the loader returns null
+    // and we serve real persisted standings if present, otherwise an honest
+    // EMPTY table — never fabricated teams/points.
     const smSeason = await resolveSeasonId(data.leagueId);
     const result = await sportMonksCached<Standings | null>(
       `standings:${data.leagueId}:${season}`,
@@ -187,37 +156,27 @@ export const getStandings = createServerFn({ method: "GET" })
         });
         const rows = json?.data ?? [];
         if (!rows.length) return null;
-        const mapped = mapSmStandings(rows, { id: data.leagueId }, fallbackName, season);
+        const mapped = mapSmStandings(rows, { id: data.leagueId }, leagueName, season);
         void persistStandings(mapped);
         return mapped;
       },
       null,
     );
     if (result) return result;
-    const stored = await readStandingsDb(data.leagueId, season, fallback.leagueName);
-    return stored ?? fallback;
+    const stored = await readStandingsDb(data.leagueId, season, leagueName);
+    return stored ?? emptyStandings(data.leagueId, season, leagueName);
   });
 
-function mockMatchDetails(fixtureId: number): MatchDetails {
-  return {
-    fixtureId,
-    source: "mock",
-    events: [],
-    stats: [
-      { type: "Ball Possession", home: "50%", away: "50%" },
-      { type: "Total Shots", home: "8", away: "7" },
-      { type: "Shots on Goal", home: "3", away: "2" },
-      { type: "Corner Kicks", home: "4", away: "3" },
-      { type: "Fouls", home: "10", away: "11" },
-    ],
-    lineups: [],
-  };
+/** Honest empty match-detail payload — shown instead of fabricated stats when
+ * the upstream provider returns no data. Never invents scores or statistics. */
+function emptyMatchDetails(fixtureId: number): MatchDetails {
+  return { fixtureId, source: "api-football", events: [], stats: [], lineups: [] };
 }
 
 export const getMatchDetails = createServerFn({ method: "GET" })
   .inputValidator((input: { fixtureId: number }) => input)
   .handler(async ({ data }): Promise<MatchDetails> => {
-    const fallback = mockMatchDetails(data.fixtureId);
+    const fallback = emptyMatchDetails(data.fixtureId);
 
     // Single call: `/fixtures/{id}?include=league;events;statistics;lineups`.
     // Confirmed working includes on this plan: events, statistics, lineups.
@@ -239,19 +198,6 @@ export const getMatchDetails = createServerFn({ method: "GET" })
     );
   });
 
-function mockInjuries(teamId: number): Injury[] {
-  const team = teams.find((t) => t.id.includes(String(teamId))) ?? teams[0];
-  const squad = players.filter((p) => p.club === team?.club).slice(0, 2);
-  return squad.map((p) => ({
-    player: { id: 0, name: p.name, photo: "" },
-    team: { id: teamId, name: team?.name ?? "—" },
-    fixture: undefined,
-    type: p.injuries ? "Injury" : undefined,
-    reason: p.injuries ?? undefined,
-    status: p.injuries ? "Out" : undefined,
-  }));
-}
-
 export const getInjuries = createServerFn({ method: "GET" })
   .inputValidator((input: { teamId: number; season?: number }) => input)
   .handler(async ({ data }): Promise<Injury[]> => {
@@ -263,34 +209,16 @@ export const getInjuries = createServerFn({ method: "GET" })
     return [];
   });
 
-function mockFixtures(leagueId: number, date: string): Fixture[] {
-  const leagueTeams = teams.filter((t) => t.league.toLowerCase().includes(leagueIdToName(leagueId).toLowerCase()));
-  const pool = leagueTeams.length ? leagueTeams : teams.slice(0, 6);
-  return pool.slice(0, Math.floor(pool.length / 2) * 2).reduce<Fixture[]>((acc, t, i, arr) => {
-    if (i % 2 === 0 && arr[i + 1]) {
-      acc.push({
-        id: 900000 + i,
-        date,
-        league: { id: leagueId, name: leagueIdToName(leagueId), logo: "" },
-        home: { id: 1000 + i, name: t.name, logo: "" },
-        away: { id: 1000 + i + 1, name: arr[i + 1]!.name, logo: "" },
-        status: "scheduled",
-      });
-    }
-    return acc;
-  }, []);
-}
-
 export const getFixturesByLeague = createServerFn({ method: "GET" })
   .inputValidator((input: { leagueId: number; season?: number; date?: string }) => input)
   .handler(async ({ data }): Promise<Fixture[]> => {
     const season = data.season ?? currentSeason();
     const date = data.date ?? today();
-    const fallback = mockFixtures(data.leagueId, date);
 
     // `/fixtures` filtering (`filter[league_id]`) returns "Filters should be
     // passed as a string" on the current plan, so instead we pull the date's
-    // fixtures (which include the league object) and filter client-side.
+    // fixtures (which include the league object) and filter client-side. When no
+    // fixtures exist we return an honest empty list — never fabricated fixtures.
     return sportMonksCached<Fixture[]>(
       `fixtures-league:${data.leagueId}:${season}:${date}`,
       TTL.FIXTURES,
@@ -303,6 +231,6 @@ export const getFixturesByLeague = createServerFn({ method: "GET" })
         if (!rows.length) return null;
         return rows.map((r) => mapSmFixtureBrief(r, data.leagueId, date));
       },
-      fallback,
+      [],
     );
   });

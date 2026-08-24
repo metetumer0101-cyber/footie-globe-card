@@ -46,10 +46,12 @@ export const getLiveFeed = createServerFn({ method: "GET" }).handler(async (): P
 });
 async function getLiveFeedSportMonks(from: string, to: string): Promise<LiveFeed> {
   const map = (rows: SMFixture[], prefix: string) => rows.map((r, i) => mapSmFixture(r, `${prefix}-${i}`));
-  // One `/fixtures/between/{from}/{to}` call covers the whole rolling window
-  // (today..today+4) and includes those days' in-play matches too, so it doubles
-  // as the live view. Reuses the daily route's `include=league` approach so
-  // league names stay populated and team names come from the `name` field.
+  // SportMonks v3 has NO `/fixtures/live` endpoint — that path is interpreted as
+  // `/fixtures/{id}` (id="live") and 422s ("The fixture id must be an integer").
+  // Instead a single `/fixtures/between/{from}/{to}` call covers the whole rolling
+  // window (today..today+4) and includes those days' in-play matches too, so it
+  // doubles as the live view. `mapSmFixture` derives per-fixture live/HT/FT status
+  // from `state_id`/`time`, so fixtures actually in play surface as live.
   const window = await sportMonksCached<LiveFixture[] | null>(
     `fixtures-window:${from}:${to}`,
     TTL.FIXTURES,
@@ -64,21 +66,8 @@ async function getLiveFeedSportMonks(from: string, to: string): Promise<LiveFeed
     },
     null,
   );
-  const liveNow = await sportMonksCached<LiveFixture[]>(
-    "live-all",
-    LIVE_SNAPSHOT_TTL,
-    async () => {
-      // Plan-gated / undocumented: returns 422 on the current plan; ignore it.
-      const json = await sportMonks<SportMonksList<SMFixture>>({ path: "/fixtures/live", include: ["league"] });
-      return map(json?.data ?? [], "live");
-    },
-    [],
-  );
-  if (!window?.length && !liveNow.length) return emptyFeed();
-  // Dedupe by fixture id across the combined sources.
-  const byId = new Map((window ?? []).map((f) => [f.id, f]));
-  for (const live of liveNow) byId.set(live.id, live);
-  return { date: from, source: "api-football", fixtures: [...byId.values()], quotaExhausted: isQuotaExhausted() };
+  if (!window?.length) return emptyFeed();
+  return { date: from, source: "api-football", fixtures: window, quotaExhausted: isQuotaExhausted() };
 }
 
 /**

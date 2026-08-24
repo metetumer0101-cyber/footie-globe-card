@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { cachedMeta, type CachedResult } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
-import { players as mockPlayers, type PlayerCardData, type Tier } from "@/data/football";
+import { type PlayerCardData, type Tier } from "@/data/football";
 import { currentSeason, sportMonks, sportMonksCached, sportMonksCachedMeta, type SportMonksEnvelope, type SportMonksList } from "@/lib/api-sportmonks.server";
 import { mapSmPlayerCard, mapSmWorldPlayer, type SMPlayer } from "@/lib/sportmonks.mappers";
 import { leagueTopPlayersDb, playerSeasonStatsDb, searchWorldPlayersDb } from "@/lib/player-db.server";
@@ -32,25 +32,11 @@ export type WorldSearchResult = {
   paging: { current: number; total: number };
 };
 
-function mockSearch(query: string): WorldSearchResult {
-  const q = query.trim().toLowerCase();
-  return {
-    source: "mock",
-    paging: { current: 1, total: 1 },
-    players: mockPlayers
-      .filter((p) => !q || p.name.toLowerCase().includes(q))
-      .map((p, i) => ({
-        id: 900000 + i,
-        localId: p.id,
-        club: p.club,
-        name: p.name,
-        age: p.age,
-        nationality: p.nation,
-        position: p.position,
-        heightCm: p.heightCm,
-        weightKg: p.weightKg,
-      })),
-  };
+/** Honest empty search result — used instead of a fabricated catalogue fallback
+ * so the Scout world-search never shows static players as if they were real.
+ * Only genuine SportMonks player rows are surfaced. */
+function emptySearch(): WorldSearchResult {
+  return { players: [], source: "api-football" as const, paging: { current: 1, total: 1 } };
 }
 
 /** Search every player indexed worldwide by name (min 3 characters). */
@@ -78,7 +64,7 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
           source: "api-football" as const,
         };
       },
-      mockSearch(query),
+      emptySearch(),
     );
   });
 
