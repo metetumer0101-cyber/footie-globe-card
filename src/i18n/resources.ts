@@ -498,7 +498,14 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "noLineups": "Lineups are not provided for this competition by the live data feed.",
         "startXI": "Starting XI",
         "bench": "Bench",
-        "viewFullPage": "Open full match page"
+        "viewFullPage": "Open full match page",
+        "tabStats": "Stats",
+        "tabLineups": "Lineups",
+        "tabEvents": "Events",
+        "tabH2H": "H2H",
+        "noH2H": "No head-to-head matches available.",
+        "noMatchDetail": "Match details could not be loaded.",
+        "invalidMatchId": "That match could not be found."
       },
       "competitions": {
         "subtitle": "League tables and fixtures from top competitions.",
@@ -1002,7 +1009,14 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "noLineups": "Bu lig için canlı veri akışında kadro bilgisi sağlanmıyor.",
         "startXI": "İlk 11",
         "bench": "Yedekler",
-        "viewFullPage": "Maç sayfasını aç"
+        "viewFullPage": "Maç sayfasını aç",
+        "tabStats": "İstatistikler",
+        "tabLineups": "Kadrolar",
+        "tabEvents": "Olaylar",
+        "tabH2H": "H2H",
+        "noH2H": "Karşılıklı maç geçmişi bulunmuyor.",
+        "noMatchDetail": "Maç detayları yüklenemedi.",
+        "invalidMatchId": "Bu maç bulunamadı."
       },
       "competitions": {
         "subtitle": "Önemli liglerin puan durumu ve fikstürleri.",
