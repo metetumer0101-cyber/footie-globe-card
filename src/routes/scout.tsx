@@ -1,13 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Globe2, LayoutGrid, Rows3, Search, SlidersHorizontal, Sparkles, Star, X } from "lucide-react";
+import { LayoutGrid, Rows3, Search, SlidersHorizontal, Sparkles, Star, X } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PlayerFrontCard } from "@/components/cards/PlayerFrontCard";
 import { CardDetailModal } from "@/components/analytics/CardDetailModal";
 import { ScoutFilters } from "@/components/scout/ScoutFilters";
 import { ResultsTable } from "@/components/scout/ResultsTable";
-import { WorldSearch } from "@/components/scout/WorldSearch";
+import {
+  AGE_BUCKETS,
+  LEAGUES,
+  POS_GROUPS,
+  WorldSearch,
+  inAgeBucket,
+  posGroup,
+  type AgeBucket,
+  type PosGroup,
+  type WorldFilters,
+} from "@/components/scout/WorldSearch";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import {
   applyPreset,
@@ -37,12 +47,12 @@ export const Route = createFileRoute("/scout")({
       {
         name: "description",
         content:
-          "Multi-parametric football scouting: filter by age, market value, contract, stats, league and nation.",
+          "Global football scouting: search every player in the world, then filter by position, league, age and nation.",
       },
       { property: "og:title", content: "Scout Engine — FootCard" },
       {
         property: "og:description",
-        content: "Hunt wonderkids, pace monsters and playmakers with advanced scout filters.",
+        content: "Hunt wonderkids, pace monsters and playmakers with a unified global search.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -64,11 +74,175 @@ export const Route = createFileRoute("/scout")({
 const presets: PresetKey[] = ["wonderkids", "expiring", "pace", "playmakers"];
 const sortKeys: SortKey[] = ["scoutRating", "valueM", "age", "potential", "form"];
 
+/* A broad, honest set of footballing nations for the primary filter. World
+   players report their real nationality; any player whose nation isn't listed
+   is simply left out when a specific nation is chosen. */
+const COMMON_NATIONS = [
+  "Argentina",
+  "Australia",
+  "Austria",
+  "Belgium",
+  "Brazil",
+  "Cameroon",
+  "Canada",
+  "Colombia",
+  "Croatia",
+  "Czech Republic",
+  "Denmark",
+  "Ecuador",
+  "England",
+  "Egypt",
+  "France",
+  "Georgia",
+  "Germany",
+  "Ghana",
+  "Greece",
+  "Italy",
+  "Ivory Coast",
+  "Japan",
+  "Mexico",
+  "Morocco",
+  "Netherlands",
+  "Nigeria",
+  "Norway",
+  "Poland",
+  "Portugal",
+  "Senegal",
+  "Serbia",
+  "South Korea",
+  "Spain",
+  "Sweden",
+  "Switzerland",
+  "Türkiye",
+  "Ukraine",
+  "United States",
+  "Uruguay",
+  "Wales",
+];
+
+function PrimaryFilters({
+  nationOptions,
+  world,
+  onWorld,
+}: {
+  nationOptions: string[];
+  world: WorldFilters;
+  onWorld: (w: WorldFilters) => void;
+}) {
+  const { t } = useTranslation();
+  const set = (patch: Partial<WorldFilters>) => onWorld({ ...world, ...patch });
+
+  return (
+    <div className="space-y-4">
+      {/* Position group */}
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          {t("scout.filters.position")}
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {(["any", ...POS_GROUPS] as const).map((g) => (
+            <button
+              key={g}
+              onClick={() => set({ pos: g })}
+              className={cn(
+                "rounded-full px-2.5 py-1 text-xs font-semibold transition-colors",
+                world.pos === g
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-secondary/50 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {g === "any" ? t("scout.any") : g}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* League */}
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          {t("scout.league")}
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => set({ league: 0 })}
+            className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-semibold transition-colors",
+              world.league === 0
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary/50 text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t("scout.filters.allLeagues")}
+          </button>
+          {LEAGUES.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => set({ league: l.id })}
+              className={cn(
+                "rounded-full px-2.5 py-1 text-xs font-semibold transition-colors",
+                world.league === l.id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/50 text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {l.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Age */}
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          {t("scout.filters.age")}
+        </span>
+        <select
+          value={world.ageBucket}
+          onChange={(e) => set({ ageBucket: e.target.value as AgeBucket })}
+          className="w-full rounded-xl bg-secondary/50 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
+        >
+          {AGE_BUCKETS.map((b) => (
+            <option key={b.id} value={b.id}>
+              {t(`scout.ageBuckets.${b.id}`)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Nation */}
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          {t("scout.filters.nationality")}
+        </span>
+        <select
+          value={world.nation}
+          onChange={(e) => set({ nation: e.target.value })}
+          className="w-full rounded-xl bg-secondary/50 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
+        >
+          <option value="any">{t("scout.any")}</option>
+          {nationOptions.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 function Page() {
   const { t } = useTranslation();
   const { q } = Route.useSearch();
   const players = Route.useLoaderData();
   const scoutPlayers = useMemo(() => buildScoutPlayers(players), [players]);
+  const [query, setQuery] = useState(q ?? "");
+  const [world, setWorld] = useState<WorldFilters>({
+    league: 39,
+    pos: "any",
+    ageBucket: "any",
+    nation: "any",
+  });
   const [filters, setFilters] = useState<ScoutFilterState>({
     ...defaultFilters(scoutPlayers),
     minStats: { ...emptyStats },
@@ -81,20 +255,36 @@ function Page() {
   const [preset, setPreset] = useState<PresetKey | null>(null);
   const [onlySaved, setOnlySaved] = useState(false);
   const [selected, setSelected] = useState<CardData | null>(null);
-  const [mode, setMode] = useState<"local" | "world">("world");
   const { has, toggle, ids } = useWatchlist();
 
+  // Debounced query drives both the world search and the curated picks, so the
+  // two pools stay in sync while typing.
+  const [debouncedQ, setDebouncedQ] = useState(query);
   useEffect(() => {
-    if (q) {
-      setMode("world");
-      setFilters((f) => (f.query === q ? f : { ...f, query: q }));
-    }
+    const id = window.setTimeout(() => setDebouncedQ(query), 400);
+    return () => window.clearTimeout(id);
+  }, [query]);
+
+  const nationOptions = useMemo(
+    () =>
+      Array.from(new Set([...scoutPlayers.map((p) => p.nationName), ...COMMON_NATIONS])).sort(
+        (a, b) => a.localeCompare(b),
+      ),
+    [scoutPlayers],
+  );
+
+  useEffect(() => {
+    if (q) setQuery(q);
   }, [q]);
 
   const results = useMemo(() => {
-    const list = filterAndSort(scoutPlayers, filters, sort, dir);
+    let list = filterAndSort(scoutPlayers, { ...filters, query: debouncedQ }, sort, dir);
+    // Primary position/age filters apply to the curated pool too, so both pools
+    // respond to the same panel.
+    if (world.pos !== "any") list = list.filter((p) => posGroup(p.position) === world.pos);
+    if (world.ageBucket !== "any") list = list.filter((p) => inAgeBucket(p.age, world.ageBucket));
     return onlySaved ? list.filter((p) => ids.includes(p.id)) : list;
-  }, [scoutPlayers, filters, sort, dir, onlySaved, ids]);
+  }, [scoutPlayers, filters, debouncedQ, sort, dir, onlySaved, ids, world.pos, world.ageBucket]);
 
   const pickPreset = (key: PresetKey) => {
     if (preset === key) {
@@ -106,6 +296,19 @@ function Page() {
     }
   };
 
+  const filterPanel = (
+    <>
+      <PrimaryFilters nationOptions={nationOptions} world={world} onWorld={setWorld} />
+      <div className="border-t border-border/60 pt-4">
+        <ScoutFilters
+          players={players}
+          value={filters}
+          onChange={(f) => (setPreset(null), setFilters(f))}
+        />
+      </div>
+    </>
+  );
+
   return (
     <AppShell>
       <section className="space-y-4">
@@ -114,35 +317,42 @@ function Page() {
           <p className="text-sm text-muted-foreground">{t("scout.subtitle")}</p>
         </header>
 
-        <label className="card-surface flex items-center gap-2 rounded-2xl px-3 py-2.5">
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+        {/* Prominent global search — the single entry point for the whole page. */}
+        <label className="card-surface flex items-center gap-2.5 rounded-2xl px-4 py-3.5 focus-within:ring-1 focus-within:ring-primary">
+          <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
           <input
-            value={filters.query}
-            onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-            placeholder={t("searchPlaceholder")}
-            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("scout.globalSearch")}
+            className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
           />
         </label>
 
-        <div className="flex items-center gap-1 rounded-xl bg-secondary/40 p-1">
-          {(["local", "world"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
-                mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-              )}
-            >
-              {m === "world" && <Globe2 className="h-3.5 w-3.5" />}
-              {t(`scout.${m}`)}
-            </button>
-          ))}
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            <Globe2Icon />
+            {t("scout.worldResults")}
+          </h2>
+          <button
+            onClick={() => setDrawer(true)}
+            className="flex items-center gap-1.5 rounded-xl bg-secondary/60 px-3 py-1.5 text-xs font-semibold lg:hidden"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            {t("filters")}
+          </button>
         </div>
 
-        {mode === "world" && <WorldSearch query={filters.query} />}
+        {/* Primary: real world player search + results */}
+        <WorldSearch query={query} filters={world} onFiltersChange={setWorld} />
 
-        {mode === "local" && (
+        {/* Secondary: curated FootCard picks, sharing the same search + filters */}
+        <div className="flex items-center gap-2 pt-2">
+          <Sparkles className="h-4 w-4 text-accent" />
+          <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            {t("scout.curatedPicks")}
+          </h2>
+        </div>
+
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {presets.map((p) => (
             <button
@@ -172,24 +382,14 @@ function Page() {
             {t("scout.watchlist")} ({ids.length})
           </button>
         </div>
-        )}
 
-        {mode === "local" && (
         <div className="flex gap-4">
           <aside className="card-surface hidden h-fit w-64 shrink-0 rounded-2xl p-4 lg:block">
-            <ScoutFilters players={players} value={filters} onChange={(f) => (setPreset(null), setFilters(f))} />
+            {filterPanel}
           </aside>
 
           <div className="min-w-0 flex-1 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setDrawer(true)}
-                className="flex items-center gap-1.5 rounded-xl bg-secondary/60 px-3 py-1.5 text-xs font-semibold lg:hidden"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                {t("filters")}
-              </button>
-
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as SortKey)}
@@ -214,7 +414,9 @@ function Page() {
                   aria-label={t("scout.gridView")}
                   className={cn(
                     "rounded-lg p-1.5",
-                    view === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                    view === "grid"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground",
                   )}
                 >
                   <LayoutGrid className="h-4 w-4" />
@@ -224,7 +426,9 @@ function Page() {
                   aria-label={t("scout.tableView")}
                   className={cn(
                     "rounded-lg p-1.5",
-                    view === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                    view === "table"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground",
                   )}
                 >
                   <Rows3 className="h-4 w-4" />
@@ -270,7 +474,6 @@ function Page() {
             )}
           </div>
         </div>
-        )}
       </section>
 
       {drawer && (
@@ -287,12 +490,30 @@ function Page() {
             >
               <X className="h-4 w-4" />
             </button>
-            <ScoutFilters players={players} value={filters} onChange={(f) => (setPreset(null), setFilters(f))} />
+            {filterPanel}
           </div>
         </div>
       )}
 
       <CardDetailModal card={selected} onOpenChange={(o) => !o && setSelected(null)} />
     </AppShell>
+  );
+}
+
+function Globe2Icon() {
+  return (
+    <svg
+      className="h-4 w-4 text-muted-foreground"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
   );
 }

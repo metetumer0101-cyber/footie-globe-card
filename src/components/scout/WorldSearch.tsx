@@ -3,7 +3,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { ChevronRight, Loader2, RotateCcw } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import {
   getLeagueTopPlayers,
   searchWorldPlayers,
@@ -11,7 +11,8 @@ import {
 } from "@/lib/player-search.functions";
 import { cn } from "@/lib/utils";
 
-const LEAGUES = [
+/** The six major leagues browseable/scoped on the Scout page. */
+export const LEAGUES = [
   { id: 39, name: "Premier League" },
   { id: 140, name: "La Liga" },
   { id: 135, name: "Serie A" },
@@ -20,24 +21,16 @@ const LEAGUES = [
   { id: 203, name: "Süper Lig" },
 ] as const;
 
-type PosGroup = "GK" | "DEF" | "MID" | "ATT";
-const POS_GROUPS: PosGroup[] = ["GK", "DEF", "MID", "ATT"];
+export type PosGroup = "GK" | "DEF" | "MID" | "ATT";
+export const POS_GROUPS: PosGroup[] = ["GK", "DEF", "MID", "ATT"];
 
 /** Map any position label (API long names or FootCard codes) to a group. */
-function posGroup(position?: string): PosGroup | null {
+export function posGroup(position?: string): PosGroup | null {
   const p = (position ?? "").toLowerCase();
   if (!p) return null;
   if (p.includes("goal") || p === "gk") return "GK";
-  if (
-    p.includes("def") ||
-    ["cb", "lb", "rb", "lwb", "rwb", "sw"].includes(p)
-  )
-    return "DEF";
-  if (
-    p.includes("mid") ||
-    ["cm", "cdm", "cam", "lm", "rm", "dm", "amf"].includes(p)
-  )
-    return "MID";
+  if (p.includes("def") || ["cb", "lb", "rb", "lwb", "rwb", "sw"].includes(p)) return "DEF";
+  if (p.includes("mid") || ["cm", "cdm", "cam", "lm", "rm", "dm", "amf"].includes(p)) return "MID";
   if (
     p.includes("att") ||
     p.includes("forw") ||
@@ -48,8 +41,8 @@ function posGroup(position?: string): PosGroup | null {
   return null;
 }
 
-type AgeBucket = "any" | "u21" | "b22_26" | "b27_31" | "o31";
-const AGE_BUCKETS: { id: AgeBucket; min?: number; max?: number }[] = [
+export type AgeBucket = "any" | "u21" | "b22_26" | "b27_31" | "o31";
+export const AGE_BUCKETS: { id: AgeBucket; min?: number; max?: number }[] = [
   { id: "any" },
   { id: "u21", max: 21 },
   { id: "b22_26", min: 22, max: 26 },
@@ -57,7 +50,7 @@ const AGE_BUCKETS: { id: AgeBucket; min?: number; max?: number }[] = [
   { id: "o31", min: 32 },
 ];
 
-function inAgeBucket(age: number | undefined, bucket: AgeBucket): boolean {
+export function inAgeBucket(age: number | undefined, bucket: AgeBucket): boolean {
   if (bucket === "any") return true;
   if (age == null) return false;
   const b = AGE_BUCKETS.find((x) => x.id === bucket);
@@ -67,18 +60,30 @@ function inAgeBucket(age: number | undefined, bucket: AgeBucket): boolean {
   return true;
 }
 
-export function WorldSearch({ query }: { query: string }) {
+export type WorldFilters = {
+  league: number;
+  pos: PosGroup | "any";
+  ageBucket: AgeBucket;
+  nation: string;
+};
+
+export function WorldSearch({
+  query,
+  filters,
+  onFiltersChange,
+}: {
+  query: string;
+  filters: WorldFilters;
+  onFiltersChange: (f: WorldFilters) => void;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const search = useServerFn(searchWorldPlayers);
   const topPlayers = useServerFn(getLeagueTopPlayers);
   const [debounced, setDebounced] = useState(query);
-  // league 0 = all leagues (search mode); browse mode always picks a league.
-  const [league, setLeague] = useState<number>(39);
-  const [pos, setPos] = useState<PosGroup | "any">("any");
-  const [ageBucket, setAgeBucket] = useState<AgeBucket>("any");
-  const [nation, setNation] = useState<string>("any");
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const { league, pos, ageBucket, nation } = filters;
 
   useEffect(() => {
     const id = window.setTimeout(() => setDebounced(query), 400);
@@ -133,8 +138,6 @@ export function WorldSearch({ query }: { query: string }) {
     [rawList],
   );
 
-  const filtersActive = pos !== "any" || ageBucket !== "any" || nation !== "any";
-
   const list = useMemo(
     () =>
       rawList.filter((p) => {
@@ -145,12 +148,6 @@ export function WorldSearch({ query }: { query: string }) {
       }),
     [rawList, pos, ageBucket, nation],
   );
-
-  const resetFilters = () => {
-    setPos("any");
-    setAgeBucket("any");
-    setNation("any");
-  };
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = searchQuery;
 
@@ -187,104 +184,6 @@ export function WorldSearch({ query }: { query: string }) {
   return (
     <div className="space-y-3">
       {!active && <p className="text-xs text-muted-foreground">{t("scout.worldHint")}</p>}
-
-      {/* League selector — pick the browse league, or scope the search. */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
-        {active && (
-          <button
-            onClick={() => setLeague(0)}
-            className={cn(
-              "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-              league === 0
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {t("scout.filters.allLeagues")}
-          </button>
-        )}
-        {LEAGUES.map((l) => (
-          <button
-            key={l.id}
-            onClick={() => setLeague(l.id)}
-            className={cn(
-              "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-              league === l.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {l.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Position / age / nationality filters (applied to loaded results). */}
-      <div className="card-surface space-y-2 rounded-2xl p-2.5">
-        <div className="flex items-center gap-1.5 overflow-x-auto">
-          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("scout.filters.position")}
-          </span>
-          {(["any", ...POS_GROUPS] as const).map((g) => (
-            <button
-              key={g}
-              onClick={() => setPos(g)}
-              className={cn(
-                "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors",
-                pos === g
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-secondary/50 text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {g === "any" ? t("scout.any") : g}
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="font-semibold uppercase tracking-wide">
-              {t("scout.filters.age")}
-            </span>
-            <select
-              value={ageBucket}
-              onChange={(e) => setAgeBucket(e.target.value as AgeBucket)}
-              className="rounded-lg border border-border bg-secondary/60 px-2 py-1 text-[11px] font-semibold text-foreground"
-            >
-              {AGE_BUCKETS.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {t(`scout.ageBuckets.${b.id}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="shrink-0 font-semibold uppercase tracking-wide">
-              {t("scout.filters.nationality")}
-            </span>
-            <select
-              value={nation}
-              onChange={(e) => setNation(e.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-border bg-secondary/60 px-2 py-1 text-[11px] font-semibold text-foreground"
-            >
-              <option value="any">{t("scout.any")}</option>
-              {nations.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </label>
-          {filtersActive && (
-            <button
-              onClick={resetFilters}
-              className="flex shrink-0 items-center gap-1 rounded-lg bg-secondary/60 px-2 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <RotateCcw className="h-3 w-3" />
-              {t("scout.reset")}
-            </button>
-          )}
-        </div>
-      </div>
 
       {loading ? (
         <p className="card-surface flex items-center justify-center gap-2 rounded-2xl p-6 text-sm text-muted-foreground">
