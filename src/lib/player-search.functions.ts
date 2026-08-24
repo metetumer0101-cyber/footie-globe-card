@@ -4,7 +4,7 @@ import { TTL } from "@/lib/freshness-config";
 import { players as mockPlayers, type PlayerCardData, type Tier } from "@/data/football";
 import { currentSeason, sportMonks, sportMonksCached, sportMonksCachedMeta, type SportMonksEnvelope, type SportMonksList } from "@/lib/api-sportmonks.server";
 import { mapSmPlayerCard, mapSmWorldPlayer, type SMPlayer } from "@/lib/sportmonks.mappers";
-import { leagueTopPlayersDb, searchWorldPlayersDb } from "@/lib/player-db.server";
+import { leagueTopPlayersDb, playerSeasonStatsDb, searchWorldPlayersDb } from "@/lib/player-db.server";
 
 export type WorldPlayer = {
   id: number;
@@ -131,10 +131,24 @@ export const getWorldPlayerCard = createServerFn({ method: "GET" })
       `player-card:${data.playerId}:sm`,
       TTL.PLAYER,
       async () => {
-        const json = await sportMonks<SportMonksEnvelope<SMPlayer>>({ path: `/players/${data.playerId}` });
+        // Real bio includes: position name ("Attacker"), country + flag image.
+        const json = await sportMonks<SportMonksEnvelope<SMPlayer>>({
+          path: `/players/${data.playerId}?include=position;country;nationality`,
+        });
         const p = json?.data;
         if (!p?.id) return null;
-        return { card: mapSmPlayerCard(p), source: "api-football" as const };
+        const card = mapSmPlayerCard(p);
+        // "B bridge": fold the local mirror's real season stats (nullable) into the
+        // card. Analytics stay plan-gated today, so these read as undefined -> em-dash,
+        // but when the sync/plan starts filling goals/assists/appearances they will
+        // render real numbers without any provider or UI change.
+        const stats = await playerSeasonStatsDb(data.playerId);
+        if (stats) {
+          card.goals = stats.goals;
+          card.assists = stats.assists;
+          card.appearances = stats.appearances;
+        }
+        return { card, source: "api-football" as const };
       },
       null,
     );

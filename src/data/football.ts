@@ -46,9 +46,18 @@ export type PlayerCardData = {
   marketValue: string;
   contractUntil: string;
   injuries: string | null;
-  technical: DeepAttr[];
-  physical: DeepAttr[];
-  mental: DeepAttr[];
+  /** Hand-curated deep attributes (optional — not derived from a live provider). */
+  technical?: DeepAttr[] | undefined;
+  physical?: DeepAttr[] | undefined;
+  mental?: DeepAttr[] | undefined;
+  /** Real season stats (host can be empty -> UI shows em-dash). */
+  goals?: number | undefined;
+  assists?: number | undefined;
+  appearances?: number | undefined;
+  /** Human-readable position name when known (e.g. "Attacker"). */
+  positionName?: string | undefined;
+  /** Country flag emoji for the identity card. */
+  flag?: string | undefined;
   form: number;
   careerGoals: number;
   photo?: string | undefined;
@@ -97,45 +106,6 @@ export type TeamCardData = {
 export type CardData = PlayerCardData | ManagerCardData;
 export type ComparableEntity = CardData;
 
-const tech = (v: number[]): DeepAttr[] =>
-  [
-    "finishing",
-    "shotPower",
-    "longShots",
-    "volleys",
-    "penalties",
-    "curve",
-    "freeKick",
-    "crossing",
-    "shortPassing",
-    "longPassing",
-    "vision",
-    "ballControl",
-    "dribblingAttr",
-    "heading",
-  ].map((key, i) => ({ key, value: v[i] ?? 60 }));
-
-const phys = (v: number[]): DeepAttr[] =>
-  ["acceleration", "sprintSpeed", "agility", "balance", "stamina", "strength", "jumping", "reactions"].map(
-    (key, i) => ({ key, value: v[i] ?? 60 }),
-  );
-
-const ment = (v: number[]): DeepAttr[] =>
-  [
-    "positioning",
-    "offTheBall",
-    "composure",
-    "aggression",
-    "interceptions",
-    "marking",
-    "standingTackle",
-    "slidingTackle",
-    "defAwareness",
-    "workRate",
-    "leadership",
-    "flair",
-  ].map((key, i) => ({ key, value: v[i] ?? 60 }));
-
 export const players: PlayerCardData[] = [
   {
     id: "mbappe",
@@ -155,9 +125,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€180M",
     contractUntil: "2029",
     injuries: "Hamstring (2025, 3 weeks)",
-    technical: tech([93, 89, 83, 84, 84, 80, 70, 86, 85, 71, 83, 92, 74]),
-    physical: phys([97, 97, 93, 82, 88, 77, 88, 93]),
-    mental: ment([93, 92, 88, 64, 38, 34, 34, 32, 36, 79, 76, 91]),
     form: 92,
     careerGoals: 340,
   },
@@ -179,9 +146,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€175M",
     contractUntil: "2034",
     injuries: null,
-    technical: tech([96, 94, 85, 88, 85, 74, 62, 55, 68, 60, 74, 90, 90]),
-    physical: phys([87, 92, 79, 71, 88, 93, 95, 92]),
-    mental: ment([95, 92, 88, 87, 40, 35, 42, 30, 43, 78, 72, 76]),
     form: 94,
     careerGoals: 310,
   },
@@ -202,9 +166,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€180M",
     contractUntil: "2029",
     injuries: "Shoulder (2024, surgery)",
-    technical: tech([87, 86, 84, 80, 76, 80, 74, 80, 88, 82, 87, 89, 79]),
-    physical: phys([80, 82, 82, 80, 90, 84, 82, 89]),
-    mental: ment([88, 89, 88, 83, 78, 74, 79, 73, 77, 92, 88, 85]),
     form: 85,
     careerGoals: 120,
   },
@@ -225,9 +186,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€90M",
     contractUntil: "2029",
     injuries: "Meniscus (2023, 4 months)",
-    technical: tech([82, 80, 86, 79, 82, 90, 88, 85, 89, 86, 89, 90, 62]),
-    physical: phys([83, 80, 88, 86, 74, 62, 66, 84]),
-    mental: ment([84, 83, 85, 58, 48, 42, 46, 38, 45, 74, 68, 92]),
     form: 80,
     careerGoals: 42,
   },
@@ -248,9 +206,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€200M",
     contractUntil: "2031",
     injuries: null,
-    technical: tech([81, 78, 80, 74, 72, 88, 80, 87, 86, 78, 88, 93, 58]),
-    physical: phys([91, 89, 93, 88, 76, 58, 64, 86]),
-    mental: ment([83, 86, 84, 52, 40, 33, 35, 30, 38, 72, 62, 94]),
     form: 88,
     careerGoals: 66,
   },
@@ -272,9 +227,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€150M",
     contractUntil: "2027",
     injuries: "Hamstring (2024, 5 weeks)",
-    technical: tech([85, 82, 78, 74, 70, 79, 66, 84, 82, 72, 82, 93, 62]),
-    physical: phys([95, 94, 93, 84, 84, 68, 78, 88]),
-    mental: ment([86, 87, 82, 60, 34, 30, 32, 28, 33, 80, 66, 93]),
     form: 87,
     careerGoals: 160,
   },
@@ -295,9 +247,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€140M",
     contractUntil: "2030",
     injuries: "ACL (2022, 9 months)",
-    technical: tech([82, 80, 82, 76, 74, 84, 80, 86, 91, 86, 92, 92, 60]),
-    physical: phys([85, 82, 90, 87, 82, 64, 68, 88]),
-    mental: ment([86, 90, 87, 62, 52, 44, 48, 40, 50, 84, 70, 90]),
     form: 86,
     careerGoals: 78,
   },
@@ -318,9 +267,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€145M",
     contractUntil: "2030",
     injuries: null,
-    technical: tech([84, 80, 78, 72, 70, 78, 68, 80, 86, 78, 88, 94, 58]),
-    physical: phys([87, 84, 94, 90, 80, 62, 66, 88]),
-    mental: ment([85, 88, 88, 56, 44, 36, 40, 34, 42, 78, 64, 95]),
     form: 84,
     careerGoals: 90,
   },
@@ -341,9 +287,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€130M",
     contractUntil: "2027",
     injuries: "Hamstring (2024, 3 months)",
-    technical: tech([84, 82, 80, 74, 84, 82, 74, 88, 85, 78, 84, 88, 62]),
-    physical: phys([88, 86, 88, 84, 86, 72, 70, 86]),
-    mental: ment([85, 86, 85, 66, 56, 48, 54, 44, 55, 88, 72, 84]),
     form: 83,
     careerGoals: 105,
   },
@@ -364,9 +307,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€70M",
     contractUntil: "2026",
     injuries: null,
-    technical: tech([74, 80, 76, 66, 62, 74, 70, 86, 82, 76, 78, 84, 66]),
-    physical: phys([94, 95, 88, 80, 88, 76, 78, 84]),
-    mental: ment([78, 80, 78, 76, 78, 76, 78, 74, 77, 88, 72, 78]),
     form: 81,
     careerGoals: 60,
   },
@@ -387,9 +327,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€25M",
     contractUntil: "2027",
     injuries: "ACL (2020, 10 months)",
-    technical: tech([58, 76, 60, 48, 52, 50, 54, 62, 82, 80, 72, 74, 90]),
-    physical: phys([76, 80, 68, 74, 84, 94, 92, 86]),
-    mental: ment([72, 60, 88, 82, 89, 91, 90, 84, 92, 80, 94, 58]),
     form: 79,
     careerGoals: 70,
   },
@@ -410,9 +347,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€45M",
     contractUntil: "2030",
     injuries: null,
-    technical: tech([30, 60, 32, 26, 34, 28, 30, 34, 68, 72, 60, 46, 42]),
-    physical: phys([58, 60, 66, 68, 62, 84, 82, 88]),
-    mental: ment([86, 40, 84, 56, 30, 28, 26, 22, 40, 62, 78, 44]),
     form: 80,
     careerGoals: 0,
   },
@@ -433,9 +367,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€55M",
     contractUntil: "2030",
     injuries: null,
-    technical: tech([82, 84, 74, 76, 70, 68, 58, 60, 70, 62, 68, 82, 74]),
-    physical: phys([89, 87, 84, 80, 76, 74, 82, 80]),
-    mental: ment([84, 82, 76, 70, 32, 28, 30, 26, 34, 74, 60, 82]),
     form: 74,
     careerGoals: 35,
   },
@@ -456,9 +387,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€75M",
     contractUntil: "2029",
     injuries: null,
-    technical: tech([70, 74, 72, 62, 60, 70, 66, 78, 88, 82, 84, 86, 68]),
-    physical: phys([80, 79, 84, 84, 88, 76, 72, 86]),
-    mental: ment([80, 82, 84, 78, 80, 74, 80, 72, 79, 90, 78, 78]),
     form: 78,
     careerGoals: 22,
   },
@@ -479,9 +407,6 @@ export const players: PlayerCardData[] = [
     marketValue: "€85M",
     contractUntil: "2029",
     injuries: null,
-    technical: tech([80, 82, 80, 70, 66, 82, 74, 84, 82, 74, 84, 91, 62]),
-    physical: phys([88, 87, 90, 86, 82, 74, 70, 86]),
-    mental: ment([82, 84, 82, 62, 40, 34, 38, 32, 40, 80, 68, 91]),
     form: 82,
     careerGoals: 88,
   },

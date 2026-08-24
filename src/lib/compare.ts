@@ -34,9 +34,8 @@ const pct = (v: number) => `${v}%`;
 export function metricsOf(a: Entity, b: Entity): Metric[] {
   if (a.type === "player" && b.type === "player") {
     return [
-      { key: "technicalAvg", a: avg(a.technical), b: avg(b.technical) },
-      { key: "physicalAvg", a: avg(a.physical), b: avg(b.physical) },
-      { key: "mentalAvg", a: avg(a.mental), b: avg(b.mental) },
+      { key: "goals", a: a.goals ?? 0, b: b.goals ?? 0, display: num },
+      { key: "assists", a: a.assists ?? 0, b: b.assists ?? 0, display: num },
       { key: "form", a: a.form, b: b.form },
       { key: "careerGoals", a: a.careerGoals, b: b.careerGoals, display: num },
     ];

@@ -18,8 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RadarChart } from "./RadarChart";
-import { AttributeList } from "./AttributeList";
 import { tierStyles, type CardData } from "@/data/football";
 import { TransferTimeline } from "./TransferTimeline";
 import { cn } from "@/lib/utils";
@@ -70,7 +68,7 @@ export function CardDetailModal({
               <DialogTitle className="truncate text-lg">{card.name}</DialogTitle>
               <DialogDescription className="truncate text-xs">
                 {card.clubBadge} {card.club} ·{" "}
-                {card.type === "player" ? card.position : t("manager")} · {t(card.tier)}
+                {card.type === "player" ? (card.positionName || card.position) : t("manager")}
               </DialogDescription>
             </div>
           </div>
@@ -90,9 +88,7 @@ export function CardDetailModal({
 
         {card.type === "player" ? (
           <>
-            <div className="card-surface rounded-2xl py-2">
-              <RadarChart core={card.core} />
-            </div>
+            <SeasonStatsTable card={card} />
 
             <section className="mt-4">
               <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-accent">
@@ -138,9 +134,6 @@ export function CardDetailModal({
 
 
 
-            <AttributeList titleKey="technical" attrs={card.technical} />
-            <AttributeList titleKey="physicalCat" attrs={card.physical} />
-            <AttributeList titleKey="mental" attrs={card.mental} />
           </>
         ) : (
           <section className="mt-2 grid gap-1.5 sm:grid-cols-2">
@@ -155,5 +148,39 @@ export function CardDetailModal({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function dash(v?: number | null): string {
+  return v == null || !Number.isFinite(v) ? "—" : String(v);
+}
+
+function SeasonStatsTable({ card }: { card: CardData }) {
+  const { t } = useTranslation();
+  if (card.type !== "player") return null;
+  return (
+    <div className="mt-3 card-surface rounded-2xl p-3">
+      <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-accent">
+        {t("seasonStats")}
+      </h3>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <th className="pb-2 text-start font-semibold">{t("season")}</th>
+            <th className="pb-2 text-center font-semibold">{t("matches")}</th>
+            <th className="pb-2 text-center font-semibold">{t("goals")}</th>
+            <th className="pb-2 text-center font-semibold">{t("assists")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-t border-border/60">
+            <td className="py-2 text-muted-foreground">{card.league || "—"}</td>
+            <td className="py-2 text-center font-bold">{dash(card.appearances)}</td>
+            <td className="py-2 text-center font-bold">{dash(card.goals)}</td>
+            <td className="py-2 text-center font-bold">{dash(card.assists)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   );
 }

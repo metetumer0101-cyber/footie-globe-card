@@ -15,8 +15,6 @@ import {
   Weight,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { RadarChart } from "@/components/analytics/RadarChart";
-import { AttributeList } from "@/components/analytics/AttributeList";
 import { TransferTimeline } from "@/components/analytics/TransferTimeline";
 import { InfoRow } from "@/components/analytics/CardDetailModal";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -252,11 +250,8 @@ function PlayerDetail({
               <span className="truncate">{card.club}</span>
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", tier.chip)}>
-                {t(card.tier)}
-              </span>
               <span className="rounded-full bg-secondary/60 px-2.5 py-0.5 text-[11px] font-bold">
-                {card.position}
+                {card.positionName || card.position}
               </span>
               {card.league && (
                 <span className="rounded-full bg-secondary/60 px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
@@ -268,50 +263,64 @@ function PlayerDetail({
         </div>
       </section>
 
-      <section className="card-surface rounded-3xl py-3">
-        <RadarChart core={card.core} />
+      <section className="card-surface rounded-3xl p-4">
+        <SeasonStatsTable card={card} />
       </section>
-
       <section>
         <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-accent">
-          {t("playerPage.snapshot")}
-        </h2>
-        <div className="grid grid-cols-2 gap-1.5">
-          <InfoRow icon={Activity} label={t("playerPage.form")} value={String(card.form)} />
-          <InfoRow
-            icon={TrendingUp}
-            label={t("playerPage.goals")}
-            value={String(card.careerGoals)}
-          />
-        </div>
-      </section>
-
-      <section>
-        <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-accent">
-          {t("information")}
+          {t("identity")}
         </h2>
         <div className="grid gap-1.5 sm:grid-cols-2">
-          <InfoRow icon={CalendarClock} label={t("age")} value={String(card.age)} />
-          <InfoRow icon={Ruler} label={t("height")} value={`${card.heightCm} cm`} />
-          <InfoRow icon={Weight} label={t("weight")} value={`${card.weightKg} kg`} />
-          <InfoRow icon={Footprints} label={t("preferredFoot")} value={t(card.foot)} />
-          <InfoRow icon={TrendingUp} label={t("marketValue")} value={card.marketValue} />
-          <InfoRow icon={CalendarClock} label={t("contractUntil")} value={card.contractUntil} />
-          <InfoRow
-            icon={Activity}
-            label={t("injuryHistory")}
-            value={card.injuries ?? t("noInjuries")}
-          />
+          <InfoRow icon={CalendarClock} label={t("age")} value={dash(card.age)} />
+          <InfoRow icon={Ruler} label={t("height")} value={`${dash(card.heightCm)} cm`} />
+          <InfoRow icon={Weight} label={t("weight")} value={`${dash(card.weightKg)} kg`} />
+          <InfoRow icon={Footprints} label={t("position")} value={card.positionName || card.position} />
+          <InfoRow icon={Activity} label={t("nationality")} value={card.nation || "—"} />
+          <InfoRow icon={TrendingUp} label={t("league")} value={card.league || "—"} />
         </div>
       </section>
-
+      <section>
+        <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-accent">
+          {t("career")}
+        </h2>
+        <div className="flex h-24 items-center justify-center rounded-2xl border border-dashed border-border bg-secondary/30 p-3 text-center text-xs text-muted-foreground">
+          {t("careerEmpty")}
+        </div>
+      </section>
       <TransferTimeline playerId={card.id} apiPlayerId={apiPlayerId} />
-
-      <div className="card-surface space-y-1 rounded-3xl p-4">
-        <AttributeList titleKey="technical" attrs={card.technical} />
-        <AttributeList titleKey="physicalCat" attrs={card.physical} />
-        <AttributeList titleKey="mental" attrs={card.mental} />
-      </div>
     </>
+  );
+}
+
+function dash(v?: number | null): string {
+  return v == null || !Number.isFinite(v) ? "—" : String(v);
+}
+
+function SeasonStatsTable({ card }: { card: PlayerCardData }) {
+  const { t } = useTranslation();
+  return (
+    <div>
+      <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-accent">
+        {t("seasonStats")}
+      </h2>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <th className="pb-2 text-start font-semibold">{t("season")}</th>
+            <th className="pb-2 text-center font-semibold">{t("matches")}</th>
+            <th className="pb-2 text-center font-semibold">{t("goals")}</th>
+            <th className="pb-2 text-center font-semibold">{t("assists")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-t border-border/60">
+            <td className="py-2 text-muted-foreground">{card.league || "—"}</td>
+            <td className="py-2 text-center font-bold">{dash(card.appearances)}</td>
+            <td className="py-2 text-center font-bold">{dash(card.goals)}</td>
+            <td className="py-2 text-center font-bold">{dash(card.assists)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   );
 }
