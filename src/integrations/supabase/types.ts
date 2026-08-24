@@ -539,7 +539,7 @@ export type Database = {
       world_players: {
         Row: {
           age: number | null
-          api_id: number
+          api_id: number | null
           appearances: number | null
           assists: number | null
           club: string | null
@@ -547,6 +547,7 @@ export type Database = {
           firstname: string | null
           goals: number | null
           height_cm: number | null
+          id: string
           injured: boolean
           lastname: string | null
           league: string | null
@@ -556,14 +557,16 @@ export type Database = {
           nationality: string | null
           photo: string | null
           position: string | null
+          provider: string
           rating: number | null
           season: number | null
+          sportmonks_id: number | null
           updated_at: string
           weight_kg: number | null
         }
         Insert: {
           age?: number | null
-          api_id: number
+          api_id?: number | null
           appearances?: number | null
           assists?: number | null
           club?: string | null
@@ -571,6 +574,7 @@ export type Database = {
           firstname?: string | null
           goals?: number | null
           height_cm?: number | null
+          id?: string
           injured?: boolean
           lastname?: string | null
           league?: string | null
@@ -580,14 +584,16 @@ export type Database = {
           nationality?: string | null
           photo?: string | null
           position?: string | null
+          provider?: string
           rating?: number | null
           season?: number | null
+          sportmonks_id?: number | null
           updated_at?: string
           weight_kg?: number | null
         }
         Update: {
           age?: number | null
-          api_id?: number
+          api_id?: number | null
           appearances?: number | null
           assists?: number | null
           club?: string | null
@@ -595,6 +601,7 @@ export type Database = {
           firstname?: string | null
           goals?: number | null
           height_cm?: number | null
+          id?: string
           injured?: boolean
           lastname?: string | null
           league?: string | null
@@ -604,8 +611,10 @@ export type Database = {
           nationality?: string | null
           photo?: string | null
           position?: string | null
+          provider?: string
           rating?: number | null
           season?: number | null
+          sportmonks_id?: number | null
           updated_at?: string
           weight_kg?: number | null
         }
