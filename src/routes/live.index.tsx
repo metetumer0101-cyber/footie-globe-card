@@ -110,7 +110,7 @@ function highlightsStrip(fixture: LiveFixture) {
   return { reds, hasPenalty, lastGoal };
 }
 
-function TeamLogo({ logo, badge, name }: { logo?: string; badge: string; name: string }) {
+function TeamLogo({ logo, badge, name }: { logo?: string | undefined; badge: string; name: string }) {
   if (logo) return <img src={logo} alt={`${name} logo`} loading="lazy" className="h-7 w-7 shrink-0 object-contain" />;
   return <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-secondary text-sm">{badge}</span>;
 }
