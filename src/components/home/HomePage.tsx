@@ -498,13 +498,15 @@ function KeyMatches() {
   const rows = useMemo(() => {
     const fixtures = data?.fixtures ?? [];
     const sorted = sortFixtures(fixtures);
+    // Only genuinely important matches qualify: classic derbies plus
+    // fixtures where BOTH sides are big clubs. Normal matches are excluded
+    // (no fallback to the raw feed). The section hides itself when empty.
     const featured = sorted.filter(
       (f) => isDerbyMatth(f.home.name, f.away.name) || isFeaturedMatch(f.home.name, f.away.name),
     );
-    const fallback = sorted.slice(0, 4);
     const picks: { fixture: LiveFixture; derby: boolean }[] = [];
     const seen = new Set<string>();
-    for (const f of featured.length ? featured : fallback) {
+    for (const f of featured) {
       if (seen.has(f.id)) continue;
       seen.add(f.id);
       picks.push({ fixture: f, derby: isDerbyMatth(f.home.name, f.away.name) });
