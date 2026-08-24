@@ -405,13 +405,57 @@ function inplayPhase(desc?: string): LiveFixture["phase"] | undefined {
 }
 
 /**
+ * SportMonks fixture `state_id` → coarse status. Official state ids:
+ * 1 scheduled, 2 first half live, 3 halftime, 4 second half live, 5 finished.
+ * Unknown/absent ids return undefined so the caller falls back to `periods`.
+ */
+function inplayStateStatus(
+  stateId?: number,
+): "scheduled" | "live" | "halftime" | "finished" | undefined {
+  switch (stateId) {
+    case 1:
+      return "scheduled";
+    case 2:
+    case 4:
+      return "live";
+    case 3:
+      return "halftime";
+    case 5:
+      return "finished";
+    default:
+      return undefined;
+  }
+}
+
+/** SportMonks fixture `state_id` → fine-grained phase (when it maps cleanly). */
+function inplayStatePhase(stateId?: number): LiveFixture["phase"] | undefined {
+  switch (stateId) {
+    case 2:
+      return "first-half";
+    case 3:
+      return "halftime";
+    case 4:
+      return "second-half";
+    default:
+      return undefined;
+  }
+}
+
+/**
  * Shared helper that derives { status, minute, phase, addedTime } from a
- * fixture's `periods` array (the current/ticking → last-open → last period).
+ * fixture's `state_id` and `periods` array.
+ *
+ * The authoritative `state_id` (SportMonks: 1 scheduled, 2 first-half live,
+ * 3 halftime, 4 second-half live, 5 finished) drives status/phase when present —
+ * this matters at half-time, where the only period is closed with no second half
+ * yet, so a periods-only heuristic would wrongly label the fixture "finished".
+ * `minute`/`addedTime` still come from `periods` (the ticking/last period).
  * Used by both the in-play fixture mapper and the match-detail page mapper so
  * their status/minute/phase semantics stay identical.
  */
 export function deriveInplayPeriod(
   periods: SMInplayPeriod[] | undefined,
+  stateId?: number,
 ): {
   status: "scheduled" | "live" | "halftime" | "finished";
   minute: number;
@@ -424,18 +468,32 @@ export function deriveInplayPeriod(
     list.find((p) => p.ticking === true) ??
     (open.length ? open[open.length - 1] : undefined) ??
     list[list.length - 1];
-  if (!period) return { status: "scheduled", minute: 0, phase: undefined, addedTime: undefined };
-  const phase = inplayPhase(period.description);
-  const anyOpen = period.ticking === true || period.ended == null;
-  if (anyOpen) {
+
+  const stateStatus = inplayStateStatus(stateId);
+  const statePhase = inplayStatePhase(stateId);
+
+  if (!period) {
     return {
-      status: phase === "halftime" ? "halftime" : "live",
-      minute: period.minutes ?? 0,
-      phase,
-      addedTime: period.time_added != null ? period.time_added : undefined,
+      status: stateStatus ?? "scheduled",
+      minute: 0,
+      phase: statePhase,
+      addedTime: undefined,
     };
   }
-  return { status: "finished", minute: period.minutes ?? 0, phase, addedTime: undefined };
+
+  const periodPhase = inplayPhase(period.description);
+  const anyOpen = period.ticking === true || period.ended == null;
+
+  // Prefer state_id when it maps to a known status; fall back to periods.
+  const status =
+    stateStatus ?? (anyOpen ? (periodPhase === "halftime" ? "halftime" : "live") : "finished");
+  const phase = statePhase ?? periodPhase;
+  return {
+    status,
+    minute: period.minutes ?? 0,
+    phase,
+    addedTime: period.time_added != null ? period.time_added : undefined,
+  };
 }
 
 /** Map in-play events into highlights, resolving side by participant id and
@@ -516,7 +574,7 @@ export function mapSmInplayFixture(row: SMInplayFixture, fallbackId: string): Li
   // Current period = the ticking one, else the last open (ended === null), else
   // the last period. Phase + minute + addedTime derive from it (shared with the
   // match-detail page mapper so in-play and detail semantics stay identical).
-  const { status, minute, phase, addedTime } = deriveInplayPeriod(row.periods);
+  const { status, minute, phase, addedTime } = deriveInplayPeriod(row.periods, row.state_id);
 
   const highlights = mapInplayHighlights(row.events ?? [], homeP?.id, awayP?.id);
 
@@ -938,7 +996,7 @@ export function mapSmMatchDetailPage(
     else if (side === "away") awayScore = goals;
   }
 
-  const { status, minute, phase, addedTime } = deriveInplayPeriod(row.periods);
+  const { status, minute, phase, addedTime } = deriveInplayPeriod(row.periods, row.state_id);
 
   const events = (row.events ?? [])
     .map((e) => mapMatchDetailEvent(e, homeId, awayId))

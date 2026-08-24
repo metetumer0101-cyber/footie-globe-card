@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Radio, RefreshCw, Search, Shield, X } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { MatchDetailModal } from "@/components/live/MatchDetailModal";
 import { QuotaStateCard } from "@/components/home/QuotaStateCard";
 import { useInplayFeed, LIVE_POLL_MS } from "@/hooks/use-live-feed";
 import { useSystemStatus } from "@/hooks/use-system-status";
@@ -153,19 +152,18 @@ function StatusBadge({
 
 function MatchCard({
   fixture,
-  onOpen,
   t,
 }: {
   fixture: LiveFixture;
-  onOpen: (f: LiveFixture) => void;
   t: (k: string, o: { defaultValue: string }) => string;
 }) {
+  const navigate = useNavigate();
   const { reds, hasPenalty, lastGoal } = highlightsStrip(fixture);
   const showStrip = reds.length > 0 || hasPenalty || lastGoal;
 
   return (
     <article
-      onClick={() => onOpen(fixture)}
+      onClick={() => void navigate({ to: "/match/$id", params: { id: fixture.id } })}
       className="card-surface cursor-pointer rounded-3xl p-4 transition-colors hover:bg-secondary/40"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -245,7 +243,6 @@ function SkeletonCard() {
 
 function LiveListPage() {
   const { t } = useTranslation();
-  const [openFixture, setOpenFixture] = useState<LiveFixture | null>(null);
   const [tab, setTab] = useState<StatusTab>("all");
   // "all" = every league; otherwise a POPULAR_LEAGUES id.
   const [selectedLeague, setSelectedLeague] = useState<string>("all");
@@ -510,13 +507,11 @@ function LiveListPage() {
         {!isLoading && (
           <div className="space-y-3">
             {filtered.map((fixture) => (
-              <MatchCard key={fixture.id} fixture={fixture} onOpen={setOpenFixture} t={t} />
+              <MatchCard key={fixture.id} fixture={fixture} t={t} />
             ))}
           </div>
         )}
       </div>
-
-      <MatchDetailModal fixture={openFixture} onOpenChange={(open) => !open && setOpenFixture(null)} />
     </AppShell>
   );
 }
