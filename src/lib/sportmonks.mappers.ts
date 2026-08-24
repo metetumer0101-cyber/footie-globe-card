@@ -60,7 +60,9 @@ export type SMPlayer = {
   weight?: number | string | null;
   position_id?: number;
   nationality?: string;
-  country?: { id?: number; name?: string } | null;
+  country?: { id?: number; name?: string; image_path?: string } | null;
+  /** Position resource — real name via `?include=position` (e.g. "Attacker"). */
+  position?: { id?: number; name?: string } | null;
 };
 
 export type SMFixture = {
@@ -555,24 +557,24 @@ export function mapSmPlayerCard(p: SMPlayer, season?: SMPlayerSeason): PlayerCar
     name: playerName(p),
     club: season?.team?.name ?? "Free Agent",
     clubBadge: season?.team?.image_path ?? "⚽",
-    nation: p.nationality ?? "🌍",
+    nation: p.country?.name ?? p.nationality ?? "🌍",
     position: pos,
+    positionName: p.position?.name ?? pos,
+    flag: p.country?.image_path,
     tier: tierFor(overall),
     core,
     age,
     heightCm: toNum(p.height) ?? 180,
     weightKg: toNum(p.weight) ?? 75,
+    // Real season stats (present only when a stats include resolves; otherwise
+    // the UI renders the em-dash "B bridge" placeholder).
+    goals: goals || undefined,
+    assists: assists || undefined,
+    appearances: season?.games?.appearences || undefined,
     foot: hash(seed) % 4 === 0 ? "left" : "right",
     marketValue: "—",
     contractUntil: "—",
     injuries: null,
-    technical: attrKeys(
-      ["finishing", "shotPower", "longShots", "volleys", "penalties", "curve", "freeKick", "crossing", "shortPassing", "longPassing", "vision", "ballControl", "dribblingAttr", "heading"],
-      (core.sho + core.pas + core.dri) / 3,
-      seed,
-    ),
-    physical: attrKeys(["acceleration", "sprintSpeed", "agility", "balance", "stamina", "strength", "jumping", "reactions"], (core.pac + core.phy) / 2, seed),
-    mental: attrKeys(["positioning", "offTheBall", "composure", "aggression", "interceptions", "marking", "standingTackle", "slidingTackle", "defAwareness", "workRate", "leadership", "flair"], (core.def + core.pas) / 2, seed),
     form: clampAttr(overall),
     careerGoals: goals,
     photo: p.image_path,

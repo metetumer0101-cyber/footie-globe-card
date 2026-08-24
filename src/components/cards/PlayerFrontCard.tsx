@@ -3,6 +3,15 @@ import { Shirt } from "lucide-react";
 import { tierStyles, type PlayerCardData } from "@/data/football";
 import { cn } from "@/lib/utils";
 
+const dash = (v?: number | null) =>
+  v == null || !Number.isFinite(v) ? "—" : String(v);
+
+/**
+ * "Identity card" — a real, data-backed player card. Shows only verified bio
+ * (photo, name, age, country/flag, position, club, height/weight, league) and
+ * real season stats when present. No fabricated technical/physical/mental
+ * attributes and no derived "core" grade.
+ */
 export function PlayerFrontCard({
   player,
   onClick,
@@ -12,14 +21,8 @@ export function PlayerFrontCard({
 }) {
   const { t } = useTranslation();
   const tier = tierStyles[player.tier];
-  const core = [
-    ["pac", player.core.pac],
-    ["sho", player.core.sho],
-    ["pas", player.core.pas],
-    ["dri", player.core.dri],
-    ["def", player.core.def],
-    ["phy", player.core.phy],
-  ] as const;
+  const position = player.positionName || player.position;
+  const flag = player.flag || player.nation;
 
   return (
     <button
@@ -33,16 +36,12 @@ export function PlayerFrontCard({
     >
       <div className="flex h-full flex-col rounded-[22px] bg-surface p-3">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <span
-            className={cn(
-              "rounded-lg px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide",
-              tier.chip,
-            )}
-          >
-            {t(player.tier)}
+          <span className="rounded-lg bg-secondary/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+            {position}
           </span>
           <span className="rounded-lg bg-secondary/60 px-1.5 py-0.5 text-[10px] font-bold">
-            {player.position}
+            {player.age > 0 ? `${player.age} ` : ""}
+            {player.age > 0 ? t("age").toLowerCase() : ""}
           </span>
         </div>
 
@@ -63,22 +62,39 @@ export function PlayerFrontCard({
           ) : (
             <Shirt className="relative h-11 w-11 text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5" />
           )}
-          <span className="absolute bottom-1 start-1.5 text-base leading-none">{player.nation}</span>
-          <span className="absolute bottom-1 end-1.5 text-base leading-none">{player.clubBadge}</span>
+          {flag ? (
+            flag.startsWith("http") ? (
+              <img
+                src={flag}
+                alt=""
+                loading="lazy"
+                className="absolute bottom-1 start-1.5 h-4 w-6 rounded-[3px] object-cover ring-1 ring-border/60"
+              />
+            ) : (
+              <span className="absolute bottom-1 start-1.5 text-base leading-none">{flag}</span>
+            )
+          ) : null}
         </div>
 
         <h3 className="truncate text-sm font-bold uppercase tracking-wide">{player.name}</h3>
-        <p className="mb-2 truncate text-[11px] text-muted-foreground">{player.club}</p>
+        <p className="mb-2 truncate text-[11px] text-muted-foreground">
+          {player.club}
+          {player.league ? ` · ${player.league}` : ""}
+        </p>
 
         <dl className="grid grid-cols-3 gap-1">
-          {core.map(([key, value]) => (
-            <div key={key} className="rounded-lg bg-secondary/40 px-1 py-1 text-center">
-              <dt className="text-[9px] font-semibold text-muted-foreground">
-                {t(`attr.${key}`)}
-              </dt>
-              <dd className="text-xs font-bold">{value}</dd>
-            </div>
-          ))}
+          <div className="rounded-lg bg-secondary/40 px-1 py-1 text-center">
+            <dt className="text-[9px] font-semibold text-muted-foreground">{t("age")}</dt>
+            <dd className="text-xs font-bold">{dash(player.age)}</dd>
+          </div>
+          <div className="rounded-lg bg-secondary/40 px-1 py-1 text-center">
+            <dt className="text-[9px] font-semibold text-muted-foreground">cm</dt>
+            <dd className="text-xs font-bold">{dash(player.heightCm)}</dd>
+          </div>
+          <div className="rounded-lg bg-secondary/40 px-1 py-1 text-center">
+            <dt className="text-[9px] font-semibold text-muted-foreground">kg</dt>
+            <dd className="text-xs font-bold">{dash(player.weightKg)}</dd>
+          </div>
         </dl>
       </div>
     </button>

@@ -335,6 +335,36 @@ export async function searchWorldPlayersDb(opts: {
   }
 }
 
+/**
+ * Real season stats for a SportMonks player id from the local mirror.
+ * The `goals`/`assists`/`appearances` columns exist but the current sync does
+ * not populate them (numeric season stats are plan-gated). Returns undefined
+ * values when absent so the UI renders the em-dash "B bridge" placeholder —
+ * never a fabricated zero.
+ */
+export async function playerSeasonStatsDb(smId: number): Promise<{
+  goals?: number | undefined;
+  assists?: number | undefined;
+  appearances?: number | undefined;
+} | null> {
+  try {
+    const { data, error } = await publicDb()
+      .from("world_players")
+      .select("goals, assists, appearances")
+      .or(`sportmonks_id.eq.${smId},api_id.eq.${smId}`)
+      .limit(1);
+    if (error || !data?.[0]) return null;
+    const row = data[0];
+    return {
+      goals: row.goals ?? undefined,
+      assists: row.assists ?? undefined,
+      appearances: row.appearances ?? undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Top scorers of a league from the local mirror (null when not synced). */
 export async function leagueTopPlayersDb(leagueId: number): Promise<WorldSearchResult | null> {
   try {
