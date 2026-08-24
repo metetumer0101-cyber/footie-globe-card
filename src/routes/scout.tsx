@@ -81,7 +81,7 @@ function Page() {
   const [preset, setPreset] = useState<PresetKey | null>(null);
   const [onlySaved, setOnlySaved] = useState(false);
   const [selected, setSelected] = useState<CardData | null>(null);
-  const [mode, setMode] = useState<"local" | "world">(q ? "world" : "local");
+  const [mode, setMode] = useState<"local" | "world">("world");
   const { has, toggle, ids } = useWatchlist();
 
   useEffect(() => {
