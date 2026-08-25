@@ -26,12 +26,25 @@ async function handle(request: Request): Promise<Response> {
   if (!authorized) {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data } = await supabaseAdmin
+      // `cron_config` is service-role only and therefore absent from the
+      // generated Data API types — query it through an untyped view.
+      const untyped = supabaseAdmin as unknown as {
+        from: (table: string) => {
+          select: (cols: string) => {
+            eq: (
+              col: string,
+              val: string,
+            ) => { maybeSingle: () => Promise<{ data: { value?: string | null } | null }> };
+          };
+        };
+      };
+      const { data } = await untyped
         .from("cron_config")
         .select("value")
         .eq("key", "sync_token")
         .maybeSingle();
-      authorized = Boolean(data?.value) && provided === data?.value;
+      const token = data?.value ?? "";
+      authorized = Boolean(token) && provided === token;
     } catch {
       authorized = false;
     }
