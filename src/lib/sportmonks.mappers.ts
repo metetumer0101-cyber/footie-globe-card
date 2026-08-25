@@ -388,7 +388,7 @@ export function mapSmFixture(row: SMFixture, fallbackId: string): LiveFixture {
   const away = row.visitorTeam ?? {};
   const [homeName, awayName] = smFixtureTeamNames(row.name);
   const status = mapSmFixtureStatus(row);
-  const minute = row.time?.minute ?? 0 ?? 0;
+  const minute = row.time?.minute ?? 0;
   return {
     id: String(row.id ?? fallbackId),
     league: row.league?.name ?? "—",
