@@ -13,6 +13,8 @@ export type WorldPlayer = {
   lastname?: string | undefined;
   age?: number | undefined;
   nationality?: string | undefined;
+  /** National flag image URL (player's country resource). */
+  flag?: string | undefined;
   position?: string | undefined;
   photo?: string | undefined;
   heightCm?: number | undefined;
@@ -54,7 +56,15 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
       `player-search:${query.toLowerCase()}:${leagueId ?? "all"}:${page}`,
       TTL.SEARCH,
       async () => {
-        const json = await sportMonks<SportMonksList<SMPlayer>>({ path: `/players/search/${encodeURIComponent(query)}`, page });
+        const json = await sportMonks<SportMonksList<SMPlayer>>({
+          path: `/players/search/${encodeURIComponent(query)}`,
+          // position -> real position name; country -> flag image + nationality.
+          // NB: this plan's search include-set has no `stats`/team/league include, so
+          // search results can't carry club/league — those stay undefined here (the
+          // picker degrades to position · nationality in the subtitle).
+          include: ["position", "country"],
+          page,
+        });
         const players = (json?.data ?? []).map((p) => mapSmWorldPlayer(p)).filter((p) => p.id);
         if (!players.length && page === 1) return null;
         const total = json?.meta?.pagination?.total ?? page;

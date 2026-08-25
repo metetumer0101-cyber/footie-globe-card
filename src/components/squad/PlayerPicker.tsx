@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Globe2, Loader2, Search, X } from "lucide-react";
-import { managers, players, tierStyles, type PlayerCardData } from "@/data/football";
-import { apiPositionCode, leagueOf, roleFit } from "@/lib/squad";
+import { managers, tierStyles, type PlayerCardData } from "@/data/football";
+import { apiPositionCode, roleFit } from "@/lib/squad";
 import { getWorldPlayerCard, searchWorldPlayers } from "@/lib/player-search.functions";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -42,34 +42,20 @@ export function PlayerPicker({
   }, [query]);
 
   const list = useMemo(() => {
+    if (!isManager) return [];
     const q = query.trim().toLowerCase();
-    if (isManager) {
-      return managers
-        .filter((m) => !q || m.name.toLowerCase().includes(q) || m.club.toLowerCase().includes(q))
-        .map((m) => ({
-          id: m.id,
-          name: m.name,
-          nation: m.nation,
-          club: m.club,
-          meta: `${m.formation} · ${m.winRate}%`,
-          tier: m.tier,
-          fit: 2 as const,
-        }));
-    }
-    const role = target?.kind === "starter" ? target.role : null;
-    return players
-      .filter((p) => !q || p.name.toLowerCase().includes(q) || p.club.toLowerCase().includes(q))
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        nation: p.nation,
-        club: p.club,
-        meta: `${p.position} · ${leagueOf(p.club)}`,
-        tier: p.tier,
-        fit: role ? roleFit(role, p.position) : (2 as const),
-      }))
-      .sort((a, b) => b.fit - a.fit || a.name.localeCompare(b.name));
-  }, [query, isManager, target]);
+    return managers
+      .filter((m) => !q || m.name.toLowerCase().includes(q) || m.club.toLowerCase().includes(q))
+      .map((m) => ({
+        id: m.id,
+        name: m.name,
+        nation: m.nation,
+        club: m.club,
+        meta: `${m.formation} · ${m.winRate}%`,
+        tier: m.tier,
+        fit: 2 as const,
+      }));
+  }, [query, isManager]);
 
   const worldEnabled = !isManager && !!target && debounced.length >= 3;
   const worldQuery = useQuery({
@@ -80,20 +66,16 @@ export function PlayerPicker({
   });
 
   const role = target?.kind === "starter" ? target.role : null;
-  const localNames = useMemo(
-    () => new Set(players.map((p) => p.name.toLowerCase())),
-    [],
-  );
   const worldHits = useMemo(() => {
     const rows = worldQuery.data?.players ?? [];
     return rows
-      .filter((h) => !h.localId && !localNames.has(h.name.toLowerCase()))
+      .filter((h) => !h.localId)
       .map((h) => {
         const pos = apiPositionCode(h.position);
         return { hit: h, pos, fit: role ? roleFit(role, pos) : (2 as const) };
       })
       .sort((a, b) => b.fit - a.fit || a.hit.name.localeCompare(b.hit.name));
-  }, [worldQuery.data, localNames, role]);
+  }, [worldQuery.data, role]);
 
   const pickWorld = async (playerId: number) => {
     if (pendingId) return;
@@ -229,7 +211,7 @@ export function PlayerPicker({
                     used || pendingId !== null ? "opacity-40" : "hover:border-accent/60",
                   )}
                 >
-                  <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-accent/30 bg-background text-[9px] font-black">
+                  <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-accent/30 bg-background text-[9px] font-black">
                     {hit.photo ? (
                       <img
                         src={hit.photo}
@@ -239,6 +221,14 @@ export function PlayerPicker({
                       />
                     ) : (
                       pos
+                    )}
+                    {hit.flag && (
+                      <img
+                        src={hit.flag}
+                        alt=""
+                        loading="lazy"
+                        className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-[3px] border border-accent/40 object-cover"
+                      />
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
