@@ -430,11 +430,50 @@ function inplayPhase(desc?: string): LiveFixture["phase"] | undefined {
 }
 
 /**
- * SportMonks fixture `state_id` → coarse status. Official state ids:
- * 1 scheduled, 2 first half live, 3 halftime, 4 second half live, 5 finished.
+ * SportMonks `livescores/inplay` fixture `state_id` → coarse status (fallback
+ * only — `periods` is the primary driver in `deriveInplayPeriod`).
+ *
+ * ⚠️ The in-play endpoint does NOT use the 1-5 enumeration this file previously
+ * assumed. Observed on the live payload:
+ *   22 = live, 9 = penalty shootout (still in play), 5 = finished (FT),
+ *   4  = finished (both periods ended; the row lingers in the feed after FT).
  * Unknown/absent ids return undefined so the caller falls back to `periods`.
  */
 function inplayStateStatus(
+  stateId?: number,
+): "scheduled" | "live" | "halftime" | "finished" | undefined {
+  switch (stateId) {
+    case 1:
+      return "scheduled";
+    case 22:
+      return "live";
+    case 9:
+      return "live"; // penalty shootout — still in play
+    case 4:
+    case 5:
+      return "finished";
+    default:
+      return undefined;
+  }
+}
+
+/** SportMonks in-play `state_id` → fine-grained phase (fallback only). */
+function inplayStatePhase(stateId?: number): LiveFixture["phase"] | undefined {
+  switch (stateId) {
+    case 9:
+      return "penalties";
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * SportMonks schedule-fixture `state_id` → coarse status. Schedule fixtures
+ * (`/schedules/seasons/{id}`) keep the classic enumeration (1 scheduled,
+ * 2 first-half live, 3 halftime, 4 second-half live, 5 finished), which differs
+ * from the `livescores/inplay` convention — so they use their own mapping.
+ */
+function scheduleStateStatus(
   stateId?: number,
 ): "scheduled" | "live" | "halftime" | "finished" | undefined {
   switch (stateId) {
@@ -452,29 +491,20 @@ function inplayStateStatus(
   }
 }
 
-/** SportMonks fixture `state_id` → fine-grained phase (when it maps cleanly). */
-function inplayStatePhase(stateId?: number): LiveFixture["phase"] | undefined {
-  switch (stateId) {
-    case 2:
-      return "first-half";
-    case 3:
-      return "halftime";
-    case 4:
-      return "second-half";
-    default:
-      return undefined;
-  }
-}
-
 /**
  * Shared helper that derives { status, minute, phase, addedTime } from a
- * fixture's `state_id` and `periods` array.
+ * fixture's `periods` array (the primary source of truth) with `state_id` as a
+ * fallback.
  *
- * The authoritative `state_id` (SportMonks: 1 scheduled, 2 first-half live,
- * 3 halftime, 4 second-half live, 5 finished) drives status/phase when present —
- * this matters at half-time, where the only period is closed with no second half
- * yet, so a periods-only heuristic would wrongly label the fixture "finished".
- * `minute`/`addedTime` still come from `periods` (the ticking/last period).
+ * ⚠️ The `livescores/inplay` endpoint does NOT use the 1-5 state enumeration:
+ * live rows carry `state_id` 22, just-finished rows still lingering in the feed
+ * carry `state_id` 4/5, and a penalty shootout carries `state_id` 9. The reliable
+ * signal is therefore the `periods` array:
+ *   - any period with `ticking: true` → live (its `description` gives the phase,
+ *     its `minutes`(+`time_added`) gives the minute);
+ *   - otherwise, all periods carry an `ended` timestamp → finished.
+ * Halftime is preserved when the only ticking-capable period is a "half-time"/"HT"
+ * period, or the 1st half has ended with no ticking 2nd half yet.
  * Used by both the in-play fixture mapper and the match-detail page mapper so
  * their status/minute/phase semantics stay identical.
  */
@@ -488,36 +518,81 @@ export function deriveInplayPeriod(
   addedTime: number | undefined;
 } {
   const list = periods ?? [];
-  const open = list.filter((p) => p.ticking === true || p.ended == null);
-  const period =
-    list.find((p) => p.ticking === true) ??
-    (open.length ? open[open.length - 1] : undefined) ??
-    list[list.length - 1];
+  const phaseOf = (p?: SMInplayPeriod) => inplayPhase(p?.description);
+  const addedOf = (p?: SMInplayPeriod) => (p?.time_added != null ? p.time_added : undefined);
 
-  const stateStatus = inplayStateStatus(stateId);
-  const statePhase = inplayStatePhase(stateId);
-
-  if (!period) {
+  // No periods at all → defer entirely to the (fallback) state mapping.
+  if (!list.length) {
     return {
-      status: stateStatus ?? "scheduled",
+      status: inplayStateStatus(stateId) ?? "scheduled",
       minute: 0,
-      phase: statePhase,
+      phase: inplayStatePhase(stateId),
       addedTime: undefined,
     };
   }
 
-  const periodPhase = inplayPhase(period.description);
-  const anyOpen = period.ticking === true || period.ended == null;
+  // 1) A ticking period is the live clock: its description gives the phase and
+  //    its minutes/time_added give the match minute + stoppage.
+  const ticking = list.find((p) => p.ticking === true);
+  if (ticking) {
+    const phase = phaseOf(ticking);
+    return {
+      status: phase === "halftime" ? "halftime" : "live",
+      minute: ticking.minutes ?? 0,
+      phase,
+      addedTime: addedOf(ticking),
+    };
+  }
 
-  // Prefer state_id when it maps to a known status; fall back to periods.
-  const status =
-    stateStatus ?? (anyOpen ? (periodPhase === "halftime" ? "halftime" : "live") : "finished");
-  const phase = statePhase ?? periodPhase;
+  // 2) An explicit "half-time"/"HT" period → half-time.
+  const htPeriod = list.find((p) => phaseOf(p) === "halftime");
+  if (htPeriod) {
+    return {
+      status: "halftime",
+      minute: htPeriod.minutes ?? 0,
+      phase: "halftime",
+      addedTime: addedOf(htPeriod),
+    };
+  }
+
+  // 3) A final period (2nd-half / extra-time / penalties) that has ended means
+  //    the match is over — even when the row still lingers in the in-play feed
+  //    with state_id 4/5. Find the latest such period (so a shootout that ended
+  //    resolves to "penalties", not "second-half").
+  const finalPhases: LiveFixture["phase"][] = ["second-half", "extra-time", "penalties"];
+  const finalEnded = [...list].reverse().find((p) => {
+    const ph = phaseOf(p);
+    return ph != null && finalPhases.includes(ph) && p.ended != null;
+  });
+  if (finalEnded) {
+    return {
+      status: "finished",
+      minute: finalEnded.minutes ?? 0,
+      phase: phaseOf(finalEnded),
+      addedTime: addedOf(finalEnded),
+    };
+  }
+
+  // 4) 1st half ended but no final period has ended → half-time (the 2nd half
+  //    hasn't started/ticked yet).
+  const firstHalf = list.find((p) => phaseOf(p) === "first-half");
+  if (firstHalf && firstHalf.ended != null) {
+    return {
+      status: "halftime",
+      minute: firstHalf.minutes ?? 0,
+      phase: "halftime",
+      addedTime: addedOf(firstHalf),
+    };
+  }
+
+  // 5) Fallback: periods present but ambiguous → scheduled unless state_id says
+  //    otherwise.
+  const last = list[list.length - 1];
   return {
-    status,
-    minute: period.minutes ?? 0,
-    phase,
-    addedTime: period.time_added != null ? period.time_added : undefined,
+    status: inplayStateStatus(stateId) ?? "scheduled",
+    minute: last?.minutes ?? 0,
+    phase: inplayStatePhase(stateId) ?? phaseOf(last),
+    addedTime: addedOf(last),
   };
 }
 
@@ -654,8 +729,9 @@ export function mapSmFixtureBrief(row: SMFixture, leagueId: number, date: string
  * A fixture row embedded in a schedule round. Unlike the `/fixtures` resource,
  * schedule fixtures carry `participants` (with `meta.location`) and a `scores`
  * ARRAY (CURRENT rows) — not `localTeam`/`visitorTeam`/`scores` object. They
- * also use the in-play `state_id` convention (1 scheduled, 2/4 live, 3 halftime,
- * 5 finished).
+ * use the classic schedule `state_id` convention (1 scheduled, 2/4 live,
+ * 3 halftime, 5 finished), which differs from the `livescores/inplay` ids
+ * (22 live, 9 penalties, 4/5 finished).
  */
 export type SMScheduleFixture = {
   id?: number;
@@ -713,9 +789,10 @@ export function mapSmScheduleFixture(
     if (side === "home") homeScore = goals;
     else if (side === "away") awayScore = goals;
   }
-  // Schedule fixtures use the in-play state ids; fall back to the `/fixtures`
-  // convention when the id is unknown.
-  const status = inplayStateStatus(row.state_id) ?? mapSmFixtureStatus(row);
+  // Schedule fixtures use the classic schedule state ids (1 scheduled, 2/4 live,
+  // 3 halftime, 5 finished); fall back to the `/fixtures` convention when the id
+  // is unknown. (Deliberately separate from the in-play `livescores/inplay` ids.)
+  const status = scheduleStateStatus(row.state_id) ?? mapSmFixtureStatus(row);
   const start = smDateTime(row.starting_at);
   return {
     id: row.id ?? 0,
