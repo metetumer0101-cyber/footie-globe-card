@@ -12,11 +12,16 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  // Build the SSR bundle for long-running Node hosting (nitro `node-server`
-  // preset → a runnable `.output/`: `node .output/server/index.mjs` serves the
-  // app). `scripts/publish-live.sh` builds this and serves it on port 3000, the
-  // team's live-site port. NOTE: this supersedes the previous `vercel` preset
-  // (which emitted `.output/` in Vercel serverless format). If you need Vercel
-  // serverless output again, set `nitro: { preset: "vercel" }` instead.
-  nitro: { preset: "node-server" },
+  // Build the SSR bundle for long-running Node hosting by default (nitro
+  // `node-server` preset → a runnable `.output/`: `node .output/server/index.mjs`
+  // serves the app). `scripts/publish-live.sh` builds this and serves it on port
+  // 3000, the team's live-site port.
+  //
+  // The preset is selectable at build time via the `NITRO_PRESET` env var. When
+  // set (e.g. `NITRO_PRESET=vercel bun run build`), that preset is used instead —
+  // Vercel's git-linked auto-deploy runs `bun run build` and needs the `vercel`
+  // serverless preset (the default `node-server` preset doesn't serve correctly on
+  // Vercel). When unset, `node-server` remains the default, so local builds and the
+  // team's port-3000 hosting are unchanged.
+  nitro: { preset: process.env.NITRO_PRESET ?? "node-server" },
 });
