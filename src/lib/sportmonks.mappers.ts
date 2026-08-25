@@ -200,8 +200,18 @@ export type SMStatistic = {
   participant_id?: number;
   player_id?: number;
   /** SportMonks groups per-team stat rows; each entry may hold a `stats` list. */
-  stats?: { type?: { name?: string }; type_id?: number; value?: string | number | null; name?: string }[];
-  data?: { type?: { name?: string }; type_id?: number; value?: string | number | null; name?: string }[];
+  stats?: {
+    type?: { name?: string };
+    type_id?: number;
+    value?: string | number | null;
+    name?: string;
+  }[];
+  data?: {
+    type?: { name?: string };
+    type_id?: number;
+    value?: string | number | null;
+    name?: string;
+  }[];
 };
 
 export type SMLineup = {
@@ -277,6 +287,21 @@ export type SMH2HFixture = {
   scores?: SMInplayScore[];
 };
 
+/** One standing `details` cell — the real SportMonks shape is a flat array of
+ * `{ type_id, value }` rows (NOT a single object), embedded via `include=details`. */
+export type SMStandingDetail = {
+  id?: number;
+  type_id?: number;
+  value?: number | string | null;
+};
+
+/** One standing `form` entry — the real shape is an array of `{ form, sort_order }`
+ * rows, embedded via `include=form`. */
+export type SMStandingForm = {
+  form?: string;
+  sort_order?: number;
+};
+
 export type SMStanding = {
   id?: number;
   position?: number;
@@ -288,14 +313,10 @@ export type SMStanding = {
   drawn?: number;
   lost?: number;
   goals?: { scored?: number; against?: number; difference?: number };
-  details?: {
-    played?: number;
-    wins?: number;
-    draws?: number;
-    losses?: number;
-    scores?: { for?: number; against?: number };
-  };
-  form?: string | string[];
+  /** Real SportMonks shape: `include=details` embeds a flat array of cells. */
+  details?: SMStandingDetail[];
+  /** Real SportMonks shape: `include=form` embeds an array of entries. */
+  form?: string | SMStandingForm[];
   participant?: SMTeam | null;
   team?: SMTeam | null;
 };
@@ -333,10 +354,14 @@ export function mapSmFixtureStatus(f: {
     if (s === "ht" || s === "halftime" || s === "half") return "halftime";
     if (["1h", "2h", "live", "inplay", "et"].includes(s)) return "live";
   }
-  if (state === 5 || (state != null && state > 1 && state !== 55 && f.time?.minute != null && f.time.minute > 0)) {
+  if (
+    state === 5 ||
+    (state != null && state > 1 && state !== 55 && f.time?.minute != null && f.time.minute > 0)
+  ) {
     return "live";
   }
-  if (state === 55 || (f.time?.minute != null && f.time.minute >= 45 && f.time.minute < 50)) return "halftime";
+  if (state === 55 || (f.time?.minute != null && f.time.minute >= 45 && f.time.minute < 50))
+    return "halftime";
   return "scheduled";
 }
 
@@ -499,18 +524,12 @@ export function deriveInplayPeriod(
 /** Map in-play events into highlights, resolving side by participant id and
  * classifying kind from the event's combined text. Unknown events are skipped
  * (never fabricated). */
-function mapInplayHighlights(
-  events: SMEvent[],
-  homeId?: number,
-  awayId?: number,
-): LiveHighlight[] {
+function mapInplayHighlights(events: SMEvent[], homeId?: number, awayId?: number): LiveHighlight[] {
   const out: LiveHighlight[] = [];
   for (const e of events) {
     if (e.participant_id == null) continue;
     const side =
-      e.participant_id === homeId ? "home"
-        : e.participant_id === awayId ? "away"
-          : undefined;
+      e.participant_id === homeId ? "home" : e.participant_id === awayId ? "away" : undefined;
     if (!side) continue;
     const label = [e.addition, e.type, e.info, e.reason, e.detail]
       .filter((v): v is string => typeof v === "string" && v.length > 0)
@@ -609,8 +628,18 @@ export function mapSmFixtureBrief(row: SMFixture, leagueId: number, date: string
       name: row.league?.name ?? "—",
       logo: row.league?.image_path ?? "",
     },
-    home: { id: row.localteam_id ?? 0, name: homeName, logo: row.localTeam?.image_path ?? "", score: row.scores?.localteam_score ?? undefined },
-    away: { id: row.visitorteam_id ?? 0, name: awayName, logo: row.visitorTeam?.image_path ?? "", score: row.scores?.visitorteam_score ?? undefined },
+    home: {
+      id: row.localteam_id ?? 0,
+      name: homeName,
+      logo: row.localTeam?.image_path ?? "",
+      score: row.scores?.localteam_score ?? undefined,
+    },
+    away: {
+      id: row.visitorteam_id ?? 0,
+      name: awayName,
+      logo: row.visitorTeam?.image_path ?? "",
+      score: row.scores?.visitorteam_score ?? undefined,
+    },
     status,
     minute: row.time?.minute ?? undefined,
     source: "api-football",
@@ -618,14 +647,171 @@ export function mapSmFixtureBrief(row: SMFixture, leagueId: number, date: string
 }
 
 /* ------------------------------------------------------------------ */
+/* Schedule fixtures (schedules/seasons/{id})                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A fixture row embedded in a schedule round. Unlike the `/fixtures` resource,
+ * schedule fixtures carry `participants` (with `meta.location`) and a `scores`
+ * ARRAY (CURRENT rows) — not `localTeam`/`visitorTeam`/`scores` object. They
+ * also use the in-play `state_id` convention (1 scheduled, 2/4 live, 3 halftime,
+ * 5 finished).
+ */
+export type SMScheduleFixture = {
+  id?: number;
+  league_id?: number;
+  season_id?: number;
+  stage_id?: number;
+  round_id?: number;
+  state_id?: number;
+  name?: string;
+  starting_at?: string;
+  result_info?: string | null;
+  participants?: SMInplayParticipant[];
+  scores?: SMInplayScore[];
+  league?: SMLeague | null;
+};
+
+export type SMScheduleRound = {
+  id?: number;
+  name?: string;
+  starting_at?: string;
+  ending_at?: string;
+  fixtures?: SMScheduleFixture[];
+};
+
+export type SMScheduleStage = {
+  id?: number;
+  name?: string;
+  rounds?: SMScheduleRound[];
+};
+
+/** Normalize SportMonks' "YYYY-MM-DD HH:MM:SS" (UTC) into an ISO 8601 string. */
+function smDateTime(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  if (!raw.includes("T") && /^\d{4}-\d{2}-\d{2} /.test(raw)) return `${raw.replace(" ", "T")}Z`;
+  return raw;
+}
+
+/** Map one schedule fixture row into the app `Fixture` shape. Resolves teams
+ * from `participants` (by `meta.location`) and scores from CURRENT rows. */
+export function mapSmScheduleFixture(
+  row: SMScheduleFixture,
+  leagueId: number,
+  leagueName: string,
+): Fixture {
+  const participants = row.participants ?? [];
+  const homeP = participants.find((p) => p.meta?.location === "home");
+  const awayP = participants.find((p) => p.meta?.location === "away");
+  const [nameHome, nameAway] = smFixtureTeamNames(row.name);
+  let homeScore: number | undefined;
+  let awayScore: number | undefined;
+  for (const s of row.scores ?? []) {
+    if (s.description !== "CURRENT") continue;
+    const side = s.score?.participant;
+    const goals = s.score?.goals ?? 0;
+    if (side === "home") homeScore = goals;
+    else if (side === "away") awayScore = goals;
+  }
+  // Schedule fixtures use the in-play state ids; fall back to the `/fixtures`
+  // convention when the id is unknown.
+  const status = inplayStateStatus(row.state_id) ?? mapSmFixtureStatus(row);
+  const start = smDateTime(row.starting_at);
+  return {
+    id: row.id ?? 0,
+    date: (start ?? "").slice(0, 10),
+    kickoff: start,
+    league: {
+      id: row.league_id ?? leagueId,
+      name: row.league?.name ?? leagueName,
+      logo: row.league?.image_path ?? "",
+    },
+    home: {
+      id: homeP?.id ?? 0,
+      name: homeP?.name ?? nameHome,
+      logo: homeP?.image_path ?? "",
+      score: homeScore,
+    },
+    away: {
+      id: awayP?.id ?? 0,
+      name: awayP?.name ?? nameAway,
+      logo: awayP?.image_path ?? "",
+      score: awayScore,
+    },
+    status,
+    source: "api-football",
+  };
+}
+
+/** Flatten a schedules payload (stages → rounds → fixtures) into `Fixture`s,
+ * sorted chronologically by kickoff. */
+export function mapSmScheduleFixtures(
+  stages: SMScheduleStage[],
+  leagueId: number,
+  leagueName: string,
+): Fixture[] {
+  const out: Fixture[] = [];
+  for (const stage of stages) {
+    for (const round of stage.rounds ?? []) {
+      for (const f of round.fixtures ?? []) out.push(mapSmScheduleFixture(f, leagueId, leagueName));
+    }
+  }
+  out.sort((a, b) => (a.kickoff ?? a.date).localeCompare(b.kickoff ?? b.date));
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
 /* Standings                                                           */
 /* ------------------------------------------------------------------ */
 
+/**
+ * SportMonks standing `details` type ids (validated against the live
+ * `standings/seasons/{id}?include=details` response):
+ *   129 = played, 130 = won, 131 = drawn, 132 = lost,
+ *   133 = goals for, 134 = goals against, 179 = goal difference.
+ */
+const SM_STANDING_DETAIL = {
+  played: 129,
+  won: 130,
+  drawn: 131,
+  lost: 132,
+  goalsFor: 133,
+  goalsAgainst: 134,
+  goalDiff: 179,
+} as const;
+
+/** Pull one numeric stat out of the flat `details` array (0 when absent). */
+function smStandingStat(details: SMStandingDetail[] | undefined, typeId: number): number {
+  const cell = (details ?? []).find((d) => d.type_id === typeId);
+  const v = cell?.value;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  if (typeof v === "string") {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+/** Collapse the `form` array (`[{form:"W",sort_order:1},…]`) into a left-to-right
+ * string, falling back to a raw string / legacy array-of-chars form. */
+function smStandingForm(form: SMStanding["form"]): string {
+  if (Array.isArray(form)) {
+    return [...form]
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map((f) => (typeof f === "string" ? f : (f.form ?? "")))
+      .join("");
+  }
+  return typeof form === "string" ? form : "";
+}
+
 /** Map a raw SportMonks standing row into the app `StandingRow`. */
 export function mapSmStandingRow(row: SMStanding): StandingRow {
-  const gf = row.details?.scores?.for ?? row.goals?.scored ?? row.details?.played ?? 0;
-  const ga = row.details?.scores?.against ?? row.goals?.against ?? 0;
   const team = row.participant ?? row.team ?? {};
+  const gf = smStandingStat(row.details, SM_STANDING_DETAIL.goalsFor) || row.goals?.scored || 0;
+  const ga =
+    smStandingStat(row.details, SM_STANDING_DETAIL.goalsAgainst) || row.goals?.against || 0;
+  const goalDiff = smStandingStat(row.details, SM_STANDING_DETAIL.goalDiff);
+  const hasDiff = (row.details ?? []).some((d) => d.type_id === SM_STANDING_DETAIL.goalDiff);
   return {
     rank: row.position ?? 0,
     team: {
@@ -634,14 +820,14 @@ export function mapSmStandingRow(row: SMStanding): StandingRow {
       logo: team.image_path ?? "",
     },
     points: row.points ?? 0,
-    played: row.details?.played ?? row.played ?? 0,
-    wins: row.details?.wins ?? row.won ?? 0,
-    draws: row.details?.draws ?? row.drawn ?? 0,
-    losses: row.details?.losses ?? row.lost ?? 0,
+    played: smStandingStat(row.details, SM_STANDING_DETAIL.played) || row.played || 0,
+    wins: smStandingStat(row.details, SM_STANDING_DETAIL.won) || row.won || 0,
+    draws: smStandingStat(row.details, SM_STANDING_DETAIL.drawn) || row.drawn || 0,
+    losses: smStandingStat(row.details, SM_STANDING_DETAIL.lost) || row.lost || 0,
     goalsFor: gf,
     goalsAgainst: ga,
-    goalDiff: row.goals?.difference ?? gf - ga,
-    form: typeof row.form === "string" ? row.form : (row.form ?? []).join(""),
+    goalDiff: hasDiff ? goalDiff : (row.goals?.difference ?? gf - ga),
+    form: smStandingForm(row.form),
   };
 }
 
@@ -657,7 +843,7 @@ export function mapSmStandings(
     season: fallbackSeason,
     leagueName: league.name ?? fallbackLeagueName,
     logo: league.image_path ?? "",
-    rows: rows.map(mapSmStandingRow),
+    rows: [...rows].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map(mapSmStandingRow),
     source: "api-football", // STMAP: product type only knows api-football|mock; revisit when product types are taught providers
   };
 }
@@ -673,18 +859,23 @@ export function mapSmEvent(e: SMEvent): MatchEvent {
   // derive the coarse event type from them (case-insensitive).
   const label = [e.addition, e.type, e.info, e.reason, e.detail].filter(Boolean).join(" ");
   const l = label.toLowerCase();
-  const eventType =
-    /subst|substitution|in play|on for/i.test(l) ? "Subst"
-      : /red card|yellow card|(^| )card/i.test(l) ? "Card"
-        : /var|video assistant/i.test(l) ? "Var"
-          : /goal|penalty scored|own goal|header|shot/i.test(l) ? "Goal"
-            : e.type || "Event";
+  const eventType = /subst|substitution|in play|on for/i.test(l)
+    ? "Subst"
+    : /red card|yellow card|(^| )card/i.test(l)
+      ? "Card"
+      : /var|video assistant/i.test(l)
+        ? "Var"
+        : /goal|penalty scored|own goal|header|shot/i.test(l)
+          ? "Goal"
+          : e.type || "Event";
   return {
     elapsed: e.minute ?? 0,
     extraTime: e.extra_minute,
     team: { id: e.participant_id ?? 0, name: "—" },
     player: { id: e.player_id ?? 0, name: e.player_name ?? "—" },
-    assist: e.related_player_id ? { id: e.related_player_id, name: e.related_player_name ?? "—" } : undefined,
+    assist: e.related_player_id
+      ? { id: e.related_player_id, name: e.related_player_name ?? "—" }
+      : undefined,
     type: eventType,
     detail: e.addition ?? e.info ?? e.detail ?? e.reason ?? "",
   };
@@ -737,7 +928,10 @@ export function mapSmLineups(rows: SMLineup[], startXI: number[] = []): MatchLin
   for (const row of rows) {
     const tid = row.participant_id ?? row.team_id ?? 0;
     const g = grouped.get(tid) ?? { starters: [], subs: [] };
-    const isStarter = row.type_id != null ? row.type_id === 11 : row.player_id != null && startXI.includes(row.player_id);
+    const isStarter =
+      row.type_id != null
+        ? row.type_id === 11
+        : row.player_id != null && startXI.includes(row.player_id);
     if (isStarter) g.starters.push(row);
     else g.subs.push(row);
     grouped.set(tid, g);
@@ -950,7 +1144,9 @@ export function mapSmDetailLineups(
     const g = byTeam.get(tid) ?? { starters: [], subs: [] };
     // Prefer type_id (11 = starter, 12 = sub); fall back to formation_position.
     const isStarter =
-      row.type_id != null ? row.type_id === 11 : (row.formation_position ?? 0) >= 1 && (row.formation_position ?? 0) <= 11;
+      row.type_id != null
+        ? row.type_id === 11
+        : (row.formation_position ?? 0) >= 1 && (row.formation_position ?? 0) <= 11;
     if (isStarter) g.starters.push(row);
     else g.subs.push(row);
     byTeam.set(tid, g);
@@ -1086,10 +1282,16 @@ function playerName(p: SMPlayer): string {
  * current season's stats row, embedded via `include=stats`) contributes league,
  * club, position and goals where available.
  */
-export function mapSmWorldPlayer(p: SMPlayer, stats?: { team?: SMTeam; league?: SMLeague; position_id?: number; goals?: { total?: number } }[]): WorldPlayer {
+export function mapSmWorldPlayer(
+  p: SMPlayer,
+  stats?: { team?: SMTeam; league?: SMLeague; position_id?: number; goals?: { total?: number } }[],
+): WorldPlayer {
   const s = stats?.[0];
   const birth = p.date_of_birth ? new Date(p.date_of_birth) : null;
-  const age = birth && !Number.isNaN(birth.getTime()) ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (365.25 * 86400_000))) : undefined;
+  const age =
+    birth && !Number.isNaN(birth.getTime())
+      ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (365.25 * 86400_000)))
+      : undefined;
   return {
     id: p.id ?? 0,
     name: playerName(p),
@@ -1097,7 +1299,10 @@ export function mapSmWorldPlayer(p: SMPlayer, stats?: { team?: SMTeam; league?: 
     lastname: p.lastname,
     age,
     nationality: p.nationality ?? p.country?.name,
-    position: smPositionName({ position: p.position, position_id: s?.position_id ?? p.position_id }),
+    position: smPositionName({
+      position: p.position,
+      position_id: s?.position_id ?? p.position_id,
+    }),
     photo: p.image_path,
     heightCm: toNum(p.height),
     weightKg: toNum(p.weight),
@@ -1157,20 +1362,21 @@ export function mapSmPlayerCard(p: SMPlayer, season?: SMPlayerSeason): PlayerCar
   const base = clampAttr(42 + Math.min(goals * 3, 30));
   const posId = season?.position_id ?? p.position_id;
   const pos =
-    posId != null
-      ? posId <= 1 ? "GK" : posId <= 4 ? "DF" : posId <= 6 ? "MF" : "ST"
-      : "CM";
+    posId != null ? (posId <= 1 ? "GK" : posId <= 4 ? "DF" : posId <= 6 ? "MF" : "ST") : "CM";
   const core = {
     pac: clampAttr(base + (pos === "DF" ? -2 : 4) + ((hash(seed + "pac") % 13) - 6)),
     sho: clampAttr(base + per90(goals) * 22 - 6),
     pas: clampAttr(base + passAcc * 0.18 + per90(assists) * 6 - 12),
     dri: clampAttr(base + 4),
     def: clampAttr(base + (pos === "DF" ? 8 : pos === "ST" ? -18 : -4)),
-    phy: clampAttr(base + ((toNum(p.weight) ?? 75) * 0.05) - 2),
+    phy: clampAttr(base + (toNum(p.weight) ?? 75) * 0.05 - 2),
   };
   const overall = Math.round((core.pac + core.sho + core.pas + core.dri + core.def + core.phy) / 6);
   const birth = p.date_of_birth ? new Date(p.date_of_birth) : null;
-  const age = birth && !Number.isNaN(birth.getTime()) ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (365.25 * 86400_000))) : 0;
+  const age =
+    birth && !Number.isNaN(birth.getTime())
+      ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (365.25 * 86400_000)))
+      : 0;
   return {
     id: `sm-${p.id}`,
     type: "player",
@@ -1230,7 +1436,12 @@ export function mapSmTeamPage(
     squad: (squad ?? []).map((p) => ({
       id: p.id ?? 0,
       name: playerName(p),
-      age: p.date_of_birth ? Math.max(0, Math.floor((Date.now() - new Date(p.date_of_birth).getTime()) / (365.25 * 86400_000))) : undefined,
+      age: p.date_of_birth
+        ? Math.max(
+            0,
+            Math.floor((Date.now() - new Date(p.date_of_birth).getTime()) / (365.25 * 86400_000)),
+          )
+        : undefined,
       number: undefined,
       position: p.position_id != null ? String(p.position_id) : undefined,
       photo: p.image_path ?? "",

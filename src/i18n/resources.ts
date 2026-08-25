@@ -508,10 +508,34 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "invalidMatchId": "That match could not be found."
       },
       "competitions": {
+        "title": "Standings & Fixtures",
         "subtitle": "League tables and fixtures from top competitions.",
         "standings": "Standings",
         "fixtures": "Fixtures",
-        "team": "Team"
+        "team": "Team",
+        "played": "O",
+        "won": "G",
+        "drawn": "B",
+        "lost": "M",
+        "goalsFor": "AG",
+        "goalsAgainst": "YG",
+        "goalDiff": "AV",
+        "points": "P",
+        "form": "Form",
+        "vs": "vs",
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "thisWeek": "This week",
+        "prevWeek": "Previous week",
+        "nextWeek": "Next week",
+        "backToThisWeek": "Back to this week",
+        "noFixtures": "No fixtures this week",
+        "noFixturesHint": "No matches are scheduled in this competition for this week. Real fixtures are shown when available \u2014 nothing is made up.",
+        "noStandings": "No standings available",
+        "noStandingsHint": "Real standings aren't available for this competition right now. No data is shown rather than making it up.",
+        "zoneChampionsLeague": "Champions League",
+        "zoneEuropaLeague": "Europa League",
+        "zoneRelegation": "Relegation"
       },
       "badges": {
         "title": "Badge Collection"
@@ -1019,10 +1043,34 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "invalidMatchId": "Bu maç bulunamadı."
       },
       "competitions": {
+        "title": "Puan Durumu & Fikstür",
         "subtitle": "Önemli liglerin puan durumu ve fikstürleri.",
         "standings": "Puan Durumu",
         "fixtures": "Fikstür",
-        "team": "Takım"
+        "team": "Takım",
+        "played": "O",
+        "won": "G",
+        "drawn": "B",
+        "lost": "M",
+        "goalsFor": "AG",
+        "goalsAgainst": "YG",
+        "goalDiff": "AV",
+        "points": "P",
+        "form": "Form",
+        "vs": "vs",
+        "today": "Bugün",
+        "tomorrow": "Yarın",
+        "thisWeek": "Bu hafta",
+        "prevWeek": "Önceki hafta",
+        "nextWeek": "Sonraki hafta",
+        "backToThisWeek": "Bu haftaya dön",
+        "noFixtures": "Bu hafta fikstür yok",
+        "noFixturesHint": "Bu yarışma için bu hafta maç planlanmamış. Gerçek fikstür mevcut olduğunda gösterilir — hiçbir şey uydurulmaz.",
+        "noStandings": "Puan durumu yok",
+        "noStandingsHint": "Bu yarışma için şu an gerçek puan durumu mevcut değil. Uydurmak yerine hiçbir veri gösterilmiyor.",
+        "zoneChampionsLeague": "Şampiyonlar Ligi",
+        "zoneEuropaLeague": "Avrupa Ligi",
+        "zoneRelegation": "Küme Düşme"
       },
       "badges": {
         "title": "Rozet Koleksiyonu"

@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { cached } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
 import {
   currentSeason,
@@ -10,14 +9,15 @@ import {
   type SportMonksList,
 } from "@/lib/api-sportmonks.server";
 import {
-  mapSmFixtureBrief,
   mapSmH2H,
   mapSmMatchDetailPage,
   mapSmMatchDetails,
+  mapSmScheduleFixtures,
   mapSmStandings,
   type SMDetailFixture,
   type SMFixture,
   type SMH2HFixture,
+  type SMScheduleStage,
   type SMStanding,
 } from "@/lib/sportmonks.mappers";
 import { persistStandings, readStandingsDb } from "@/lib/football-data.server";
@@ -163,6 +163,8 @@ export type Injury = {
 export type Fixture = {
   id: number;
   date: string;
+  /** ISO 8601 kickoff (UTC) — used to show start times for upcoming matches. */
+  kickoff?: string | undefined;
   league: { id: number; name: string; logo: string };
   home: { id: number; name: string; logo: string; score?: number | undefined };
   away: { id: number; name: string; logo: string; score?: number | undefined };
@@ -172,20 +174,16 @@ export type Fixture = {
   source?: "api-football" | "mock" | undefined;
 };
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function leagueIdToName(id: number): string {
+  // SportMonks league ids (NOT the legacy API-Football ids — SportMonks is the
+  // sole provider now and uses its own numeric ids).
   const map: Record<number, string> = {
-    39: "Premier League",
-    140: "La Liga",
-    78: "Bundesliga",
-    135: "Serie A",
-    61: "Ligue 1",
-    203: "Süper Lig",
-    2: "UEFA Champions League",
-    3: "UEFA Europa League",
+    8: "Premier League",
+    564: "La Liga",
+    82: "Bundesliga",
+    384: "Serie A",
+    301: "Ligue 1",
+    600: "Süper Lig",
   };
   return map[id] ?? "Competition";
 }
@@ -202,24 +200,24 @@ export const getStandings = createServerFn({ method: "GET" })
     const season = data.season ?? currentSeason();
     const leagueName = leagueIdToName(data.leagueId);
 
-    // Documented SportMonks v3 call:
-    //   `/standings?filter[league_id]=x&filter[season_id]=y&include=participant;form;league`
-    // (filter/format validated against the live API). The current trial plan
-    // rejects the filter param with HTTP 400 "Filters should be passed as a
-    // string" / 5010 (plan-gating, not a format bug) so the loader returns null
-    // and we serve real persisted standings if present, otherwise an honest
-    // EMPTY table — never fabricated teams/points.
+    // Path-based SportMonks v3 standings call (the current plan rejects
+    // `filter[...]` params with HTTP 400, so we use the season id in the path):
+    //   GET /standings/seasons/{season_id}?include=participant;form;details
+    // When the season can't be resolved, or the upstream returns no rows, we
+    // serve persisted standings if present, otherwise an honest EMPTY table —
+    // never fabricated teams/points.
     const smSeason = await resolveSeasonId(data.leagueId);
+    if (smSeason == null) {
+      const stored = await readStandingsDb(data.leagueId, season, leagueName);
+      return stored ?? emptyStandings(data.leagueId, season, leagueName);
+    }
     const result = await sportMonksCached<Standings | null>(
-      `standings:${data.leagueId}:${season}`,
+      `standings:${data.leagueId}:${smSeason}`,
       TTL.STANDINGS,
       async () => {
-        const filters: Record<string, number> = { league_id: data.leagueId };
-        if (smSeason != null) filters["season_id"] = smSeason;
         const json = await sportMonks<SportMonksList<SMStanding>>({
-          path: "/standings",
-          filters,
-          include: ["participant", "form", "league"],
+          path: `/standings/seasons/${smSeason}`,
+          include: ["participant", "form", "details"],
         });
         const rows = json?.data ?? [];
         if (!rows.length) return null;
@@ -301,7 +299,16 @@ export const getMatchDetailPage = createServerFn({ method: "GET" })
       async () => {
         const json = await sportMonks<SportMonksEnvelope<SMDetailFixture>>({
           path: `/fixtures/${data.fixtureId}`,
-          include: ["participants", "scores", "periods", "events", "lineups", "lineups.player", "statistics.type", "league"],
+          include: [
+            "participants",
+            "scores",
+            "periods",
+            "events",
+            "lineups",
+            "lineups.player",
+            "statistics.type",
+            "league",
+          ],
         });
         const f = json?.data;
         if (!f) return null;
@@ -350,23 +357,29 @@ export const getFixturesByLeague = createServerFn({ method: "GET" })
   .inputValidator((input: { leagueId: number; season?: number; date?: string }) => input)
   .handler(async ({ data }): Promise<Fixture[]> => {
     const season = data.season ?? currentSeason();
-    const date = data.date ?? today();
 
-    // `/fixtures` filtering (`filter[league_id]`) returns "Filters should be
-    // passed as a string" on the current plan, so instead we pull the date's
-    // fixtures (which include the league object) and filter client-side. When no
-    // fixtures exist we return an honest empty list — never fabricated fixtures.
+    // Path-based SportMonks v3 schedules call:
+    //   GET /schedules/seasons/{season_id}
+    // The response is stages → rounds → fixtures, each with `participants` and
+    // `scores` (CURRENT rows). When the season can't be resolved, or the upstream
+    // returns no fixtures, we return an honest empty list — never fabricated.
+    const smSeason = await resolveSeasonId(data.leagueId);
+    if (smSeason == null) return [];
     return sportMonksCached<Fixture[]>(
-      `fixtures-league:${data.leagueId}:${season}:${date}`,
+      `fixtures-league:${data.leagueId}:${smSeason}`,
       TTL.FIXTURES,
       async () => {
-        const json = await sportMonks<SportMonksList<SMFixture>>({
-          path: `/fixtures/date/${date}`,
-          include: ["league"],
+        const json = await sportMonks<{ data: SMScheduleStage[] }>({
+          path: `/schedules/seasons/${smSeason}`,
         });
-        const rows = (json?.data ?? []).filter((r) => r.league_id === data.leagueId);
-        if (!rows.length) return null;
-        return rows.map((r) => mapSmFixtureBrief(r, data.leagueId, date));
+        const stages = json?.data ?? [];
+        if (!stages.length) return null;
+        const fixtures = mapSmScheduleFixtures(
+          stages,
+          data.leagueId,
+          leagueIdToName(data.leagueId),
+        );
+        return fixtures.length ? fixtures : null;
       },
       [],
     );
