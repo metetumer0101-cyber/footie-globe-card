@@ -4,10 +4,32 @@
  */
 
 import { sportMonks, type SportMonksEnvelope, type SportMonksList } from "@/lib/api-sportmonks.server";
-import { mapSmTeamHit, mapSmTeamPage, type SMTeam } from "@/lib/sportmonks.mappers";
+import { mapSmTeamHit, mapSmTeamPage, smPositionName, type SMTeam } from "@/lib/sportmonks.mappers";
 
 type SMVenue = { name?: string; city?: string; capacity?: number };
-type SMTeamWithVenue = SMTeam & { founded?: number; venue?: SMVenue | null };
+
+/** A squad membership row embedded by `?include=players.player`. */
+type SMSquadMembership = {
+  id?: number;
+  player_id?: number;
+  position_id?: number;
+  jersey_number?: number;
+  player?: {
+    id?: number;
+    name?: string;
+    display_name?: string;
+    image_path?: string;
+    date_of_birth?: string;
+    position_id?: number;
+  } | null;
+};
+
+type SMTeamWithVenue = SMTeam & {
+  founded?: number;
+  venue?: SMVenue | null;
+  country?: { id?: number; name?: string; image_path?: string } | null;
+  players?: SMSquadMembership[];
+};
 
 export type SquadPlayer = {
   id: number;
@@ -38,14 +60,33 @@ export type TeamSearchHit = {
 };
 
 export async function fetchTeamById(teamId: number): Promise<TeamPageData | null> {
-  // `/teams/{id}?include=venue`. The `squad`/`player` includes 404 on the
-  // current plan, so the squad list is empty (honest) until a higher plan is
-  // granted; team identity + venue still render from the base payload.
-  const json = await sportMonks<SportMonksEnvelope<SMTeamWithVenue>>({ path: `/teams/${teamId}`, include: ["venue"] });
+  // `/teams/{id}?include=venue;country;players.player`. The `players` relation
+  // returns squad membership rows (jersey number, position) with the player
+  // resource nested under `players.player`; `country` resolves the team's
+  // country name (the base payload only carries `country_id`).
+  const json = await sportMonks<SportMonksEnvelope<SMTeamWithVenue>>({
+    path: `/teams/${teamId}`,
+    include: ["venue", "country", "players.player"],
+  });
   const t = json?.data;
   if (!t?.id) return null;
-  return mapSmTeamPage(t, [], {
-    country: t.country_id != null ? String(t.country_id) : undefined,
+  const squad: SquadPlayer[] = (t.players ?? []).map((m) => {
+    const p = m.player;
+    const birth = p?.date_of_birth ? new Date(p.date_of_birth) : null;
+    return {
+      id: p?.id ?? m.player_id ?? 0,
+      name: p?.name ?? p?.display_name ?? "—",
+      age:
+        birth && !Number.isNaN(birth.getTime())
+          ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (365.25 * 86400_000)))
+          : undefined,
+      number: m.jersey_number,
+      position: smPositionName({ position_id: m.position_id ?? p?.position_id }),
+      photo: p?.image_path ?? "",
+    };
+  });
+  return mapSmTeamPage(t, squad, {
+    country: t.country?.name,
     founded: t.founded,
     venue_name: t.venue?.name,
     venue_city: t.venue?.city,
