@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Star } from "lucide-react";
 import type { ScoutPlayer } from "@/lib/scout";
+import { getPlayerDisplayName } from "@/lib/player-name";
 import { cn } from "@/lib/utils";
 
 export function ResultsTable({
@@ -46,7 +47,7 @@ export function ResultsTable({
                 <div className="flex items-center gap-2">
                   <span>{p.nation}</span>
                   <div className="min-w-0">
-                    <p className="truncate font-semibold">{p.name}</p>
+                    <p className="truncate font-semibold">{getPlayerDisplayName(p)}</p>
                     <p className="truncate text-[11px] text-muted-foreground">{p.club}</p>
                   </div>
                 </div>

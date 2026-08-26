@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Shirt } from "lucide-react";
 import { tierStyles, type PlayerCardData } from "@/data/football";
+import { getPlayerDisplayName } from "@/lib/player-name";
 import { cn } from "@/lib/utils";
 
 const dash = (v?: number | null) =>
@@ -27,7 +28,7 @@ export function PlayerFrontCard({
   return (
     <button
       onClick={onClick}
-      aria-label={`${player.name} — ${t("tapForDetails")}`}
+      aria-label={`${getPlayerDisplayName(player)} — ${t("tapForDetails")}`}
       className={cn(
         "group w-44 shrink-0 snap-start rounded-3xl bg-gradient-to-b p-[2px] text-start transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]",
         tier.frame,
@@ -55,7 +56,7 @@ export function PlayerFrontCard({
           {player.photo ? (
             <img
               src={player.photo}
-              alt={player.name}
+              alt={getPlayerDisplayName(player)}
               loading="lazy"
               className="relative h-20 w-20 rounded-full object-cover ring-2 ring-border/60 transition-transform duration-200 group-hover:-translate-y-0.5"
             />
@@ -76,7 +77,7 @@ export function PlayerFrontCard({
           ) : null}
         </div>
 
-        <h3 className="truncate text-sm font-bold uppercase tracking-wide">{player.name}</h3>
+        <h3 className="truncate text-sm font-bold uppercase tracking-wide">{getPlayerDisplayName(player)}</h3>
         <p className="mb-2 truncate text-[11px] text-muted-foreground">
           {player.club}
           {player.league ? ` · ${player.league}` : ""}

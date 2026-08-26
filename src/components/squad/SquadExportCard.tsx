@@ -11,6 +11,7 @@ import {
   type SquadState,
 } from "@/lib/squad";
 import { tierStyles } from "@/data/football";
+import { getPlayerDisplayName } from "@/lib/player-name";
 import { cn } from "@/lib/utils";
 
 export const SquadExportCard = forwardRef<
@@ -79,7 +80,7 @@ export const SquadExportCard = forwardRef<
                 </div>
               </div>
               <div className="mt-1 truncate text-xl font-black">
-                {p ? shortName(p.name) : "—"}
+                {p ? shortName(getPlayerDisplayName(p)) : "—"}
               </div>
               <div className="text-lg font-bold text-primary">{node.role}</div>
             </div>

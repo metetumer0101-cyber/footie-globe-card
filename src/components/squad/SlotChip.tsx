@@ -2,6 +2,7 @@ import { Plus, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { tierStyles, type PlayerCardData } from "@/data/football";
 import { playerById, shortName } from "@/lib/squad";
+import { getPlayerDisplayName } from "@/lib/player-name";
 import { cn } from "@/lib/utils";
 
 export const chemColor = (v: number) =>
@@ -77,7 +78,7 @@ export function SlotChip({
         )}
       </span>
       <span className="max-w-full truncate rounded-md bg-background/70 px-1 text-[10px] font-bold leading-tight">
-        {player ? shortName(player.name) : t("sq.empty")}
+        {player ? shortName(getPlayerDisplayName(player)) : t("sq.empty")}
       </span>
       <span className="rounded bg-primary/20 px-1 text-[9px] font-black uppercase text-primary">
         {role}
