@@ -60,6 +60,10 @@ export type SMPlayer = {
   name?: string | undefined;
   firstname?: string | undefined;
   lastname?: string | undefined;
+  /** Full display name as returned by SportMonks (e.g. "Philip Messingschlager"). */
+  display_name?: string | undefined;
+  /** SportMonks' short/common name (e.g. "P. Messingschlager"). */
+  common_name?: string | undefined;
   image_path?: string | undefined;
   date_of_birth?: string | undefined;
   height?: number | string | null | undefined;
@@ -1367,8 +1371,22 @@ function toNum(raw?: number | string | null): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/** Resolve the best display name for a raw SportMonks player. Priority:
+ * `display_name` → `common_name` → first+last word of `name` (strips long
+ * middle/secondary names) → `firstname lastname` → "—". */
 function playerName(p: SMPlayer): string {
-  return p.name ?? (`${p.firstname ?? ""} ${p.lastname ?? ""}`.trim() || "—");
+  const trim = (s?: string) => (s == null ? "" : s.trim());
+  const display = trim(p.display_name);
+  if (display) return display;
+  const common = trim(p.common_name);
+  if (common) return common;
+  const full = trim(p.name);
+  if (full) {
+    const words = full.split(/\s+/);
+    if (words.length === 1) return words[0] ?? full;
+    return `${words[0] ?? ""} ${words[words.length - 1] ?? ""}`.trim();
+  }
+  return `${p.firstname ?? ""} ${p.lastname ?? ""}`.trim() || "—";
 }
 
 /**
