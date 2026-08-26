@@ -200,10 +200,48 @@ function Page() {
     try {
       const { default: html2canvas } = await import("html2canvas-pro");
       const canvas = await html2canvas(exportRef.current, { scale: 2, backgroundColor: null });
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), "image/png"),
+      );
+      if (!blob) throw new Error("canvas.toBlob returned null");
+      const file = new File([blob], `footcard-squad-${squad.formation}.png`, {
+        type: "image/png",
+      });
+      const title = squad.name.trim() || "FootCard Squad";
+      const text = t("sq.shareText", "My FootCard squad — built with FootCard.");
+
+      // Native share sheet (WhatsApp, Instagram, X, ...) when the browser
+      // supports sharing files.
+      if (
+        typeof navigator.share === "function" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({ files: [file], title, text });
+          toast.success(t("sq.shared", "Squad shared"));
+        } catch (err) {
+          // User dismissed the share sheet — not an error, no toast.
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          // Any other share failure falls through to the download fallback.
+          const url = URL.createObjectURL(file);
+          const link = document.createElement("a");
+          link.download = file.name;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+          toast.success(t("sq.downloaded"));
+        }
+        return;
+      }
+
+      // Fallback: auto-download the PNG.
+      const url = URL.createObjectURL(file);
       const link = document.createElement("a");
-      link.download = `footcard-squad-${squad.formation}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.download = file.name;
+      link.href = url;
       link.click();
+      URL.revokeObjectURL(url);
       toast.success(t("sq.downloaded"));
     } catch {
       toast.error(t("cmp.exportFailed"));

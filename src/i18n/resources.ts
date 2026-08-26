@@ -387,6 +387,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "delete": "Delete",
         "share": "Share squad",
         "downloaded": "Squad image downloaded",
+        "shared": "Squad shared",
+        "shareText": "My FootCard squad — built with FootCard.",
         "worldSection": "World database",
         "worldEmpty": "No players found worldwide"
       },
@@ -924,6 +926,8 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "delete": "Sil",
         "share": "Kadroyu paylaş",
         "downloaded": "Kadro görseli indirildi",
+        "shared": "Kadro paylaşıldı",
+        "shareText": "Kadrom — FootCard ile oluşturuldu.",
         "worldSection": "Dünya veritabanı",
         "worldEmpty": "Dünya veritabanında oyuncu bulunamadı"
       },
