@@ -5,6 +5,7 @@ import { type PlayerCardData, type Tier } from "@/data/football";
 import { currentSeason, sportMonks, sportMonksCached, sportMonksCachedMeta, type SportMonksEnvelope, type SportMonksList } from "@/lib/api-sportmonks.server";
 import { mapSmPlayerCard, mapSmWorldPlayer, type SMPlayer } from "@/lib/sportmonks.mappers";
 import { leagueTopPlayersDb, playerSeasonStatsDb, searchWorldPlayersDb } from "@/lib/player-db.server";
+import { isPopularPlayer } from "@/data/player-priority";
 
 export type WorldPlayer = {
   id: number;
@@ -26,6 +27,8 @@ export type WorldPlayer = {
   league?: string | undefined;
   /** Set when the entry comes from the built-in FootCard catalogue. */
   localId?: string | undefined;
+  /** true when this player is in the popular whitelist. */
+  priority?: boolean;
 };
 
 export type WorldSearchResult = {
@@ -65,7 +68,16 @@ export const searchWorldPlayers = createServerFn({ method: "GET" })
           include: ["position", "country"],
           page,
         });
-        const players = (json?.data ?? []).map((p) => mapSmWorldPlayer(p)).filter((p) => p.id);
+        const players = (json?.data ?? [])
+          .map((p) => mapSmWorldPlayer(p))
+          .filter((p) => p.id)
+          .map((p) => ({
+            ...p,
+            // Tag popular whitelist players so the picker can rank them first.
+            // Match both the display name and firstname+lastname so common_name-
+            // style names still resolve.
+            priority: isPopularPlayer(p.name) || isPopularPlayer(`${p.firstname ?? ""} ${p.lastname ?? ""}`.trim()),
+          }));
         if (!players.length && page === 1) return null;
         const total = json?.meta?.pagination?.total ?? page;
         return {
