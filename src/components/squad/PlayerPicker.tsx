@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Globe2, Loader2, Search, X } from "lucide-react";
 import { managers, tierStyles, type PlayerCardData } from "@/data/football";
 import { apiPositionCode, roleFit } from "@/lib/squad";
+import { getPlayerDisplayName } from "@/lib/player-name";
 import { getWorldPlayerCard, searchWorldPlayers } from "@/lib/player-search.functions";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -76,7 +77,7 @@ export function PlayerPicker({
       })
       .sort(
         (a, b) =>
-          (b.hit.priority ? 1 : 0) - (a.hit.priority ? 1 : 0) || b.fit - a.fit || a.hit.name.localeCompare(b.hit.name),
+          (b.hit.priority ? 1 : 0) - (a.hit.priority ? 1 : 0) || b.fit - a.fit || getPlayerDisplayName(a.hit).localeCompare(getPlayerDisplayName(b.hit)),
       );
   }, [worldQuery.data, role]);
 
@@ -151,7 +152,7 @@ export function PlayerPicker({
                     </span>
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold">{item.name}</span>
+                    <span className="block truncate text-sm font-bold">{getPlayerDisplayName(item)}</span>
                     <span className="block truncate text-[11px] text-muted-foreground">
                       {item.club} · {item.meta}
                     </span>
@@ -218,7 +219,7 @@ export function PlayerPicker({
                     {hit.photo ? (
                       <img
                         src={hit.photo}
-                        alt={hit.name}
+                        alt={getPlayerDisplayName(hit)}
                         loading="lazy"
                         className="h-full w-full object-cover"
                       />
@@ -235,7 +236,7 @@ export function PlayerPicker({
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold">{hit.name}</span>
+                    <span className="block truncate text-sm font-bold">{getPlayerDisplayName(hit)}</span>
                     <span className="block truncate text-[11px] text-muted-foreground">
                       {[hit.club, pos, hit.nationality].filter(Boolean).join(" · ")}
                     </span>

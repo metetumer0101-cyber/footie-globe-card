@@ -9,6 +9,7 @@ import {
   searchWorldPlayers,
   type WorldPlayer,
 } from "@/lib/player-search.functions";
+import { getPlayerDisplayName } from "@/lib/player-name";
 import { cn } from "@/lib/utils";
 
 /** The six major leagues browseable/scoped on the Scout page. */
@@ -206,17 +207,17 @@ export function WorldSearch({
                   {p.photo ? (
                     <img
                       src={p.photo}
-                      alt={p.name}
+                      alt={getPlayerDisplayName(p)}
                       loading="lazy"
                       className="h-11 w-11 shrink-0 rounded-full bg-secondary/50 object-cover"
                     />
                   ) : (
                     <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-secondary/50 text-xs font-bold text-muted-foreground">
-                      {p.name.slice(0, 2).toUpperCase()}
+                      {getPlayerDisplayName(p).slice(0, 2).toUpperCase()}
                     </span>
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{p.name}</span>
+                    <span className="block truncate text-sm font-semibold">{getPlayerDisplayName(p)}</span>
                     <span className="block truncate text-xs text-muted-foreground">
                       {[p.club, p.position, p.nationality, p.age ? `${p.age}` : null]
                         .filter(Boolean)

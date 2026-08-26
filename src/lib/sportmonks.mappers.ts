@@ -40,6 +40,7 @@ import type { WorldPlayer } from "@/lib/player-search.functions";
 import type { SquadPlayer, TeamPageData, TeamSearchHit } from "@/lib/entity.server";
 import type { PlayerCardData, Tier } from "@/data/football";
 import type { Fixture } from "@/lib/football-data.functions";
+import { getPlayerDisplayName } from "@/lib/player-name";
 
 /* ------------------------------------------------------------------ */
 /* Raw SportMonks shapes (subset used by the app)                      */
@@ -1371,24 +1372,6 @@ function toNum(raw?: number | string | null): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Resolve the best display name for a raw SportMonks player. Priority:
- * `display_name` → `common_name` → first+last word of `name` (strips long
- * middle/secondary names) → `firstname lastname` → "—". */
-function playerName(p: SMPlayer): string {
-  const trim = (s?: string) => (s == null ? "" : s.trim());
-  const display = trim(p.display_name);
-  if (display) return display;
-  const common = trim(p.common_name);
-  if (common) return common;
-  const full = trim(p.name);
-  if (full) {
-    const words = full.split(/\s+/);
-    if (words.length === 1) return words[0] ?? full;
-    return `${words[0] ?? ""} ${words[words.length - 1] ?? ""}`.trim();
-  }
-  return `${p.firstname ?? ""} ${p.lastname ?? ""}`.trim() || "—";
-}
-
 /**
  * Map a raw SportMonks player into the app `WorldPlayer`. `stats[0]` (the
  * current season's stats row, embedded via `include=stats`) contributes league,
@@ -1406,7 +1389,7 @@ export function mapSmWorldPlayer(
       : undefined;
   return {
     id: p.id ?? 0,
-    name: playerName(p),
+    name: getPlayerDisplayName(p),
     firstname: p.firstname,
     lastname: p.lastname,
     age,
@@ -1531,7 +1514,7 @@ export function mapSmPlayerCard(p: SMPlayer, season?: SMPlayerSeason): PlayerCar
   return {
     id: `sm-${p.id}`,
     type: "player",
-    name: playerName(p),
+    name: getPlayerDisplayName(p),
     club: club?.name ?? "Free Agent",
     clubBadge: club?.image_path ?? "⚽",
     nation: nation.name ?? "🌍",

@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { tierStyles, type CardData } from "@/data/football";
+import { getPlayerDisplayName } from "@/lib/player-name";
 import { TransferTimeline } from "./TransferTimeline";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +66,7 @@ export function CardDetailModal({
               {card.nation}
             </span>
             <div className="min-w-0">
-              <DialogTitle className="truncate text-lg">{card.name}</DialogTitle>
+              <DialogTitle className="truncate text-lg">{getPlayerDisplayName(card)}</DialogTitle>
               <DialogDescription className="truncate text-xs">
                 {card.clubBadge} {card.club} ·{" "}
                 {card.type === "player" ? (card.positionName || card.position) : t("manager")}

@@ -5,6 +5,7 @@
 
 import { sportMonks, type SportMonksEnvelope, type SportMonksList } from "@/lib/api-sportmonks.server";
 import { mapSmTeamHit, mapSmTeamPage, smPositionName, type SMTeam } from "@/lib/sportmonks.mappers";
+import { getPlayerDisplayName } from "@/lib/player-name";
 
 type SMVenue = { name?: string; city?: string; capacity?: number };
 
@@ -75,7 +76,7 @@ export async function fetchTeamById(teamId: number): Promise<TeamPageData | null
     const birth = p?.date_of_birth ? new Date(p.date_of_birth) : null;
     return {
       id: p?.id ?? m.player_id ?? 0,
-      name: p?.name ?? p?.display_name ?? "—",
+      name: getPlayerDisplayName(p),
       age:
         birth && !Number.isNaN(birth.getTime())
           ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (365.25 * 86400_000)))

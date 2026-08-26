@@ -26,6 +26,7 @@ import {
   type SquadState,
 } from "@/lib/squad";
 import { players, type PlayerCardData } from "@/data/football";
+import { getPlayerDisplayName } from "@/lib/player-name";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/squad")({
@@ -415,7 +416,7 @@ function Page() {
           className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-primary px-3 py-1.5 text-xs font-black text-primary-foreground shadow-lg"
           style={{ left: drag.x, top: drag.y }}
         >
-          {dragPlayer.name}
+          {getPlayerDisplayName(dragPlayer)}
         </div>
       )}
 
