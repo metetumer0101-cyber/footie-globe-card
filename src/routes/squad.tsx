@@ -200,8 +200,34 @@ function Page() {
     try {
       const { default: html2canvas } = await import("html2canvas-pro");
       const canvas = await html2canvas(exportRef.current, { scale: 2, backgroundColor: null });
+      const filename = `footcard-squad-${squad.formation}.png`;
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png"),
+      );
+      const file = blob ? new File([blob], filename, { type: "image/png" }) : null;
+
+      // Prefer the native share sheet (WhatsApp, Instagram, ...) when available.
+      if (
+        file &&
+        typeof navigator.share === "function" &&
+        navigator.canShare?.({ files: [file] })
+      ) {
+        const title = squad.name.trim() || t("sq.mySquad");
+        try {
+          await navigator.share({ files: [file], title, text: title });
+          toast.success(t("sq.downloaded"));
+          return;
+        } catch (err) {
+          // User dismissed the share sheet — that's not an error.
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          // Any other share failure falls through to the download fallback.
+        }
+      }
+
+      // Fallback: auto-download the PNG.
       const link = document.createElement("a");
-      link.download = `footcard-squad-${squad.formation}.png`;
+      link.download = filename;
       link.href = canvas.toDataURL("image/png");
       link.click();
       toast.success(t("sq.downloaded"));

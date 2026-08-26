@@ -58,6 +58,10 @@ export type SMLeague = { id?: number; name?: string; image_path?: string };
 export type SMPlayer = {
   id?: number | undefined;
   name?: string | undefined;
+  /** Display name without middle/second names (e.g. "Lionel Messi"). */
+  display_name?: string | undefined;
+  /** Short display name (e.g. "L. Messi"). */
+  common_name?: string | undefined;
   firstname?: string | undefined;
   lastname?: string | undefined;
   image_path?: string | undefined;
@@ -1351,7 +1355,14 @@ function toNum(raw?: number | string | null): number | undefined {
 }
 
 function playerName(p: SMPlayer): string {
-  return p.name ?? (`${p.firstname ?? ""} ${p.lastname ?? ""}`.trim() || "—");
+  // Prefer names without middle/second parts; fall back to the full name only
+  // when neither normalized field is present.
+  return (
+    p.common_name ??
+    p.display_name ??
+    p.name ??
+    (`${p.firstname ?? ""} ${p.lastname ?? ""}`.trim() || "—")
+  );
 }
 
 /**
