@@ -37,7 +37,7 @@ import type {
   Standings,
 } from "@/lib/football-data.functions";
 import type { WorldPlayer } from "@/lib/player-search.functions";
-import type { TeamPageData, TeamSearchHit } from "@/lib/entity.server";
+import type { SquadPlayer, TeamPageData, TeamSearchHit } from "@/lib/entity.server";
 import type { PlayerCardData, Tier } from "@/data/football";
 import type { Fixture } from "@/lib/football-data.functions";
 
@@ -1490,10 +1490,10 @@ export function mapSmPlayerCard(p: SMPlayer, season?: SMPlayerSeason): PlayerCar
 /* Teams                                                               */
 /* ------------------------------------------------------------------ */
 
-/** Map a raw SportMonks team + embedded squad into the app `TeamPageData`. */
+/** Map a raw SportMonks team + already-mapped squad into the app `TeamPageData`. */
 export function mapSmTeamPage(
   team: SMTeam,
-  squad?: SMPlayer[],
+  squad: SquadPlayer[] = [],
   extra?: {
     country?: string | undefined;
     founded?: number | undefined;
@@ -1511,19 +1511,7 @@ export function mapSmTeamPage(
     venueName: extra?.venue_name,
     venueCity: extra?.venue_city,
     venueCapacity: extra?.venue_capacity,
-    squad: (squad ?? []).map((p) => ({
-      id: p.id ?? 0,
-      name: playerName(p),
-      age: p.date_of_birth
-        ? Math.max(
-            0,
-            Math.floor((Date.now() - new Date(p.date_of_birth).getTime()) / (365.25 * 86400_000)),
-          )
-        : undefined,
-      number: undefined,
-      position: p.position_id != null ? String(p.position_id) : undefined,
-      photo: p.image_path ?? "",
-    })),
+    squad,
   };
 }
 

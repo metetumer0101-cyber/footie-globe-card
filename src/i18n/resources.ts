@@ -546,7 +546,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "company": "Company",
         "about": "About FootCard",
         "privacy": "Privacy Policy",
-        "dataNote": "Live data by API-Football. Not affiliated with FIFA, UEFA or any club."
+        "dataNote": "Live data by SportMonks. Not affiliated with FIFA, UEFA or any club."
       },
       "transferHistory": "Transfer history",
       "playerOfTheDay": "Player of the Day",
@@ -1081,7 +1081,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "company": "Şirket",
         "about": "FootCard Hakkında",
         "privacy": "Gizlilik Politikası",
-        "dataNote": "Canlı veriler API-Football tarafından sağlanır. FIFA, UEFA veya herhangi bir kulüple bağlantılı değildir."
+        "dataNote": "Canlı veriler SportMonks tarafından sağlanır. FIFA, UEFA veya herhangi bir kulüple bağlantılı değildir."
       },
       "transferHistory": "Transfer geçmişi",
       "playerOfTheDay": "Günün Oyuncusu",
