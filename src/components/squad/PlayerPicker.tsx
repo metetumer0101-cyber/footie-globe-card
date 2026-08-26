@@ -74,7 +74,10 @@ export function PlayerPicker({
         const pos = apiPositionCode(h.position);
         return { hit: h, pos, fit: role ? roleFit(role, pos) : (2 as const) };
       })
-      .sort((a, b) => b.fit - a.fit || a.hit.name.localeCompare(b.hit.name));
+      .sort(
+        (a, b) =>
+          (b.hit.priority ? 1 : 0) - (a.hit.priority ? 1 : 0) || b.fit - a.fit || a.hit.name.localeCompare(b.hit.name),
+      );
   }, [worldQuery.data, role]);
 
   const pickWorld = async (playerId: number) => {
