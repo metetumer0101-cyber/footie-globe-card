@@ -412,48 +412,6 @@ export const players: PlayerCardData[] = [
   },
 ];
 
-export const managers: ManagerCardData[] = [
-  {
-    id: "pep",
-    type: "manager",
-    name: "Pep Guardiola",
-    club: "Manchester City",
-    clubBadge: "🔵",
-    nation: "🇪🇸",
-    tier: "icon",
-    winRate: 73,
-    style: "Tiki-Taka",
-    formation: "4-3-3",
-    age: 55,
-    marketValue: "€25M / yr",
-    contractUntil: "2027",
-    trophies: 40,
-    coach: { att: 94, def: 82, pos: 97, prs: 90, dev: 86, mgt: 92 },
-    form: 91,
-    matches: 940,
-  },
-  {
-    id: "ancelotti",
-    type: "manager",
-    name: "Carlo Ancelotti",
-    club: "Brazil",
-    clubBadge: "🟡",
-    nation: "🇮🇹",
-    tier: "icon",
-    winRate: 61,
-    style: "Balanced Control",
-    formation: "4-4-2",
-    age: 66,
-    marketValue: "€12M / yr",
-    contractUntil: "2026",
-    trophies: 32,
-    coach: { att: 86, def: 85, pos: 84, prs: 72, dev: 80, mgt: 97 },
-    form: 82,
-    matches: 1300,
-  },
-];
-
-
 export const teams: TeamCardData[] = [
   {
     id: "real-madrid",

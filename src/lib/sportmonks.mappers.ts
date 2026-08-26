@@ -38,7 +38,7 @@ import type {
 } from "@/lib/football-data.functions";
 import type { WorldPlayer } from "@/lib/player-search.functions";
 import type { SquadPlayer, TeamPageData, TeamSearchHit } from "@/lib/entity.server";
-import type { PlayerCardData, Tier } from "@/data/football";
+import type { ManagerCardData, PlayerCardData, Tier, CoachStats } from "@/data/football";
 import type { Fixture } from "@/lib/football-data.functions";
 import { getPlayerDisplayName } from "@/lib/player-name";
 
@@ -91,6 +91,43 @@ export type SMPlayerTeamRow = {
   end?: string | null;
   jersey_number?: number;
   team?: SMTeam;
+};
+
+/** A coach → team membership row (`?include=teams.team`). */
+export type SMCoachTeamRow = {
+  team_id?: number;
+  coach_id?: number;
+  position_id?: number;
+  active?: boolean;
+  start?: string | null;
+  end?: string | null;
+  team?: SMTeam;
+};
+
+/**
+ * Raw SportMonks coach shape (`/coaches`, `/coaches/search/{name}`,
+ * `/coaches/{id}`). Coaches share most bio fields with players (name parts,
+ * `image_path`, `date_of_birth`) but have no in-play position; their current
+ * club arrives via `?include=teams.team` memberships exactly like players.
+ */
+export type SMCoach = {
+  id?: number | undefined;
+  player_id?: number | undefined;
+  common_name?: string | undefined;
+  firstname?: string | undefined;
+  lastname?: string | undefined;
+  name?: string | undefined;
+  display_name?: string | undefined;
+  image_path?: string | undefined;
+  date_of_birth?: string | undefined;
+  height?: number | string | null | undefined;
+  weight?: number | string | null | undefined;
+  /** Coach's own nationality (same source as a player's `nationality`). */
+  nationality?: { id?: number; name?: string; image_path?: string } | null | undefined;
+  /** Coach's nationality country resource (same source as `nationality`). */
+  country?: { id?: number; name?: string; image_path?: string } | null;
+  /** Club/national-team tenures embedded via `?include=teams.team`. */
+  teams?: SMCoachTeamRow[];
 };
 
 /** SportMonks generic position ids -> display names (fallback when the
@@ -1539,6 +1576,99 @@ export function mapSmPlayerCard(p: SMPlayer, season?: SMPlayerSeason): PlayerCar
     careerGoals: goals,
     photo: p.image_path,
     league: season?.league?.name ?? undefined,
+  };
+}
+
+/** Coach's own nationality (name + flag), same shape as a player's nation. */
+function smCoachNation(c: SMCoach): { name?: string; image_path?: string } {
+  return {
+    name: c.nationality?.name ?? c.country?.name,
+    image_path: c.nationality?.image_path ?? c.country?.image_path,
+  };
+}
+
+/**
+ * The coach's current club, from `?include=teams.team`. Prefers the tenure
+ * still active today, falling back to the most recent start — mirroring the
+ * player-side `smPlayerCurrentClub` so a manager's card always names a real,
+ * current club rather than "Free Agent".
+ */
+function smCoachCurrentClub(c: SMCoach): SMCoachTeamRow | undefined {
+  const rows = (Array.isArray(c.teams) ? c.teams : []).filter((r) => r?.team?.id != null);
+  if (!rows.length) return undefined;
+  const now = Date.now();
+  const active = rows.filter((r) => !r.end || new Date(r.end).getTime() > now);
+  const pool = active.length ? active : rows;
+  return [...pool].sort(
+    (a, b) => new Date(b.start ?? 0).getTime() - new Date(a.start ?? 0).getTime(),
+  )[0];
+}
+
+const MANAGER_STYLES = [
+  "Tiki-Taka",
+  "Gegenpressing",
+  "Counter-Attack",
+  "Balanced Control",
+  "Wing Play",
+  "Low Block",
+] as const;
+
+const MANAGER_FORMATIONS = ["4-3-3", "4-2-3-1", "4-4-2", "3-5-2", "5-3-2"] as const;
+
+/**
+ * Build a full FootCard `ManagerCardData` from a raw SportMonks coach. Real
+ * bio fields (name, club, nationality, age) come from the coach resource; the
+ * FootCard-specific game stats (coach attributes, tier, winRate, style,
+ * formation, trophies, form, matches) are derived DETERMINISTICALLY from a
+ * stable hash of the coach id so the same coach always maps to the same card.
+ */
+export function mapSmManagerCard(c: SMCoach): ManagerCardData {
+  const seed = String(c.id ?? 0);
+  const clubRow = smCoachCurrentClub(c);
+  const club = clubRow?.team;
+  const nation = smCoachNation(c);
+
+  const birth = c.date_of_birth ? new Date(c.date_of_birth) : null;
+  const age =
+    birth && !Number.isNaN(birth.getTime())
+      ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (365.25 * 86400_000)))
+      : 0;
+
+  const stat = (key: string, base: number) => clampAttr(base + ((hash(seed + key) % 21) - 10));
+  const coach: CoachStats = {
+    att: stat("att", 80),
+    def: stat("def", 76),
+    pos: stat("pos", 78),
+    prs: stat("prs", 74),
+    dev: stat("dev", 75),
+    mgt: stat("mgt", 80),
+  };
+  const overall = Math.round(
+    (coach.att + coach.def + coach.pos + coach.prs + coach.dev + coach.mgt) / 6,
+  );
+
+  const contractEnd = clubRow?.end ? new Date(clubRow.end) : null;
+  const contractYear =
+    contractEnd && !Number.isNaN(contractEnd.getTime()) ? String(contractEnd.getFullYear()) : "—";
+
+  return {
+    id: `sm-${c.id}`,
+    type: "manager",
+    name: getPlayerDisplayName(c),
+    club: club?.name ?? "Free Agent",
+    clubBadge: club?.image_path ?? "⚽",
+    nation: nation.name ?? "🌍",
+    tier: tierFor(overall),
+    winRate: 40 + (hash(seed + "win") % 21),
+    style: MANAGER_STYLES[hash(seed + "style") % MANAGER_STYLES.length] as string,
+    formation: MANAGER_FORMATIONS[hash(seed + "formation") % MANAGER_FORMATIONS.length] as string,
+    age,
+    marketValue: "—",
+    contractUntil: contractYear,
+    trophies: hash(seed + "troph") % 16,
+    coach,
+    form: clampAttr(overall + ((hash(seed + "form") % 9) - 4)),
+    matches: 200 + (hash(seed + "matches") % 600),
   };
 }
 

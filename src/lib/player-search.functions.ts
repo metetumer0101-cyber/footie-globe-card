@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { cachedMeta, type CachedResult } from "@/lib/api-cache.server";
 import { TTL } from "@/lib/freshness-config";
-import { type PlayerCardData, type Tier } from "@/data/football";
+import { type ManagerCardData, type PlayerCardData, type Tier } from "@/data/football";
 import { currentSeason, sportMonks, sportMonksCached, sportMonksCachedMeta, type SportMonksEnvelope, type SportMonksList } from "@/lib/api-sportmonks.server";
-import { mapSmPlayerCard, mapSmWorldPlayer, type SMPlayer } from "@/lib/sportmonks.mappers";
-import { leagueTopPlayersDb, playerSeasonStatsDb, searchWorldPlayersDb } from "@/lib/player-db.server";
+import { mapSmManagerCard, mapSmPlayerCard, mapSmWorldPlayer, SM_POSITION_NAMES, type SMCoach, type SMPlayer } from "@/lib/sportmonks.mappers";
+import { leagueTopPlayersDb, playerSeasonStatsDb, searchWorldPlayersDb, worldPlayerPoolDb } from "@/lib/player-db.server";
 import { isPopularPlayer } from "@/data/player-priority";
 
 export type WorldPlayer = {
@@ -276,3 +276,164 @@ export const getWeeklyXIPool = createServerFn({ method: "GET" }).handler(
     return shuffle([...seen.values()]);
   },
 );
+
+/* ---------------- Squad Builder: real auto-fill pool ---------------- */
+
+export type SquadPoolPlayer = {
+  /** SportMonks player id (resolves via `getWorldPlayerCard`). */
+  smId: number;
+  name: string;
+  /** Coarse position code understood by `roleFit` (GK/DF/MF/ST). */
+  position: "GK" | "DF" | "MF" | "ST";
+  rating?: number | undefined;
+  club?: string | undefined;
+  nationality?: string | undefined;
+  photo?: string | undefined;
+};
+
+/**
+ * Normalise the local mirror's `position` column (a mix of names like
+ * "Goalkeeper" and raw SportMonks position ids "24".."27") into the coarse
+ * FootCard code `roleFit` understands.
+ */
+function coarsePosition(raw?: string | null): "GK" | "DF" | "MF" | "ST" {
+  const v = (raw ?? "").trim();
+  if (!v) return "ST";
+  const name = (SM_POSITION_NAMES[Number(v)] ?? v).toLowerCase();
+  if (name.startsWith("goal") || name === "24") return "GK";
+  if (name.startsWith("def") || name === "25") return "DF";
+  if (name.startsWith("mid") || name === "26") return "MF";
+  return "ST";
+}
+
+/** How many players to keep per coarse bucket (gives ~1 GK + a deep outfield mix). */
+const POOL_PER_BUCKET: Record<SquadPoolPlayer["position"], number> = {
+  GK: 8,
+  DF: 33,
+  MF: 33,
+  ST: 33,
+};
+
+/**
+ * A position-diverse pool of REAL players for Squad Builder auto-fill, read
+ * from the local `world_players` mirror (quota-free). Falls back to an empty
+ * pool rather than fabricating players — the caller's auto-fill simply fills
+ * fewer slots if the mirror is not yet synced.
+ */
+export const getSquadPlayerPool = createServerFn({ method: "GET" }).handler(
+  async (): Promise<SquadPoolPlayer[]> => {
+    const rows = await worldPlayerPoolDb();
+    const buckets: Record<SquadPoolPlayer["position"], SquadPoolPlayer[]> = {
+      GK: [],
+      DF: [],
+      MF: [],
+      ST: [],
+    };
+    for (const r of rows) {
+      const pos = coarsePosition(r.position);
+      if (buckets[pos].length < POOL_PER_BUCKET[pos]) {
+        buckets[pos].push({
+          smId: r.smId,
+          name: r.name,
+          position: pos,
+          rating: r.rating ?? undefined,
+          club: r.club ?? undefined,
+          nationality: r.nationality ?? undefined,
+          photo: r.photo ?? undefined,
+        });
+      }
+    }
+    // Keep buckets shuffled so repeated auto-fills vary, while preserving
+    // role-fit selection (the caller re-sorts by fit anyway).
+    return shuffle([...buckets.GK, ...buckets.DF, ...buckets.MF, ...buckets.ST]);
+  },
+);
+
+/* ---------------- Squad Builder: real manager selection ---------------- */
+
+export type WorldManager = {
+  id: number;
+  name: string;
+  nation?: string | undefined;
+  /** National flag image URL. */
+  flag?: string | undefined;
+  club?: string | undefined;
+  photo?: string | undefined;
+};
+
+export type WorldManagerSearchResult = {
+  managers: WorldManager[];
+  source: "api-football" | "mock";
+  paging: { current: number; total: number };
+};
+
+/** Current club name for a coach from its teams include (provider-native). */
+function smCoachClubName(c: SMCoach): string | undefined {
+  const rows = (Array.isArray(c.teams) ? c.teams : []).filter((r) => r?.team?.id != null);
+  if (!rows.length) return undefined;
+  return [...rows]
+    .sort((a, b) => new Date(b.start ?? 0).getTime() - new Date(a.start ?? 0).getTime())[0]?.team
+    ?.name;
+}
+
+/** Live coach search by name (min 3 chars) against SportMonks `/coaches`. */
+export const searchWorldManagers = createServerFn({ method: "GET" })
+  .inputValidator((input: { query: string; page?: number }) => input)
+  .handler(async ({ data }): Promise<WorldManagerSearchResult> => {
+    const query = data.query.trim();
+    if (query.length < 3) {
+      return { managers: [], source: "mock", paging: { current: 1, total: 1 } };
+    }
+    return sportMonksCached<WorldManagerSearchResult>(
+      `manager-search:${query.toLowerCase()}:${data.page ?? 1}`,
+      TTL.SEARCH,
+      async () => {
+        const json = await sportMonks<SportMonksList<SMCoach>>({
+          path: `/coaches/search/${encodeURIComponent(query)}`,
+          include: ["country", "nationality", "teams.team"],
+          page: data.page ?? 1,
+        });
+        const managers = (json?.data ?? [])
+          .filter((c) => c.id != null)
+          .map((c) => ({
+            id: c.id as number,
+            name: getDisplayName(c),
+            nation: c.nationality?.name ?? c.country?.name,
+            flag: c.nationality?.image_path ?? c.country?.image_path,
+            club: smCoachClubName(c),
+            photo: c.image_path,
+          }));
+        return {
+          managers,
+          paging: { current: data.page ?? 1, total: Math.max(1, json?.meta?.pagination?.total ?? 1) },
+          source: "api-football" as const,
+        };
+      },
+      { managers: [], source: "mock", paging: { current: 1, total: 1 } },
+    );
+  });
+
+export type WorldManagerCard = { card: ManagerCardData; source: "api-football" | "mock" };
+
+/** Build a full FootCard manager profile from a SportMonks `/coaches/{id}` id. */
+export const getWorldManagerCard = createServerFn({ method: "GET" })
+  .inputValidator((input: { coachId: number }) => input)
+  .handler(async ({ data }): Promise<CachedResult<WorldManagerCard | null>> => {
+    return sportMonksCachedMeta<WorldManagerCard | null>(
+      `manager-card:${data.coachId}:sm`,
+      TTL.PLAYER,
+      async () => {
+        const json = await sportMonks<SportMonksEnvelope<SMCoach>>({
+          path: `/coaches/${data.coachId}?include=country;nationality;teams.team`,
+        });
+        const c = json?.data;
+        if (!c?.id) return null;
+        return { card: mapSmManagerCard(c), source: "api-football" as const };
+      },
+      null,
+    );
+  });
+
+function getDisplayName(c: SMCoach): string {
+  return c.display_name ?? c.common_name ?? c.name ?? `${c.firstname ?? ""} ${c.lastname ?? ""}`.trim();
+}

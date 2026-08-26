@@ -2,10 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Globe2, Loader2, Search, X } from "lucide-react";
-import { managers, tierStyles, type PlayerCardData } from "@/data/football";
+import { tierStyles, type ManagerCardData, type PlayerCardData } from "@/data/football";
 import { apiPositionCode, roleFit } from "@/lib/squad";
 import { getPlayerDisplayName } from "@/lib/player-name";
-import { getWorldPlayerCard, searchWorldPlayers } from "@/lib/player-search.functions";
+import {
+  getWorldManagerCard,
+  getWorldPlayerCard,
+  searchWorldManagers,
+  searchWorldPlayers,
+} from "@/lib/player-search.functions";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -18,16 +23,16 @@ export function PlayerPicker({
   target,
   usedIds,
   currentId,
-  onPick,
   onPickWorld,
+  onPickManager,
   onClear,
   onClose,
 }: {
   target: PickerTarget | null;
   usedIds: string[];
   currentId: string | null;
-  onPick: (id: string) => void;
   onPickWorld: (card: PlayerCardData) => void;
+  onPickManager: (card: ManagerCardData) => void;
   onClear: () => void;
   onClose: () => void;
 }) {
@@ -42,27 +47,19 @@ export function PlayerPicker({
     return () => clearTimeout(id);
   }, [query]);
 
-  const list = useMemo(() => {
-    if (!isManager) return [];
-    const q = query.trim().toLowerCase();
-    return managers
-      .filter((m) => !q || m.name.toLowerCase().includes(q) || m.club.toLowerCase().includes(q))
-      .map((m) => ({
-        id: m.id,
-        name: m.name,
-        nation: m.nation,
-        club: m.club,
-        meta: `${m.formation} · ${m.winRate}%`,
-        tier: m.tier,
-        fit: 2 as const,
-      }));
-  }, [query, isManager]);
-
   const worldEnabled = !isManager && !!target && debounced.length >= 3;
   const worldQuery = useQuery({
     queryKey: ["squad-picker-world", debounced],
     queryFn: () => searchWorldPlayers({ data: { query: debounced, page: 1 } }),
     enabled: worldEnabled,
+    staleTime: 60_000,
+  });
+
+  const managerEnabled = isManager && !!target && debounced.length >= 3;
+  const managerQuery = useQuery({
+    queryKey: ["squad-picker-managers", debounced],
+    queryFn: () => searchWorldManagers({ data: { query: debounced, page: 1 } }),
+    enabled: managerEnabled,
     staleTime: 60_000,
   });
 
@@ -81,6 +78,11 @@ export function PlayerPicker({
       );
   }, [worldQuery.data, role]);
 
+  const managerHits = useMemo(() => {
+    const rows = managerQuery.data?.managers ?? [];
+    return rows.sort((a, b) => a.name.localeCompare(b.name));
+  }, [managerQuery.data]);
+
   const pickWorld = async (playerId: number) => {
     if (pendingId) return;
     setPendingId(playerId);
@@ -88,6 +90,20 @@ export function PlayerPicker({
       const res = await getWorldPlayerCard({ data: { playerId } });
       const card = res.data?.card;
       if (card) onPickWorld(card);
+    } catch {
+      /* network hiccup — user can retry */
+    } finally {
+      setPendingId(null);
+    }
+  };
+
+  const pickManager = async (coachId: number) => {
+    if (pendingId) return;
+    setPendingId(coachId);
+    try {
+      const res = await getWorldManagerCard({ data: { coachId } });
+      const card = res.data?.card;
+      if (card) onPickManager(card);
     } catch {
       /* network hiccup — user can retry */
     } finally {
@@ -129,58 +145,82 @@ export function PlayerPicker({
         )}
 
         <ul className="-mx-1 max-h-[52vh] space-y-1.5 overflow-y-auto px-1">
-          {list.map((item) => {
-            const used = usedIds.includes(item.id) && item.id !== currentId;
-            return (
-              <li key={item.id}>
-                <button
-                  onClick={() => onPick(item.id)}
-                  disabled={used}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-secondary/30 p-2 text-start transition-colors",
-                    used ? "opacity-40" : "hover:border-primary/50",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b p-[2px]",
-                      tierStyles[item.tier].frame,
-                    )}
-                  >
-                    <span className="flex h-full w-full items-center justify-center rounded-[10px] bg-background text-base">
-                      {item.nation}
-                    </span>
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold">{getPlayerDisplayName(item)}</span>
-                    <span className="block truncate text-[11px] text-muted-foreground">
-                      {item.club} · {item.meta}
-                    </span>
-                  </span>
-                  {!isManager && (
-                    <span
-                      className={cn(
-                        "rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase",
-                        item.fit === 2
-                          ? "bg-primary/20 text-primary"
-                          : item.fit === 1
-                            ? "bg-accent/20 text-accent"
-                            : "bg-destructive/20 text-destructive",
-                      )}
-                    >
-                      {item.fit === 2 ? t("sq.fitPerfect") : item.fit === 1 ? t("sq.fitOk") : t("sq.fitBad")}
-                    </span>
-                  )}
-                </button>
-              </li>
-            );
-          })}
+          {isManager && debounced.length > 0 && debounced.length < 3 && (
+            <li className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+              {t("scout.worldHint")}
+            </li>
+          )}
 
           {!isManager && debounced.length > 0 && debounced.length < 3 && (
             <li className="px-2 py-3 text-center text-[11px] text-muted-foreground">
               {t("scout.worldHint")}
             </li>
           )}
+
+          {managerEnabled && (
+            <li className="flex items-center gap-2 px-2 pt-2 text-[10px] font-black uppercase tracking-wide text-muted-foreground">
+              <Globe2 className="h-3.5 w-3.5" /> {t("sq.worldSection")}
+              {managerQuery.isFetching && <Loader2 className="h-3 w-3 animate-spin" />}
+            </li>
+          )}
+
+          {managerEnabled && managerQuery.isPending && (
+            <li className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+              {t("scout.worldSearching")}
+            </li>
+          )}
+
+          {managerEnabled && !managerQuery.isPending && managerHits.length === 0 && (
+            <li className="px-2 py-3 text-center text-[11px] text-muted-foreground">
+              {t("sq.worldEmpty")}
+            </li>
+          )}
+
+          {isManager &&
+            managerHits.map((m) => {
+              const managerId = `sm-${m.id}`;
+              const busy = pendingId === m.id;
+              return (
+                <li key={managerId}>
+                  <button
+                    onClick={() => void pickManager(m.id)}
+                    disabled={pendingId !== null}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-2 text-start transition-colors",
+                      pendingId !== null ? "opacity-40" : "hover:border-accent/60",
+                    )}
+                  >
+                    <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-accent/30 bg-background text-[9px] font-black">
+                      {m.photo ? (
+                        <img
+                          src={m.photo}
+                          alt={m.name}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        m.name.slice(0, 2).toUpperCase()
+                      )}
+                      {m.flag && (
+                        <img
+                          src={m.flag}
+                          alt=""
+                          loading="lazy"
+                          className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-[3px] border border-accent/40 object-cover"
+                        />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold">{m.name}</span>
+                      <span className="block truncate text-[11px] text-muted-foreground">
+                        {[m.club, m.nation].filter(Boolean).join(" · ")}
+                      </span>
+                    </span>
+                    {busy && <Loader2 className="h-4 w-4 animate-spin text-accent" />}
+                  </button>
+                </li>
+              );
+            })}
 
           {worldEnabled && (
             <li className="flex items-center gap-2 px-2 pt-2 text-[10px] font-black uppercase tracking-wide text-muted-foreground">
