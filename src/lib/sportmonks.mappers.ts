@@ -1376,6 +1376,7 @@ export function mapSmWorldPlayer(
     lastname: p.lastname,
     age,
     nationality: p.nationality ?? p.country?.name,
+    flag: p.country?.image_path,
     position: smPositionName({
       position: p.position,
       position_id: s?.position_id ?? p.position_id,
