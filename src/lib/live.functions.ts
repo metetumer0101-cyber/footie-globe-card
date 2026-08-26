@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { mockTransfers, type LiveFeed, type LiveFixture, type TransferHistory } from "@/lib/live";
+import { type LiveFeed, type LiveFixture, type TransferHistory, type TransferMove } from "@/lib/live";
 import { TTL } from "@/lib/freshness-config";
 import { sportMonks, sportMonksCached, type SportMonksList } from "@/lib/api-sportmonks.server";
 import { mapSmFixture, mapSmInplayFixture, type SMFixture, type SMInplayFixture } from "@/lib/sportmonks.mappers";
@@ -105,25 +105,53 @@ export const getInplayFeed = createServerFn({ method: "GET" }).handler(async ():
   };
 });
 
+/** A raw SportMonks transfer row (`/transfers/players/{id}`). Team ids are
+ * resolved to real names below so the timeline shows clubs, not raw ids. */
+type SMTransferRow = {
+  from_team_id?: number | null;
+  to_team_id?: number | null;
+  date?: string | null;
+};
+
 /**
- * Historical transfer data for a player, cached for 6h so fresh moves show up
- * the same day. SportMonks has no granted transfers route on the current plan
- * (`/transfers/*` 404, `?include=transfers` not granted), so an honest empty
- * history is returned instead of the local mock so no fabricated moves show.
+ * Historical transfer data for a player, from the SportMonks
+ * `/transfers/players/{id}` endpoint (NOTE: plural "players" — the singular
+ * `/transfers/player/{id}` 404s). Each transfer's from/to team ids are resolved
+ * to real club names. Returns an honest empty history when the API returns no
+ * rows rather than the local mock, so no fabricated moves ever show.
  */
 export const getPlayerTransfers = createServerFn({ method: "GET" })
   .inputValidator((input: { playerId: string; apiPlayerId?: number }) => input)
   .handler(async ({ data }): Promise<TransferHistory> => {
-    const fallback = mockTransfers(data.playerId);
-    void fallback; // kept for when a SportMonks transfers route is granted
-
     const empty: TransferHistory = { playerId: data.playerId, source: "api-football", moves: [] };
     if (!data.apiPlayerId) return empty;
-    // Route is plan-gated; keep the call warm for future plans so it starts
-    // returning real data the moment the plan grants it.
-    const json = await sportMonks<{
-      data?: { transfers?: { data?: { date?: string; type?: string; team_name?: string }[] }[] } | null;
-    }>({ path: `/transfers/player/${data.apiPlayerId}` });
-    void json;
-    return empty;
+    const json = await sportMonks<{ data?: SMTransferRow[] | null }>({
+      path: `/transfers/players/${data.apiPlayerId}`,
+    });
+    const rows = json?.data ?? [];
+    if (!rows.length) return empty;
+    // Resolve the involved teams' ids to real club names (deduped, in parallel).
+    const ids = [
+      ...new Set(
+        rows.flatMap((r) => [r.from_team_id, r.to_team_id]).filter((x): x is number => x != null),
+      ),
+    ];
+    const names = new Map<number, string>();
+    await Promise.all(
+      ids.map(async (id) => {
+        const t = await sportMonks<{ data?: { name?: string } | null }>({ path: `/teams/${id}` });
+        const name = t?.data?.name;
+        if (name) names.set(id, name);
+      }),
+    );
+    const nameOf = (id?: number | null) =>
+      id != null ? (names.get(id) ?? `Team ${id}`) : "Unknown";
+    const moves: TransferMove[] = rows
+      .map((r) => ({
+        date: r.date ?? "",
+        from: nameOf(r.from_team_id),
+        to: nameOf(r.to_team_id),
+      }))
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    return { playerId: data.playerId, source: "api-football", moves };
   });

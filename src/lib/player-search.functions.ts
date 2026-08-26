@@ -127,9 +127,11 @@ export const getWorldPlayerCard = createServerFn({ method: "GET" })
       `player-card:${data.playerId}:sm`,
       TTL.PLAYER,
       async () => {
-        // Real bio includes: position name ("Attacker"), country + flag image.
+        // Real bio includes: position name ("Attacker"), the player's real
+        // nationality + flag, and the current-club memberships (`teams.team`)
+        // used to derive the player's actual club instead of "Free Agent".
         const json = await sportMonks<SportMonksEnvelope<SMPlayer>>({
-          path: `/players/${data.playerId}?include=position;country;nationality`,
+          path: `/players/${data.playerId}?include=position;country;nationality;teams.team`,
         });
         const p = json?.data;
         if (!p?.id) return null;

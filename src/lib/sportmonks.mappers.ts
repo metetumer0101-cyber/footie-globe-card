@@ -65,10 +65,27 @@ export type SMPlayer = {
   height?: number | string | null | undefined;
   weight?: number | string | null | undefined;
   position_id?: number | undefined;
-  nationality?: string | undefined;
+  /** The player's real nationality. SportMonks embeds this as a country object
+   * (`?include=nationality`, e.g. Norway) but may surface it as a plain string
+   * from some endpoints — both shapes are handled by `smPlayerNation`. */
+  nationality?: string | { id?: number; name?: string; image_path?: string } | null | undefined;
+  /** The domestic country of the club the player currently plays for (e.g.
+   * England for Håland) — NOT the player's own nationality. */
   country?: { id?: number; name?: string; image_path?: string } | null;
   /** Position resource — real name via `?include=position` (e.g. "Attacker"). */
   position?: { id?: number; name?: string } | null;
+  /** Club/national-team memberships embedded via `?include=teams.team`. */
+  teams?: SMPlayerTeamRow[];
+};
+/** A player→team membership row (`?include=teams.team`). `start`/`end` delimit
+ * the tenure; the row currently active (end null or in the future) is the
+ * player's current club. */
+export type SMPlayerTeamRow = {
+  team_id?: number;
+  start?: string | null;
+  end?: string | null;
+  jersey_number?: number;
+  team?: SMTeam;
 };
 
 /** SportMonks generic position ids -> display names (fallback when the
@@ -1425,6 +1442,42 @@ export type SMPlayerSeason = {
 };
 
 /**
+ * Real nationality (name + flag image) of a player, preferring the `nationality`
+ * include over `country`. SportMonks v3 returns BOTH on a player: `nationality`
+ * is the player's true nationality (e.g. Norway) while `country` is the domestic
+ * country of the club they currently play for (e.g. England for Håland). Using
+ * `country` for nationality is the classic Håland-shows-England bug.
+ */
+function smPlayerNation(p: SMPlayer): { name?: string; image_path?: string } {
+  const nat = p.nationality;
+  if (typeof nat === "string") return { name: nat };
+  return {
+    name: nat?.name ?? p.country?.name,
+    image_path: nat?.image_path ?? p.country?.image_path,
+  };
+}
+/**
+ * The player's current club, derived from the `?include=teams.team` membership
+ * rows. Picks the membership row still active today (end null or in the future),
+ * falling back to the most recent row, and prefers domestic clubs over national
+ * teams (e.g. Håland → Manchester City, not Norway NT).
+ */
+function smPlayerCurrentClub(p: SMPlayer): SMTeam | undefined {
+  const rows = (Array.isArray(p.teams) ? p.teams : []).filter((r) => r?.team?.id != null);
+  if (!rows.length) return undefined;
+  const now = Date.now();
+  const active = rows.filter((r) => !r.end || new Date(r.end).getTime() > now);
+  const pool = active.length ? active : rows;
+  const sorted = [...pool].sort((a, b) => {
+    const diff =
+      new Date(b.start ?? 0).getTime() - new Date(a.start ?? 0).getTime();
+    if (diff !== 0) return diff;
+    const rank = (r: SMPlayerTeamRow) => (r.team?.type === "domestic" ? 0 : 1);
+    return rank(a) - rank(b);
+  });
+  return sorted[0]?.team;
+}
+/**
  * Build a full FootCard `PlayerCardData` from a raw SportMonks player + its
  * embedded per-season stats. Attribute derivation mirrors the API-Football card
  * builder in `player-search.functions.ts` so the same player looks comparable
@@ -1455,16 +1508,18 @@ export function mapSmPlayerCard(p: SMPlayer, season?: SMPlayerSeason): PlayerCar
     birth && !Number.isNaN(birth.getTime())
       ? Math.max(0, Math.floor((Date.now() - birth.getTime()) / (365.25 * 86400_000)))
       : 0;
+  const nation = smPlayerNation(p);
+  const club = season?.team ?? smPlayerCurrentClub(p);
   return {
     id: `sm-${p.id}`,
     type: "player",
     name: playerName(p),
-    club: season?.team?.name ?? "Free Agent",
-    clubBadge: season?.team?.image_path ?? "⚽",
-    nation: p.country?.name ?? p.nationality ?? "🌍",
+    club: club?.name ?? "Free Agent",
+    clubBadge: club?.image_path ?? "⚽",
+    nation: nation.name ?? "🌍",
     position: pos,
     positionName: p.position?.name ?? pos,
-    flag: p.country?.image_path,
+    flag: nation.image_path,
     tier: tierFor(overall),
     core,
     age,
