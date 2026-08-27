@@ -1,69 +1,52 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { AppShell } from '@/components/layout/AppShell';
-import StandingsTable from '@/components/StandingsTable';
-import { parseSportmonksStandings } from '@/lib/mappers/standingsMapper';
-import { getRawStandings } from '@/lib/standings-raw.functions';
-import { cn } from '@/lib/utils';
+import { ErrorBoundary } from '../lib/error-boundary';
+import { LoadingSpinner } from '../lib/loading-spinner';
+import { EmptyState } from '../lib/empty-state';
+import { Trophy } from 'lucide-react';
 
 export const Route = createFileRoute('/games')({
-  head: () => ({
-    meta: [
-      { title: 'Puan Durumu – FootCard' },
-      { name: 'description', content: 'Canlı lig puan durumu, oynanan maçlar, averaj ve puan tabloları.' },
-      { property: 'og:title', content: 'Puan Durumu – FootCard' },
-      { property: 'og:description', content: 'Canlı lig puan durumu ve istatistikleri.' },
-      { property: 'og:type', content: 'website' },
-      { name: 'twitter:card', content: 'summary_large_image' },
-    ],
-  }),
   component: GamesPage,
+  meta: {
+    title: 'Canli Puan - Footcard',
+    description: 'Canli puanlar ve skorlar',
+  },
 });
 
-const LEAGUES = [
-  { id: 600, name: 'Süper Lig' },
-  { id: 8, name: 'Premier League' },
-  { id: 564, name: 'La Liga' },
-  { id: 82, name: 'Bundesliga' },
-  { id: 384, name: 'Serie A' },
-  { id: 301, name: 'Ligue 1' },
-];
-
 function GamesPage() {
-  const [leagueId, setLeagueId] = useState<number>(600);
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['raw-standings', leagueId],
-    queryFn: () => getRawStandings({ data: { leagueId } }),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const groups = parseSportmonksStandings(data ?? []);
-
   return (
-    <AppShell>
-      <div className="container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-4 text-center">Puan Durumu</h1>
-        <div className="flex flex-wrap justify-center gap-2 mb-6">
-          {LEAGUES.map((l) => (
-            <button
-              key={l.id}
-              type="button"
-              onClick={() => setLeagueId(l.id)}
-              className={cn(
-                'rounded-full border px-3 py-1 text-sm transition-colors',
-                leagueId === l.id
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {l.name}
-            </button>
-          ))}
+    <ErrorBoundary>
+      <React.Suspense fallback={<LoadingSpinner fullScreen text="Y\u00fckleniyor..." />}>
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="bg-white shadow">
+            <div className="max-w-7xl mx-auto px-4 py-6">
+              <h1 className="text-3xl font-bold text-gray-900">Canli Puan</h1>
+              <p className="text-gray-600 mt-1">
+                Güncel skorlar ve puan durumlari
+              </p>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <EmptyState
+              icon={<Trophy className="w-16 h-16 text-gray-300" />}
+              title="Canli Puan Sayfasi"
+              description="Bu sayfa hen\u00fcz geliştirme aşamas\u0131ndad\u0131r. Yak\u0131nda canli puanlar ve skorlar burada olacak!"
+              action={
+                <a
+                  href="/live"
+                  className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Canli Maçłır →
+                </a>
+              }
+            />
+          </div>
         </div>
-        <StandingsTable data={groups} isLoading={isLoading} />
-      </div>
-    </AppShell>
+      </React.Suspense>
+    </ErrorBoundary>
   );
 }
+
+export default GamesPage;
