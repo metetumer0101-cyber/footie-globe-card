@@ -1648,7 +1648,7 @@ export function mapSmPlayerCard(p: SMPlayer, season?: SMPlayerSeason): PlayerCar
 }
 
 /** Coach's own nationality (name + flag), same shape as a player's nation. */
-function smCoachNation(c: SMCoach): { name?: string; image_path?: string } {
+function smCoachNation(c: SMCoach): { name?: string | undefined; image_path?: string | undefined } {
   return {
     name: c.nationality?.name ?? c.country?.name,
     image_path: c.nationality?.image_path ?? c.country?.image_path,
