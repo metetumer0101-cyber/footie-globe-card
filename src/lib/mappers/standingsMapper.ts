@@ -43,7 +43,7 @@ export function parseSportmonksStandings(
   const resultGroups: StandingsGroup[] = [];
 
   Object.keys(groupedData).forEach((groupKey) => {
-    const rows = groupedData[groupKey];
+    const rows = groupedData[groupKey] ?? [];
 
     const parsedRows: ParsedStandingRow[] = rows.map((row) => {
       const getDetailValue = (typeId: number): number => {
