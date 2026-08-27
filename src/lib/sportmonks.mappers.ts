@@ -1497,7 +1497,7 @@ export function mapSmWorldPlayer(
     firstname: p.firstname,
     lastname: p.lastname,
     age,
-    nationality: p.nationality ?? p.country?.name,
+    nationality: smPlayerNation(p).name,
     flag: p.country?.image_path,
     position: smPositionName({
       position: p.position,
@@ -1553,7 +1553,7 @@ export type SMPlayerSeason = {
  * country of the club they currently play for (e.g. England for Håland). Using
  * `country` for nationality is the classic Håland-shows-England bug.
  */
-function smPlayerNation(p: SMPlayer): { name?: string; image_path?: string } {
+function smPlayerNation(p: SMPlayer): { name?: string | undefined; image_path?: string | undefined } {
   const nat = p.nationality;
   if (typeof nat === "string") return { name: nat };
   return {
@@ -1577,7 +1577,8 @@ function smPlayerCurrentClub(p: SMPlayer): SMTeam | undefined {
     const diff =
       new Date(b.start ?? 0).getTime() - new Date(a.start ?? 0).getTime();
     if (diff !== 0) return diff;
-    const rank = (r: SMPlayerTeamRow) => (r.team?.type === "domestic" ? 0 : 1);
+    const rank = (r: SMPlayerTeamRow) =>
+      ((r.team as { type?: string } | undefined)?.type === "domestic" ? 0 : 1);
     return rank(a) - rank(b);
   });
   return sorted[0]?.team;

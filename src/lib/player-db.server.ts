@@ -142,7 +142,10 @@ async function upsertSmPage(
         firstname: p.firstname ?? null,
         lastname: p.lastname ?? null,
         age: pAge,
-        nationality: p.nationality ?? p.country?.name ?? null,
+        nationality:
+          (typeof p.nationality === "string" ? p.nationality : p.nationality?.name) ??
+          p.country?.name ??
+          null,
         position: smPositionName(p) ?? null,
         photo: p.image_path ?? null,
         club: team.name ?? null,
