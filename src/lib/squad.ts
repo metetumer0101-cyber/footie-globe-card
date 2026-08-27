@@ -1,4 +1,4 @@
-import { managers, players, type ManagerCardData, type PlayerCardData } from "@/data/football";
+import { players, type ManagerCardData, type PlayerCardData } from "@/data/football";
 import { clubLeagues } from "@/lib/scout";
 
 export type FormationKey = "4-3-3" | "4-2-3-1" | "4-4-2" | "3-5-2" | "5-3-2";
@@ -77,12 +77,12 @@ export const formationKeys = Object.keys(formations) as FormationKey[];
 
 const groups: Record<string, string[]> = {
   GK: ["GK"],
-  CB: ["CB"],
-  LB: ["LB", "RB", "LWB", "RWB"],
-  RB: ["RB", "LB", "LWB", "RWB"],
-  CDM: ["CDM", "CM"],
-  CM: ["CM", "CDM", "CAM"],
-  CAM: ["CAM", "CM", "RW", "LW"],
+  CB: ["CB", "DF"],
+  LB: ["LB", "RB", "LWB", "RWB", "DF"],
+  RB: ["RB", "LB", "LWB", "RWB", "DF"],
+  CDM: ["CDM", "CM", "MF"],
+  CM: ["CM", "CDM", "CAM", "MF"],
+  CAM: ["CAM", "CM", "RW", "LW", "MF"],
   LW: ["LW", "RW", "ST", "CAM"],
   RW: ["RW", "LW", "ST", "CAM"],
   ST: ["ST", "LW", "RW", "CF"],
@@ -107,6 +107,8 @@ export type SquadState = {
   managerId: string | null;
   /** Full cards of world-database players picked into this squad (persisted with saves). */
   extras?: Record<string, PlayerCardData>;
+  /** Full cards of real managers picked into this squad (mirrors `extras`). */
+  managerExtras?: Record<string, ManagerCardData>;
 };
 
 export const BENCH_SLOTS = 7;
@@ -118,6 +120,7 @@ export const emptySquad = (formation: FormationKey = "4-3-3"): SquadState => ({
   bench: Array.from({ length: BENCH_SLOTS }, () => null),
   managerId: null,
   extras: {},
+  managerExtras: {},
 });
 
 /** Map API-Football position words ("Goalkeeper", "Defender", …) to FootCard codes. */
@@ -146,8 +149,10 @@ export const playerById = (
 ): PlayerCardData | null =>
   (id && (extras?.[id] ?? players.find((p) => p.id === id))) || null;
 
-export const managerById = (id: string | null): ManagerCardData | null =>
-  (id && managers.find((m) => m.id === id)) || null;
+export const managerById = (
+  id: string | null,
+  managerExtras?: Record<string, ManagerCardData>,
+): ManagerCardData | null => (id && managerExtras?.[id]) || null;
 
 export type Chemistry = {
   total: number;
@@ -158,7 +163,7 @@ export type Chemistry = {
 /** Chemistry: role fit + club/league/nation links with pitch neighbours + manager bonuses. */
 export const computeChemistry = (squad: SquadState): Chemistry => {
   const nodes = formations[squad.formation];
-  const manager = managerById(squad.managerId);
+  const manager = managerById(squad.managerId, squad.managerExtras);
   const perPlayer: Record<string, number> = {};
   let sum = 0;
   let filled = 0;

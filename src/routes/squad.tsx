@@ -25,8 +25,9 @@ import {
   type SavedSquad,
   type SquadState,
 } from "@/lib/squad";
-import { players, type PlayerCardData } from "@/data/football";
+import { type ManagerCardData, type PlayerCardData } from "@/data/football";
 import { getPlayerDisplayName } from "@/lib/player-name";
+import { getSquadPlayerPool, getWorldPlayerCard } from "@/lib/player-search.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/squad")({
@@ -57,6 +58,7 @@ function Page() {
   const [target, setTarget] = useState<PickerTarget | null>(null);
   const [saved, setSaved] = useState<SavedSquad[]>([]);
   const [busy, setBusy] = useState(false);
+  const [autofilling, setAutofilling] = useState(false);
   const [drag, setDrag] = useState<{ slot: string; x: number; y: number } | null>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
@@ -113,6 +115,15 @@ function Page() {
     assign(card.id);
   };
 
+  const assignManager = (card: ManagerCardData) => {
+    setSquad((prev) => ({
+      ...prev,
+      managerExtras: { ...prev.managerExtras, [card.id]: card },
+      managerId: card.id,
+    }));
+    setTarget(null);
+  };
+
   const swapSlots = (from: string, to: string) => {
     if (from === to) return;
     setSquad((prev) => {
@@ -153,26 +164,56 @@ function Page() {
     window.addEventListener("pointerup", up);
   };
 
-  const autoFill = () => {
-    setSquad((prev) => {
-      const starters = { ...prev.starters };
-      const taken = new Set(Object.values(starters).filter(Boolean) as string[]);
-      for (const node of formations[prev.formation]) {
+  const autoFill = async () => {
+    if (autofilling) return;
+    setAutofilling(true);
+    try {
+      const pool = await getSquadPlayerPool();
+      const nodes = formations[squad.formation];
+      const starters = { ...squad.starters };
+
+      // Players already on the pitch or bench (real ids are "sm-{smId}").
+      const usedSmIds = new Set<number>();
+      for (const id of [...Object.values(squad.starters), ...squad.bench]) {
+        if (id && id.startsWith("sm-")) usedSmIds.add(Number(id.slice(3)));
+      }
+
+      // Pick the best-fit real player for each empty slot (skip ids in use).
+      const selection: { slotId: string; smId: number }[] = [];
+      for (const node of nodes) {
         if (starters[node.id]) continue;
-        const best = players
-          .filter((p) => !taken.has(p.id) && roleFit(node.role, p.position) > 0)
+        const best = pool
+          .filter((p) => !usedSmIds.has(p.smId) && roleFit(node.role, p.position) > 0)
           .sort(
             (a, b) =>
               roleFit(node.role, b.position) - roleFit(node.role, a.position) ||
-              b.form - a.form,
+              (b.rating ?? 0) - (a.rating ?? 0),
           )[0];
         if (best) {
-          starters[node.id] = best.id;
-          taken.add(best.id);
+          selection.push({ slotId: node.id, smId: best.smId });
+          usedSmIds.add(best.smId);
         }
       }
-      return { ...prev, starters };
-    });
+
+      // Resolve every selected id into a full card (cached server calls).
+      const cards = await Promise.all(
+        selection.map((s) => getWorldPlayerCard({ data: { playerId: s.smId } })),
+      );
+      const extras = { ...squad.extras };
+      selection.forEach((s, i) => {
+        const card = cards[i]?.data?.card;
+        if (card) {
+          extras[card.id] = card;
+          starters[s.slotId] = card.id;
+        }
+      });
+
+      setSquad((prev) => ({ ...prev, starters, extras }));
+    } catch {
+      toast.error(t("cmp.exportFailed"));
+    } finally {
+      setAutofilling(false);
+    }
   };
 
   const saveSquad = () => {
@@ -288,10 +329,12 @@ function Page() {
             className="min-w-0 flex-1 rounded-xl border border-border bg-secondary/40 px-3 py-2 text-sm outline-none focus:border-primary/60"
           />
           <button
-            onClick={autoFill}
-            className="flex items-center gap-1.5 rounded-xl bg-primary/15 px-3 py-2 text-xs font-bold text-primary"
+            onClick={() => void autoFill()}
+            disabled={autofilling}
+            className="flex items-center gap-1.5 rounded-xl bg-primary/15 px-3 py-2 text-xs font-bold text-primary disabled:opacity-60"
           >
-            <Wand2 className="h-4 w-4" /> {t("sq.autoFill")}
+            {autofilling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}{" "}
+            {t("sq.autoFill")}
           </button>
         </div>
 
@@ -341,7 +384,7 @@ function Page() {
             </div>
 
             <ManagerSlot
-              managerName={managerById(squad.managerId)?.name ?? null}
+              managerName={managerById(squad.managerId, squad.managerExtras)?.name ?? null}
               onClick={() => setTarget({ kind: "manager" })}
             />
 
@@ -424,8 +467,8 @@ function Page() {
         target={target}
         usedIds={usedIds}
         currentId={currentId}
-        onPick={(id) => assign(id)}
         onPickWorld={assignCard}
+        onPickManager={assignManager}
         onClear={() => assign(null)}
         onClose={() => setTarget(null)}
       />

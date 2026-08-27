@@ -369,6 +369,60 @@ export async function playerSeasonStatsDb(smId: number): Promise<{
   }
 }
 
+/**
+ * A broad, position-diverse pool of real players for Squad Builder auto-fill.
+ * Reads the local `world_players` mirror (quota-free) and returns a generous
+ * mix across all four coarse buckets so any formation can be filled. Callers
+ * normalise `position` (names like "Goalkeeper" or raw ids "24".."27") to a
+ * coarse code before placement.
+ */
+export async function worldPlayerPoolDb(): Promise<
+  {
+    smId: number;
+    name: string;
+    position: string | null;
+    club?: string | null;
+    nationality?: string | null;
+    photo?: string | null;
+    rating?: number | null;
+  }[]
+> {
+  try {
+    const { data, error } = await publicDb()
+      .from("world_players")
+      .select("sportmonks_id, name, position, club, nationality, photo, rating")
+      .order("rating", { ascending: false, nullsFirst: false })
+      .limit(400);
+    if (error || !data?.length) return [];
+    const seen = new Set<number>();
+    const out: {
+      smId: number;
+      name: string;
+      position: string | null;
+      club?: string | null;
+      nationality?: string | null;
+      photo?: string | null;
+      rating?: number | null;
+    }[] = [];
+    for (const r of data) {
+      if (r.sportmonks_id == null || seen.has(r.sportmonks_id)) continue;
+      seen.add(r.sportmonks_id);
+      out.push({
+        smId: r.sportmonks_id,
+        name: r.name,
+        position: r.position ?? null,
+        club: r.club ?? null,
+        nationality: r.nationality ?? null,
+        photo: r.photo ?? null,
+        rating: r.rating ?? null,
+      });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 /** Top scorers of a league from the local mirror (null when not synced). */
 export async function leagueTopPlayersDb(leagueId: number): Promise<WorldSearchResult | null> {
   try {

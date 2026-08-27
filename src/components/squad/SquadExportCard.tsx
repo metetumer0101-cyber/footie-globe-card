@@ -20,7 +20,7 @@ export const SquadExportCard = forwardRef<
 >(function SquadExportCard({ squad, chem, ratings }, ref) {
   const { t } = useTranslation();
   const nodes = formations[squad.formation];
-  const manager = managerById(squad.managerId);
+  const manager = managerById(squad.managerId, squad.managerExtras);
 
   return (
     <div ref={ref} className="flex h-[1350px] w-[1080px] flex-col gap-8 bg-background p-14 text-foreground">
