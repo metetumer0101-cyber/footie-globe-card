@@ -23,5 +23,5 @@ export default defineConfig({
   // serverless preset (the default `node-server` preset doesn't serve correctly on
   // Vercel). When unset, `node-server` remains the default, so local builds and the
   // team's port-3000 hosting are unchanged.
-  nitro: { preset: process.env.NITRO_PRESET ?? "node-server" },
+  nitro: { preset: process.env["NITRO_PRESET"] ?? "node-server" },
 });

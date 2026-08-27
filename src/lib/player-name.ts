@@ -18,11 +18,11 @@
  */
 
 export type PlayerNameLike = {
-  display_name?: string | null;
-  common_name?: string | null;
-  name?: string | null;
-  firstname?: string | null;
-  lastname?: string | null;
+  display_name?: string | null | undefined;
+  common_name?: string | null | undefined;
+  name?: string | null | undefined;
+  firstname?: string | null | undefined;
+  lastname?: string | null | undefined;
 };
 
 export const UNKNOWN_PLAYER_NAME = "Unknown Player";

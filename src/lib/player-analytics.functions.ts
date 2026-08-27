@@ -242,7 +242,7 @@ function mapRecentMatches(lineups: SMLineup[]): RecentMatch[] {
     .map((l) => {
       const side = lineupSide(l.fixture?.scores, l.team_id);
       return {
-        fixtureId: l.fixture_id ?? 0,
+        fixtureId: l.fixture?.id ?? 0,
         date: (l.fixture?.starting_at ?? "").slice(0, 10) || null,
         name: l.fixture?.name ?? null,
         opponent: opponentName(l.fixture?.name, side),
