@@ -93,6 +93,71 @@ export type SMPlayerTeamRow = {
   team?: SMTeam;
 };
 
+/** A stat value cell embedded on `SMPlayerStats.details[]`. Counts carry
+ * `{ total }`; Rating carries `{ average, highest, lowest }`; Substitutions
+ * carry `{ in, out }`; Goals also carry `{ goals, penalties }` breakdowns. */
+export type SMStatValue = {
+  total?: number | null;
+  goals?: number | null;
+  penalties?: number | null;
+  in?: number | null;
+  out?: number | null;
+  average?: number | null;
+  highest?: number | null;
+  lowest?: number | null;
+};
+
+/** One per-season aggregate metric cell within `SMPlayerStats.details`. */
+export type SMStatDetail = {
+  type?: { name?: string; code?: string; developer_name?: string };
+  value?: SMStatValue;
+};
+
+/** A season resource embedded via `?include=statistics.season`. */
+export type SMSeason = {
+  id?: number;
+  name?: string;
+  league_id?: number;
+  is_current?: boolean;
+  starting_at?: string;
+  ending_at?: string;
+};
+
+/**
+ * A per-season player statistics entry (`/players/{id}?include=statistics`).
+ * One row exists per (player × team × season); only rows with `has_values: true`
+ * carry real aggregate metrics in `details[]`.
+ */
+export type SMPlayerStats = {
+  id?: number;
+  player_id?: number;
+  team_id?: number;
+  season_id?: number;
+  position_id?: number;
+  jersey_number?: number;
+  has_values?: boolean;
+  /** Per-season aggregate metrics, embedded via `?include=statistics.details.type`. */
+  details?: SMStatDetail[];
+  /** Season metadata, embedded via `?include=statistics.season`. */
+  season?: SMSeason | null;
+};
+
+/** A fixture embedded on a lineup row via `?include=lineups.fixture.scores`.
+ * `scores` is an ARRAY (like the in-play endpoint) — not the `SMFixture.scores`
+ * object — so it reuses `SMInplayScore`. */
+export type SMLineupFixture = {
+  id?: number;
+  name?: string;
+  starting_at?: string;
+  starting_at_timestamp?: number;
+  state_id?: number;
+  result_info?: string | null;
+  length?: number;
+  league_id?: number;
+  season_id?: number;
+  scores?: SMInplayScore[];
+};
+
 /** A coach → team membership row (`?include=teams.team`). */
 export type SMCoachTeamRow = {
   team_id?: number;
@@ -290,6 +355,8 @@ export type SMLineup = {
   jersey_number?: number;
   type?: string;
   player?: SMPlayer | null;
+  /** Fixture for this appearance, embedded via `?include=lineups.fixture.scores`. */
+  fixture?: SMLineupFixture | null;
   lineup?: {
     formation?: string;
     formation_position?: string;

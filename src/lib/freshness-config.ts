@@ -16,6 +16,8 @@ export const TTL = {
   /** Player profiles, injuries and the current-club overlay. */
   PLAYER: 3_600,
   INJURIES: 3_600,
+  /** Player analytics modal (seasons, career totals, recent matches, form). */
+  PLAYER_ANALYTICS: 900,
   /** Team squads. */
   SQUAD: 21_600,
   /** Transfer histories and team inbound transfers. */
