@@ -53,8 +53,7 @@ function FormDots({ form }: { form?: string }) {
   );
 }
 
-export default function StandingsTable({ data, isLoading }: StandingsTableProps) {
-  const [filterType, setFilterType] = useState<Filter>('overall');
+export default function StandingsTable({ data, isLoading, filter: filterType, onFilterChange: setFilterType }: StandingsTableProps) {
 
   if (isLoading) {
     return (

@@ -32,6 +32,7 @@ const LEAGUES = [
 
 function GamesPage() {
   const [leagueId, setLeagueId] = useState<number>(600);
+  const [filter, setFilter] = useState<'overall' | 'home' | 'away'>('overall');
 
   const { data, isLoading } = useQuery({
     queryKey: ['raw-standings', leagueId],
