@@ -4,12 +4,16 @@ import React, { useState } from 'react';
 import { StandingsGroup } from '@/types/standings';
 import { cn } from '@/lib/utils';
 
+export type StandingsFilter = 'overall' | 'home' | 'away';
+
 interface StandingsTableProps {
   data: StandingsGroup[];
   isLoading?: boolean;
+  filter: StandingsFilter;
+  onFilterChange: (f: StandingsFilter) => void;
 }
 
-type Filter = 'overall' | 'home' | 'away';
+type Filter = StandingsFilter;
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'overall', label: 'Genel' },
