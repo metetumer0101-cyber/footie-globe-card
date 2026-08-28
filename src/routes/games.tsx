@@ -40,7 +40,7 @@ function GamesPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const groups = parseSportmonksStandings(data ?? []);
+  const groups = parseSportmonksStandings(data ?? [], filter);
   const active = LEAGUES.find((l) => l.id === leagueId) ?? LEAGUES[0]!;
 
   return (
@@ -97,7 +97,7 @@ function GamesPage() {
         </div>
 
         <div className="mx-auto max-w-3xl px-2 py-4 sm:px-4">
-          <StandingsTable data={groups} isLoading={isLoading} />
+          <StandingsTable data={groups} isLoading={isLoading} filter={filter} onFilterChange={setFilter} />
         </div>
       </div>
     </AppShell>
