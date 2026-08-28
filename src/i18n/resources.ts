@@ -450,7 +450,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Compare",
         "squad": "Squad Builder",
         "competitions": "Competitions",
-        "games": "Games",
+        "games": "Live Table",
         "live": "Live",
         "profile": "Profile"
       },
@@ -989,7 +989,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Karşılaştır",
         "squad": "Kadro Kur",
         "competitions": "Yarışmalar",
-        "games": "Oyunlar",
+        "games": "Canlı Puan",
         "live": "Canlı",
         "profile": "Profil"
       },
@@ -1335,7 +1335,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Comparar",
         "squad": "Crear plantilla",
         "competitions": "Competiciones",
-        "games": "Juegos",
+        "games": "Clasificación en Vivo",
         "live": "Live",
         "profile": "Perfil"
       },
@@ -1453,7 +1453,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Vergleichen",
         "squad": "Kader bauen",
         "competitions": "Wettbewerbe",
-        "games": "Spiele",
+        "games": "Live-Tabelle",
         "live": "Live",
         "profile": "Profil"
       },
@@ -1571,7 +1571,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Comparer",
         "squad": "Composer l'équipe",
         "competitions": "Compétitions",
-        "games": "Jeux",
+        "games": "Classement en Direct",
         "live": "Live",
         "profile": "Profil"
       },
@@ -1689,7 +1689,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Confronta",
         "squad": "Crea rosa",
         "competitions": "Competizioni",
-        "games": "Giochi",
+        "games": "Classifica Live",
         "live": "Live",
         "profile": "Profilo"
       },
@@ -1807,7 +1807,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Comparar",
         "squad": "Montar equipa",
         "competitions": "Competições",
-        "games": "Jogos",
+        "games": "Classificação ao Vivo",
         "live": "Live",
         "profile": "Perfil"
       },
@@ -1925,7 +1925,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Comparar",
         "squad": "Montar time",
         "competitions": "Competições",
-        "games": "Games",
+        "games": "Classificação ao Vivo",
         "live": "Live",
         "profile": "Perfil"
       },
@@ -2043,7 +2043,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Vergelijken",
         "squad": "Team bouwen",
         "competitions": "Competities",
-        "games": "Games",
+        "games": "Live Stand",
         "live": "Live",
         "profile": "Profiel"
       },
@@ -2161,7 +2161,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "قارن",
         "squad": "بناء الفريق",
         "competitions": "المسابقات",
-        "games": "Games",
+        "games": "الترتيب المباشر",
         "live": "Live",
         "profile": "الملف الشخصي"
       },
@@ -2279,7 +2279,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "比較",
         "squad": "スカッド作成",
         "competitions": "大会",
-        "games": "Games",
+        "games": "ライブ順位表",
         "live": "Live",
         "profile": "プロフィール"
       },
@@ -2397,7 +2397,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "비교",
         "squad": "스쿼드 빌더",
         "competitions": "대회",
-        "games": "Games",
+        "games": "실시간 순위",
         "live": "Live",
         "profile": "프로필"
       },
@@ -2515,7 +2515,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "对比",
         "squad": "阵容搭建",
         "competitions": "赛事",
-        "games": "Games",
+        "games": "实时积分榜",
         "live": "Live",
         "profile": "个人资料"
       },
@@ -2633,7 +2633,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Сравнить",
         "squad": "Состав",
         "competitions": "Турниры",
-        "games": "Games",
+        "games": "Турнирная таблица",
         "live": "Live",
         "profile": "Профиль"
       },
@@ -2751,7 +2751,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Σύγκριση",
         "squad": "Δημιουργία ομάδας",
         "competitions": "Διοργανώσεις",
-        "games": "Games",
+        "games": "Ζωντανή Βαθμολογία",
         "live": "Live",
         "profile": "Προφίλ"
       },
@@ -2869,7 +2869,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Porównaj",
         "squad": "Buduj skład",
         "competitions": "Rozgrywki",
-        "games": "Games",
+        "games": "Tabela na Żywo",
         "live": "Live",
         "profile": "Profil"
       },
@@ -2987,7 +2987,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Usporedi",
         "squad": "Složi momčad",
         "competitions": "Natjecanja",
-        "games": "Games",
+        "games": "Ljestvica Uživo",
         "live": "Live",
         "profile": "Profil"
       },
@@ -3105,7 +3105,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Упореди",
         "squad": "Састави тим",
         "competitions": "Такмичења",
-        "games": "Games",
+        "games": "Tabela Uživo",
         "live": "Live",
         "profile": "Профил"
       },
@@ -3223,7 +3223,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Jämför",
         "squad": "Bygg trupp",
         "competitions": "Tävlingar",
-        "games": "Games",
+        "games": "Live Tabell",
         "live": "Live",
         "profile": "Profil"
       },
@@ -3341,7 +3341,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Sammenlign",
         "squad": "Bygg lag",
         "competitions": "Turneringer",
-        "games": "Games",
+        "games": "Live Tabell",
         "live": "Live",
         "profile": "Profil"
       },
@@ -3459,7 +3459,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Sammenlign",
         "squad": "Byg hold",
         "competitions": "Turneringer",
-        "games": "Games",
+        "games": "Live Stilling",
         "live": "Live",
         "profile": "Profil"
       },
@@ -3577,7 +3577,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Vertaa",
         "squad": "Rakenna joukkue",
         "competitions": "Kilpailut",
-        "games": "Games",
+        "games": "Live Sarjataulukko",
         "live": "Live",
         "profile": "Profiili"
       },
@@ -3695,7 +3695,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Bandingkan",
         "squad": "Susun Skuad",
         "competitions": "Kompetisi",
-        "games": "Games",
+        "games": "Klasemen Langsung",
         "live": "Live",
         "profile": "Profil"
       },
@@ -3813,7 +3813,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "तुलना करें",
         "squad": "टीम बनाएं",
         "competitions": "प्रतियोगिताएं",
-        "games": "Games",
+        "games": "लाइव स्टैंडिंग",
         "live": "Live",
         "profile": "प्रोफ़ाइल"
       },
@@ -3931,7 +3931,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "مقایسه",
         "squad": "ساخت تیم",
         "competitions": "مسابقات",
-        "games": "Games",
+        "games": "جدول زنده",
         "live": "Live",
         "profile": "پروفایل"
       },
@@ -4049,7 +4049,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Порівняти",
         "squad": "Скласти склад",
         "competitions": "Турніри",
-        "games": "Games",
+        "games": "Турнірна таблиця",
         "live": "Live",
         "profile": "Профіль"
       },
@@ -4167,7 +4167,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Porovnat",
         "squad": "Sestavit tým",
         "competitions": "Soutěže",
-        "games": "Games",
+        "games": "Tabulka Živě",
         "live": "Live",
         "profile": "Profil"
       },
@@ -4285,7 +4285,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Compară",
         "squad": "Creează lotul",
         "competitions": "Competiții",
-        "games": "Games",
+        "games": "Clasament Live",
         "live": "Live",
         "profile": "Profil"
       },
@@ -4403,7 +4403,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Összehasonlítás",
         "squad": "Keretépítő",
         "competitions": "Versenyek",
-        "games": "Games",
+        "games": "Élő Tabella",
         "live": "Live",
         "profile": "Profil"
       },
@@ -4521,7 +4521,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Сравни",
         "squad": "Състави отбор",
         "competitions": "Турнири",
-        "games": "Games",
+        "games": "Класиране на живо",
         "live": "Live",
         "profile": "Профил"
       },
@@ -4639,7 +4639,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "เปรียบเทียบ",
         "squad": "จัดทีม",
         "competitions": "การแข่งขัน",
-        "games": "Games",
+        "games": "ตารางคะแนนสด",
         "live": "Live",
         "profile": "โปรไฟล์"
       },
@@ -4757,7 +4757,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "So sánh",
         "squad": "Xây đội hình",
         "competitions": "Giải đấu",
-        "games": "Games",
+        "games": "BXH Trực Tiếp",
         "live": "Live",
         "profile": "Hồ sơ"
       },
@@ -4875,7 +4875,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "השוואה",
         "squad": "בניית סגל",
         "competitions": "תחרויות",
-        "games": "Games",
+        "games": "טבלה חיה",
         "live": "Live",
         "profile": "פרופיל"
       },
@@ -4993,7 +4993,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Linganisha",
         "squad": "Unda Kikosi",
         "competitions": "Mashindano",
-        "games": "Games",
+        "games": "Jedwali la Moja kwa Moja",
         "live": "Live",
         "profile": "Wasifu"
       },
@@ -5111,7 +5111,7 @@ export const resources: Record<string, { translation: Record<string, unknown> }>
         "compare": "Porovnať",
         "squad": "Zostaviť tím",
         "competitions": "Súťaže",
-        "games": "Games",
+        "games": "Tabuľka Naživo",
         "live": "Live",
         "profile": "Profil"
       },
