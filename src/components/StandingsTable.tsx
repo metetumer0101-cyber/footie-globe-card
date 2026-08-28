@@ -30,7 +30,7 @@ function rankStripe(position: number, total: number): string {
   return 'border-l-transparent';
 }
 
-function FormDots({ form }: { form?: string }) {
+function FormDots({ form }: { form?: string | undefined }) {
   if (!form) return null;
   const letters = form.toUpperCase().replace(/[^WDL]/g, '').slice(-5).split('');
   if (letters.length === 0) return null;
