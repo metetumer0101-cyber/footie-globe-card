@@ -10,28 +10,34 @@ import type { Country } from "@/types/news";
 import { cn } from "@/lib/utils";
 
 /**
- * Main Home Page - News Feed
- * Displays football news by selected country with filtering options
+ * Main Home Page - Football News Feed
+ * Displays news articles by country with filtering
  */
 export function HomePage() {
   const { t } = useTranslation();
   const fetchNews = useServerFn(getNewsByCountry);
 
-  // Default to Turkey
+  // State
   const [selectedCountry, setSelectedCountry] = useState<Country>("turkey");
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const countryData = COUNTRIES.find((c) => c.id === selectedCountry);
 
-  // Fetch news for selected country
-  const { data: articles = [], isLoading } = useQuery({
+  // Fetch news
+  const { data: articles = [], isLoading, error } = useQuery({
     queryKey: ["news", selectedCountry],
     queryFn: async () => {
-      const result = await fetchNews({ data: { country: selectedCountry } });
-      return result || [];
+      try {
+        const result = await fetchNews({ data: { country: selectedCountry } });
+        return result || [];
+      } catch (err) {
+        console.error("Error fetching news:", err);
+        return [];
+      }
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
   });
 
   const handleCountryChange = (country: Country) => {
@@ -41,7 +47,7 @@ export function HomePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header Section */}
       <section className="card-surface glow relative overflow-hidden rounded-3xl p-5">
         <div className="absolute -end-10 -top-10 h-36 w-36 rounded-full gradient-pitch opacity-25 blur-2xl" />
         <div className="relative">
@@ -63,58 +69,56 @@ export function HomePage() {
 
       {/* Country Selector */}
       <section className="relative">
-        <div className="relative">
-          <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className={cn(
-              "card-surface w-full rounded-2xl px-4 py-3 transition-all",
-              "flex items-center justify-between gap-2 text-left",
-              dropdownOpen && "ring-2 ring-primary"
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{countryData?.flag}</span>
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {t("news.selectCountry", { defaultValue: "Country" })}
-                </div>
-                <div className="text-base font-bold">{countryData?.name}</div>
-              </div>
-            </div>
-            <ChevronDown
-              className={cn(
-                "h-5 w-5 text-muted-foreground transition-transform",
-                dropdownOpen && "rotate-180"
-              )}
-            />
-          </button>
-
-          {/* Dropdown */}
-          {dropdownOpen && (
-            <div className="absolute top-full z-20 mt-2 w-full rounded-2xl border border-border bg-background/95 shadow-xl backdrop-blur">
-              <div className="grid max-h-96 grid-cols-2 gap-2 overflow-auto p-2 sm:grid-cols-3">
-                {COUNTRIES.map((country) => (
-                  <button
-                    key={country.id}
-                    onClick={() => handleCountryChange(country.id)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors",
-                      selectedCountry === country.id
-                        ? "bg-primary/15 font-semibold text-primary"
-                        : "hover:bg-secondary/60"
-                    )}
-                  >
-                    <span className="text-lg">{country.flag}</span>
-                    <span className="truncate text-sm">{country.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+        <button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          className={cn(
+            "card-surface w-full rounded-2xl px-4 py-3 transition-all",
+            "flex items-center justify-between gap-2 text-left",
+            dropdownOpen && "ring-2 ring-primary"
           )}
-        </div>
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{countryData?.flag}</span>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("news.selectCountry", { defaultValue: "Country" })}
+              </div>
+              <div className="text-base font-bold">{countryData?.name}</div>
+            </div>
+          </div>
+          <ChevronDown
+            className={cn(
+              "h-5 w-5 text-muted-foreground transition-transform",
+              dropdownOpen && "rotate-180"
+            )}
+          />
+        </button>
+
+        {/* Dropdown Menu */}
+        {dropdownOpen && (
+          <div className="absolute top-full z-20 mt-2 w-full rounded-2xl border border-border bg-background/95 shadow-xl backdrop-blur">
+            <div className="grid max-h-96 grid-cols-2 gap-2 overflow-auto p-2 sm:grid-cols-3">
+              {COUNTRIES.map((country) => (
+                <button
+                  key={country.id}
+                  onClick={() => handleCountryChange(country.id)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors",
+                    selectedCountry === country.id
+                      ? "bg-primary/15 font-semibold text-primary"
+                      : "hover:bg-secondary/60"
+                  )}
+                >
+                  <span className="text-lg">{country.flag}</span>
+                  <span className="truncate text-sm">{country.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
-      {/* News Grid */}
+      {/* News Section */}
       <section>
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
           <span className="text-2xl">{countryData?.flag}</span>
@@ -122,6 +126,11 @@ export function HomePage() {
             defaultValue: `Latest news from ${countryData?.name}`,
           })}
         </h2>
+        {error && (
+          <div className="mb-4 rounded-lg bg-destructive/15 p-4 text-sm text-destructive">
+            {t("news.error", { defaultValue: "Failed to load news. Please try again later." })}
+          </div>
+        )}
         <NewsGrid articles={articles} isLoading={isLoading} />
       </section>
 
@@ -130,7 +139,7 @@ export function HomePage() {
         <p className="text-xs text-muted-foreground">
           {t("news.info", {
             defaultValue:
-              "News articles open in a new tab on the original source website. Last updated: just now",
+              "News articles open in a new tab on the original source website. Content is updated regularly from trusted sports news sources.",
           })}
         </p>
       </section>

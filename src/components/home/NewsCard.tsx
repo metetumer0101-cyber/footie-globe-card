@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { ExternalLink, AlertCircle } from "lucide-react";
 import type { NewsArticle } from "@/types/news";
 import { cn } from "@/lib/utils";
@@ -10,14 +9,17 @@ interface NewsCardProps {
 
 export function NewsCard({ article, className }: NewsCardProps) {
   const handleClick = () => {
-    window.open(article.link, "_blank");
+    if (article.link) {
+      window.open(article.link, "_blank");
+    }
   };
 
   return (
     <button
       onClick={handleClick}
+      disabled={!article.link}
       className={cn(
-        "card-surface group flex flex-col gap-3 overflow-hidden rounded-2xl transition-all hover:bg-secondary/40 active:scale-95",
+        "card-surface group flex flex-col gap-3 overflow-hidden rounded-2xl transition-all hover:bg-secondary/40 active:scale-95 disabled:opacity-50",
         className
       )}
     >
@@ -69,7 +71,9 @@ export function NewsCard({ article, className }: NewsCardProps) {
                 })
               : ""}
           </span>
-          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
+          {article.link && (
+            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
+          )}
         </div>
       </div>
     </button>
