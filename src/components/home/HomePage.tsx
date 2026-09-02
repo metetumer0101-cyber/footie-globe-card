@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, Globe } from "lucide-react";
-import { getNewsByCountry } from "@/lib/news.functions";
 import { NewsGrid } from "@/components/home/NewsCard";
 import { COUNTRIES } from "@/data/news-sources";
-import type { Country } from "@/types/news";
+import type { Country, NewsArticle } from "@/types/news";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,7 +13,6 @@ import { cn } from "@/lib/utils";
  */
 export function HomePage() {
   const { t } = useTranslation();
-  const fetchNews = useServerFn(getNewsByCountry);
 
   // State
   const [selectedCountry, setSelectedCountry] = useState<Country>("turkey");
@@ -23,13 +20,17 @@ export function HomePage() {
 
   const countryData = COUNTRIES.find((c) => c.id === selectedCountry);
 
-  // Fetch news
-  const { data: articles = [], isLoading, error } = useQuery({
+  // Fetch news from API
+  const { data: articles = [], isLoading, error } = useQuery<NewsArticle[]>({
     queryKey: ["news", selectedCountry],
     queryFn: async () => {
       try {
-        const result = await fetchNews({ data: { country: selectedCountry } });
-        return result || [];
+        const response = await fetch(`/api/news?country=${selectedCountry}`);
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
       } catch (err) {
         console.error("Error fetching news:", err);
         return [];
